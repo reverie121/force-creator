@@ -2,7 +2,7 @@ import os, re
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-from sqlalchemy.types import Integer, String, Text, VARCHAR
+from sqlalchemy.types import Integer, String, Text, VARCHAR, Boolean
 
 import innocuous
 
@@ -48,16 +48,20 @@ for filename in os.listdir(directory):
                                                                                 # to be used for Foreign Keys.
             df.rename(columns = {'_id': 'id'}, inplace = True) # Re-set _id column name to 'id' to be used for Primary Key.
 
-            # Special exception: unit.experience should be unit.experience_id
-            if 'experience' in df.columns:
+            # Specific column changes: 
+            if 'nationality' in df.columns: # unit.nationality and commander.nationality should be .nationality_id
+                df.rename(columns = {'nationality': 'nationality_id'}, inplace = True)
+            if 'experience' in df.columns: # unit.experience should be unit.experience_id
                 df.rename(columns = {'experience': 'experience_id'}, inplace = True)
 
-            # Create a list of column names for this table and add to the schema as needed.
             column_names = [] # To be used later for FK assignments.
             df_schema = {} # To be used later when df is converted to a table in the db.
-            # Iterate through columns and add to schema.
+            
+            # Iterate through table columns.
             for col in df.columns:
                 column_names.append(col)
+                
+                # Add columns to schema to define their data types.
                 if col == 'name':
                     df_schema['name'] = String(80)
                 elif col == 'details':
@@ -66,19 +70,28 @@ for filename in os.listdir(directory):
                     df_schema[f'{col}'] = Integer
                 else:
                     df_schema[f'{col}'] = VARCHAR
+                
+                # In rows to be used for FK constraints replace value 0 with NaN (will be null in db).
+                if '_id' in col:
+                    for ind in df.index:
+                        if df[col][ind] == 0:
+                            df[col].replace(0, np.NaN, inplace=True)
 
             # Get table name from file name.
-            table_name = str(filename).replace('data_bp','').replace('.csv', '')
+            if filename == 'data_location.csv':
+                table_name = str(filename).replace('data_','').replace('.csv', '')
+            else:
+                table_name = str(filename).replace('data_bp','').replace('.csv', '')
 
             # Add table name to list for foreign key assignment later.
             tables.append({'table_name': table_name, 'table_columns': column_names})
 
             # In rows to be used for FK constraints replace value 0 with NaN (will be null in db).
-            for col in df.columns:
-                if '_id' in col:
-                    for ind in df.index:
-                        if df[col][ind] == 0:
-                            df[col].replace(0, np.NaN, inplace=True)
+            # for col in df.columns:
+            #     if '_id' in col:
+            #         for ind in df.index:
+            #             if df[col][ind] == 0:
+            #                 df[col].replace(0, np.NaN, inplace=True)
 
             ### End Data Cleanup ###
 
@@ -94,11 +107,19 @@ for filename in os.listdir(directory):
 
 # ******************** END DATA CLEANUP AND DB POPULATION ********************
 
-# Create Foreign Keys where needed.
+# Additional database construction and structuring.
 with engine.connect() as con:
+    
+    # Create nationality table.
+    nationalities = ['Spanish', 'English', 'French', 'Unaligned', 'Dutch', 'Golden Age Pirates', 'placeholder', 'Natives']
+    con.execute('CREATE TABLE IF NOT EXISTS nationality(id serial PRIMARY KEY, name VARCHAR UNIQUE);')
+    for nation in nationalities:
+        con.execute(f"INSERT INTO nationality (name) VALUES ('{nation}');")
+
+    # Create Foreign Keys where needed.
     for table in tables:
         for col in table['table_columns']:
-            avoid_list = ['nationality_id', 'unitclass_id', 'wcproduct_id'] # Atypical columns with '_id' in name.
+            avoid_list = ['unitclass_id', 'wcproduct_id'] # Atypical columns with '_id' in name.
             if '_id' in col and col not in avoid_list: # Foreign Keys should be set to columns ending in '_id'.
                 try:
                     keyed_table = col.replace('_id','') # Column name minus '_id' should equate to referenced table name.
