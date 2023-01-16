@@ -38,12 +38,14 @@ class Commander(db.Model):
                    primary_key=True,
                    autoincrement=True)
     ord = db.Column(db.Integer)
-    commanderclass = db.Column(db.Integer)
+    commanderclass_id = db.Column(db.Integer, db.ForeignKey(
+        'commanderclass.id', ondelete='SET NULL'))
     name = db.Column(db.VARCHAR)
     nickname = db.Column(db.VARCHAR)
     points = db.Column(db.Integer)
     details = db.Column(db.Text)
-    nationality_id = db.Column(db.Integer)
+    nationality_id = db.Column(db.Integer, db.ForeignKey(
+        'nationality.id', ondelete='SET NULL'))
     commandrange = db.Column(db.Integer)
     commandpoints = db.Column(db.Integer)
     mainweapons = db.Column(db.VARCHAR)
@@ -78,8 +80,10 @@ class CommanderFaction(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    commander_id = db.Column(db.Integer)
-    faction_id = db.Column(db.Integer)
+    commander_id = db.Column(db.Integer, db.ForeignKey(
+        'commander.id', ondelete='CASCADE'))
+    faction_id = db.Column(db.Integer, db.ForeignKey(
+        'faction.id', ondelete='CASCADE'))
 
     def __repr__(self):
         return f'<CommanderFaction {self.id}>'
@@ -93,8 +97,10 @@ class CommanderSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    commander_id = db.Column(db.Integer)
-    specialrule_id = db.Column(db.Integer)
+    commander_id = db.Column(db.Integer, db.ForeignKey(
+        'commander.id', ondelete='CASCADE'))
+    specialrule_id = db.Column(db.Integer, db.ForeignKey(
+        'specialrule.id', ondelete='CASCADE'))
 
     def __repr__(self):
         return f'<CommanderSpecialrule {self.id}>'
@@ -128,7 +134,19 @@ class Faction(db.Model):
     forcespecialrules = db.Column(db.VARCHAR)
     commandoptions = db.Column(db.VARCHAR)
     forceoptions = db.Column(db.VARCHAR)
-    nationality_id = db.Column(db.Integer)
+    nationality_id = db.Column(db.Integer, db.ForeignKey(
+        'nationality.id', ondelete='SET NULL'))
+
+    commander = db.relationship(
+        'Commander',
+        secondary = 'commanderfaction',
+        backref = 'faction'
+    )
+    upgrade = db.relationship(
+        'Upgrade',
+        secondary = 'factionupgrade',
+        backref = 'faction'
+    )
 
     def __repr__(self):
         return f'<Faction {self.id} {self.name} ({self.nationality.name})>'
@@ -142,9 +160,12 @@ class FactionUnit(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    faction_id = db.Column(db.Integer)
-    factionUnitclass = db.Column(db.Integer)
-    unit_id = db.Column(db.Integer)
+    faction_id = db.Column(db.Integer, db.ForeignKey(
+        'faction.id', ondelete='CASCADE'))
+    factionunitclass = db.Column(db.Integer, db.ForeignKey(
+        'factionunitclass.id', ondelete='CASCADE'))
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id', ondelete='CASCADE'))
     details = db.Column(db.Text)
 
     def __repr__(self):
@@ -175,8 +196,10 @@ class FactionUpgrade(db.Model):
                    primary_key=True,
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
-    faction_id = db.Column(db.Integer)
-    upgrade_id = db.Column(db.Integer)
+    faction_id = db.Column(db.Integer, db.ForeignKey(
+        'faction.id', ondelete='CASCADE'))
+    upgrade_id = db.Column(db.Integer, db.ForeignKey(
+        'upgrade.id', ondelete='CASCADE'))
 
     def __repr__(self):
         return f'<FactionUpgrade {self.id} {self.name}>'
@@ -192,7 +215,8 @@ class ForceOption(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    faction_id = db.Column(db.Integer)
+    faction_id = db.Column(db.Integer, db.ForeignKey(
+        'faction.id', ondelete='CASCADE'))
 
     def __repr__(self):
         return f'<ForceOption {self.id} {self.name}>'
@@ -206,7 +230,8 @@ class ForceSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    faction_id = db.Column(db.Integer)
+    faction_id = db.Column(db.Integer, db.ForeignKey(
+        'faction.id', ondelete='CASCADE'))
     details = db.Column(db.Text)
     addsubstract = db.Column(db.Integer)
 
@@ -272,6 +297,12 @@ class Ship(db.Model):
     traits = db.Column(db.VARCHAR)
     wcproduct_id = db.Column(db.Integer)
 
+    upgrade = db.relationship(
+        'Upgrade',
+        secondary = 'shipupgrade',
+        backref = 'ship'
+    )    
+
     def __repr__(self):
         return f'<Ship {self.id} {self.name}>'
 
@@ -284,8 +315,10 @@ class ShipSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    ship_id = db.Column(db.Integer)
-    specialrule_id = db.Column(db.Integer)
+    ship_id = db.Column(db.Integer, db.ForeignKey(
+        'ship.id', ondelete='CASCADE'))
+    specialrule_id = db.Column(db.Integer, db.ForeignKey(
+        'specialrule.id', ondelete='CASCADE'))
     namecustomadd = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
 
@@ -303,7 +336,8 @@ class ShipUpgrade(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    ship_id = db.Column(db.Integer)
+    ship_id = db.Column(db.Integer, db.ForeignKey(
+        'ship.id', ondelete='CASCADE'))
     pointcost = db.Column(db.Integer)
 
     def __repr__(self):
@@ -325,6 +359,27 @@ class Specialrule(db.Model):
     onship = db.Column(db.Integer)
     onfactionopt = db.Column(db.Integer)
 
+    commander = db.relationship(
+        'Commander',
+        secondary = 'commanderspecialrule',
+        backref = 'specialrule'
+    )
+    force = db.relationship(
+        'Force',
+        secondary = 'forcespecialrule',
+        backref = 'specialrule'
+    )
+    ship = db.relationship(
+        'Ship',
+        secondary = 'shipspecialrule',
+        backref = 'specialrule'
+    )
+    unit = db.relationship(
+        'Unit',
+        secondary = 'unitspecialrule',
+        backref = 'specialrule'
+    )
+
     def __repr__(self):
         return f'<Specialrule {self.id} {self.name}>'
 
@@ -340,8 +395,10 @@ class Unit(db.Model):
     name = db.Column(db.VARCHAR)
     points = db.Column(db.Integer)
     details = db.Column(db.Text)
-    nationality_id = db.Column(db.Integer)
-    experience_id = db.Column(db.Integer)
+    nationality_id = db.Column(db.Integer, db.ForeignKey(
+        'nationality.id', ondelete='CASCADE'))
+    experience_id = db.Column(db.Integer, db.ForeignKey(
+        'experience.id', ondelete='CASCADE'))
     mainweapons = db.Column(db.VARCHAR)
     sidearms = db.Column(db.VARCHAR)
     fightskill = db.Column(db.Integer)
@@ -368,7 +425,8 @@ class UnitOption(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    unit_id = db.Column(db.Integer)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id', ondelete='SET NULL'))
     pointcost = db.Column(db.Integer)
     perxmodels = db.Column(db.Integer)
     pointsperunit = db.Column(db.Integer)
@@ -387,8 +445,10 @@ class UnitSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    unit_id = db.Column(db.Integer)
-    specialrule_id = db.Column(db.Integer)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id', ondelete='CASCADE'))
+    specialrule_id = db.Column(db.Integer, db.ForeignKey(
+        'specialrule.id', ondelete='CASCADE'))
     namecustomadd = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
 
@@ -404,12 +464,15 @@ class UnorthodoxForce(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    commander_id = db.Column(db.Integer)
-    forceoption_id = db.Column(db.Integer)
+    commander_id = db.Column(db.Integer, db.ForeignKey(
+        'commander.id', ondelete='SET NULL'))
+    forceoption_id = db.Column(db.Integer, db.ForeignKey(
+        'forceoption.id', ondelete='SET NULL'))
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
     addsubtract = db.Column(db.Integer)
-    unit_id = db.Column(db.Integer)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id', ondelete='SET NULL'))
     unitclass_id = db.Column(db.Integer)
 
     def __repr__(self):
@@ -424,14 +487,18 @@ class UnorthodoxOption(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    commander_id = db.Column(db.Integer)
-    forceoption_id = db.Column(db.Integer)
+    commander_id = db.Column(db.Integer, db.ForeignKey(
+        'commander.id', ondelete='SET NULL'))
+    forceoption_id = db.Column(db.Integer, db.ForeignKey(
+        'forceoption.id', ondelete='SET NULL'))
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
     addsubtract = db.Column(db.Integer)
-    unit_id = db.Column(db.Integer)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id', ondelete='SET NULL'))
     unitclass_id = db.Column(db.Integer)
-    unit_option_id = db.Column(db.Integer)
+    unitoption_id = db.Column(db.Integer, db.ForeignKey(
+        'unitoption.id', ondelete='SET NULL'))
 
     def __repr__(self):
         return f'<UnorthodoxOption {self.id} {self.name}>'
@@ -446,7 +513,8 @@ class Upgrade(db.Model):
                    primary_key=True,
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
-    unit_id = db.Column(db.Integer)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id', ondelete='SET NULL'))
     bonustext = db.Column(db.VARCHAR)
     pointcost = db.Column(db.Integer)
     experienceupg = db.Column(db.Integer)
