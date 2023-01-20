@@ -2,11 +2,91 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+#################### Serialization Functions ####################
+# Serialization is required for jsonification.
+
+def serialize_one(qo):
+    """ Serializes an individual query response object by turning it into a dict. """
+    try:
+        s_qo = vars(qo)
+        for key in s_qo.keys():
+            if key.startswith('_sa_'):
+                s_qo.pop(key)
+    except Exception as e: print(e)
+    return s_qo
+
+def serialize_list(qo_list):
+    """ Iterates through a list of query response objects and serializes them.
+        Returns a list of dicts. """
+    s_list = []
+    for dict in qo_list:
+        s_dict = serialize_one(dict)
+        s_list.append(s_dict)
+    return s_list
+
+def serialize(q):
+    """ Serializes a query response.
+        Returns a dict for individual record queries.
+        Returns a list of dicts for multi-record queries. """
+    if type(q) == list:
+        try:
+            serialized = serialize_list(q)
+        except Exception as e: print(e)
+    else:
+        try:
+            serialized = serialize_one(q)
+        except Exception as e: print(e)
+    return serialized
+
+
+#################### MODELS ####################
+
+
+class Nationality(db.Model):
+    """ Nationality Model. """
+
+    __tablename__ = "nationality"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    name = db.Column(db.VARCHAR)
+
+    commanderfaction = db.relationship(
+        'CommanderFaction',
+        secondary = 'faction',
+        backref = 'nationality'
+    )
+    factionunit = db.relationship(
+        'FactionUnit',
+        secondary = 'faction',
+        backref = 'nationality'
+    )
+
+    def pack_data(self):
+        """ Create a serialized data set for a specified Nationality.
+            Returns a dict containing lists of dicts of that
+            Nationality's commanders, factions, and units. """
+        commanders = list(self.commander)
+        factions = list(self.faction)
+        units = list(self.unit)
+        commanderfaction = list(self.commanderfaction)
+        nationality_data = {
+            'commanders_factions': serialize(commanderfaction),
+            'commanders': serialize(commanders),
+            'factions': serialize(factions),
+            'units': serialize(units)
+        }
+        return nationality_data
+
+    def __repr__(self):
+        return f'<Nationality {self.id} {self.name}>'
+
 
 class Artillery(db.Model):
-    """Artillery."""
+    """ Artillery Model. """
 
-    __tablename__ = "commander"
+    __tablename__ = "artillery"
 
     id = db.Column(db.Integer,
                    primary_key=True,
@@ -30,7 +110,7 @@ class Artillery(db.Model):
 
 
 class Commander(db.Model):
-    """Commander."""
+    """ Commander Model. """
 
     __tablename__ = "commander"
 
@@ -54,12 +134,18 @@ class Commander(db.Model):
     extrainfo = db.Column(db.VARCHAR)
     wcproduct_id = db.Column(db.Integer)
 
+    commanderclass = db.relationship('CommanderClass', backref='commander')
+    nationality = db.relationship('Nationality', backref='commander')
+    commanderfaction = db.relationship('CommanderFaction', backref='commander')
+    commanderspecialrule = db.relationship('CommanderSpecialrule', backref='commander')
+    
     def __repr__(self):
         return f'<Commander {self.id} {self.name} ({self.nationality.name})>'
 
 
 class CommanderClass(db.Model):
-    """Commander class."""
+    """ CommanderClass Model.
+        Provides id names (Standard/Historic/Legendary) """
 
     __tablename__ = "commanderclass"
 
@@ -73,7 +159,8 @@ class CommanderClass(db.Model):
 
 
 class CommanderFaction(db.Model):
-    """Commander faction."""
+    """ CommanderFaction Model.
+        Connects Commander and Faction Models."""
 
     __tablename__ = "commanderfaction"
 
@@ -90,7 +177,8 @@ class CommanderFaction(db.Model):
 
 
 class CommanderSpecialrule(db.Model):
-    """Commander special rule."""
+    """ CommanderSpecialRule Model.
+        Connects Commander and Specialrule Models"""
 
     __tablename__ = "commanderspecialrule"
 
@@ -107,7 +195,7 @@ class CommanderSpecialrule(db.Model):
 
 
 class Experience(db.Model):
-    """Experience."""
+    """ Experience Model. """
 
     __tablename__ = "experience"
 
@@ -122,7 +210,7 @@ class Experience(db.Model):
 
 
 class Faction(db.Model):
-    """Faction."""
+    """ Faction Model. """
 
     __tablename__ = "faction"
 
@@ -137,6 +225,12 @@ class Faction(db.Model):
     nationality_id = db.Column(db.Integer, db.ForeignKey(
         'nationality.id', ondelete='SET NULL'))
 
+    nationality = db.relationship('Nationality', backref='faction')
+    commanderfaction = db.relationship('CommanderFaction', backref='faction')
+    factionunit = db.relationship('FactionUnit', backref='faction')
+    factionupgrade = db.relationship('FactionUpgrade', backref='faction')
+    forceoption = db.relationship('ForceOption', backref='faction')
+    forcespecialrule = db.relationship('ForceSpecialrule', backref='faction')
     commander = db.relationship(
         'Commander',
         secondary = 'commanderfaction',
@@ -147,13 +241,20 @@ class Faction(db.Model):
         secondary = 'factionupgrade',
         backref = 'faction'
     )
+    factionunitclass = db.relationship(
+        'FactionUnitclass', 
+        secondary = 'factionunit', 
+        backref='faction'
+    )
 
     def __repr__(self):
         return f'<Faction {self.id} {self.name} ({self.nationality.name})>'
 
 
 class FactionUnit(db.Model):
-    """Faction unit."""
+    """ FactionUnit Model.
+        Connects Faction and Unit Models.
+        Also connects FactionUnitclass Model. """
 
     __tablename__ = "factionunit"
 
@@ -168,12 +269,15 @@ class FactionUnit(db.Model):
         'unit.id', ondelete='CASCADE'))
     details = db.Column(db.Text)
 
+    unitclass = db.relationship('FactionUnitclass', backref='factionunit')
+
     def __repr__(self):
         return f'<FactionUnit {self.id}>'
 
 
-class FactionUnitClass(db.Model):
-    """Faction unit class."""
+class FactionUnitclass(db.Model):
+    """ FactionUnitClass Model.
+        Provides id names (Core/Support) """
 
     __tablename__ = "factionunitclass"
 
@@ -184,11 +288,12 @@ class FactionUnitClass(db.Model):
     details = db.Column(db.Text)
 
     def __repr__(self):
-        return f'<FactionUnitClass {self.id} {self.name} {self.details}>'
+        return f'<FactionUnitclass {self.id} {self.name} {self.details}>'
 
 
 class FactionUpgrade(db.Model):
-    """Faction upgrade."""
+    """ FactionUpgrade Model.
+        Connects Faction and Upgrade Models. """
 
     __tablename__ = "factionupgrade"
 
@@ -206,7 +311,8 @@ class FactionUpgrade(db.Model):
 
 
 class ForceOption(db.Model):
-    """Force option."""
+    """ ForceOption Model.
+        Provides supporting data for Faction Model. """
 
     __tablename__ = "forceoption"
 
@@ -223,7 +329,8 @@ class ForceOption(db.Model):
 
 
 class ForceSpecialrule(db.Model):
-    """Force special rule."""
+    """ ForceSpecialrule Model.
+        Provides supporting data for Faction Model. """
 
     __tablename__ = "forcespecialrule"
 
@@ -240,7 +347,7 @@ class ForceSpecialrule(db.Model):
 
 
 class Location(db.Model):
-    """Location."""
+    """ Location Model. """
 
     __tablename__ = "location"
 
@@ -255,22 +362,8 @@ class Location(db.Model):
         return f'<Location {self.id} {self.name}>'
 
 
-class Nationality(db.Model):
-    """Nationality."""
-
-    __tablename__ = "nationality"
-
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    name = db.Column(db.VARCHAR)
-
-    def __repr__(self):
-        return f'<Nationality {self.id} {self.name}>'
-
-
 class Ship(db.Model):
-    """Ship."""
+    """ Ship Model. """
 
     __tablename__ = "ship"
 
@@ -297,18 +390,16 @@ class Ship(db.Model):
     traits = db.Column(db.VARCHAR)
     wcproduct_id = db.Column(db.Integer)
 
-    upgrade = db.relationship(
-        'Upgrade',
-        secondary = 'shipupgrade',
-        backref = 'ship'
-    )    
+    shipspecialrule = db.relationship('ShipSpecialrule', backref='ship')
+    shipupgrade = db.relationship('ShipUpgrade', backref='ship')
 
     def __repr__(self):
         return f'<Ship {self.id} {self.name}>'
 
 
 class ShipSpecialrule(db.Model):
-    """Ship special rule."""
+    """ ShipSpecialrule Model.
+        Connects Ship and Specialrule Models. """
 
     __tablename__ = "shipspecialrule"
 
@@ -327,7 +418,8 @@ class ShipSpecialrule(db.Model):
 
 
 class ShipUpgrade(db.Model):
-    """Ship upgrade."""
+    """ ShipUpgrade Model.
+        Provides supporting data for Ship Model. """
 
     __tablename__ = "shipupgrade"
 
@@ -345,7 +437,7 @@ class ShipUpgrade(db.Model):
 
 
 class Specialrule(db.Model):
-    """Special rule."""
+    """ Special ule Model. """
 
     __tablename__ = "specialrule"
 
@@ -359,14 +451,12 @@ class Specialrule(db.Model):
     onship = db.Column(db.Integer)
     onfactionopt = db.Column(db.Integer)
 
+    commanderspecialrule = db.relationship('CommanderSpecialrule', backref='specialrule')
+    shipspecialrule = db.relationship('ShipSpecialrule', backref='specialrule')
+    unitspecialrule = db.relationship('UnitSpecialrule', backref='specialrule')
     commander = db.relationship(
         'Commander',
         secondary = 'commanderspecialrule',
-        backref = 'specialrule'
-    )
-    force = db.relationship(
-        'Force',
-        secondary = 'forcespecialrule',
         backref = 'specialrule'
     )
     ship = db.relationship(
@@ -385,7 +475,7 @@ class Specialrule(db.Model):
 
 
 class Unit(db.Model):
-    """Unit."""
+    """ Unit Model. """
 
     __tablename__ = "unit"
 
@@ -411,12 +501,24 @@ class Unit(db.Model):
     extrainfo = db.Column(db.VARCHAR)
     wcproduct_id = db.Column(db.Integer)
 
+    nationality = db.relationship('Nationality', backref='unit')
+    experience = db.relationship('Experience', backref='unit')
+    factionunit = db.relationship('FactionUnit', backref='unit')
+    unitoption = db.relationship('UnitOption', backref='unit')
+    unitspecialrule = db.relationship('UnitSpecialrule', backref='unit')
+    upgrade = db.relationship('Upgrade', backref='unit')
+    factionunitclass = db.relationship(
+        'FactionUnitclass', 
+        secondary = 'factionunit', 
+        backref='faction'
+    )
     def __repr__(self):
         return f'<Unit {self.id} {self.name}>'
 
 
 class UnitOption(db.Model):
-    """Unit option."""
+    """ UnitOption Model.
+        Provides supporting data for Unit Model. """
 
     __tablename__ = "unitoption"
 
@@ -438,7 +540,8 @@ class UnitOption(db.Model):
 
 
 class UnitSpecialrule(db.Model):
-    """Unit special rule."""
+    """ UnitSpecialrule Model.
+        Connects Unit and Specialrule Models. """
 
     __tablename__ = "unitspecialrule"
 
@@ -457,7 +560,7 @@ class UnitSpecialrule(db.Model):
 
 
 class UnorthodoxForce(db.Model):
-    """Unorthodox force."""
+    """ UnorthodoxForce Model. """
 
     __tablename__ = "unorthodoxforce"
 
@@ -475,12 +578,16 @@ class UnorthodoxForce(db.Model):
         'unit.id', ondelete='SET NULL'))
     unitclass_id = db.Column(db.Integer)
 
+    commander = db.relationship('Commander', backref='unorthodoxforce')
+    forceoption = db.relationship('ForceOption', backref='unorthodoxforce')
+    unit = db.relationship('Unit', backref='unorthodoxforce')
+
     def __repr__(self):
         return f'<UnorthodoxForce {self.id} {self.name}>'
 
 
 class UnorthodoxOption(db.Model):
-    """Unorthodox option."""
+    """ UnorthodoxOption Model. """
 
     __tablename__ = "unorthodoxoption"
 
@@ -500,12 +607,17 @@ class UnorthodoxOption(db.Model):
     unitoption_id = db.Column(db.Integer, db.ForeignKey(
         'unitoption.id', ondelete='SET NULL'))
 
+    commander = db.relationship('Commander', backref='unorthodoxoption')
+    forceoption = db.relationship('ForceOption', backref='unorthodoxoption')
+    unit = db.relationship('Unit', backref='unorthodoxoption')
+    unitoption = db.relationship('UnitOption', backref='unorthodoxoption')
+
     def __repr__(self):
         return f'<UnorthodoxOption {self.id} {self.name}>'
 
 
 class Upgrade(db.Model):
-    """Upgrade."""
+    """ Upgrade Model. """
 
     __tablename__ = "upgrade"
 
@@ -519,12 +631,13 @@ class Upgrade(db.Model):
     pointcost = db.Column(db.Integer)
     experienceupg = db.Column(db.Integer)
 
+    factionupgrade = db.relationship('FactionUpgrade', backref='upgrade')
+
     def __repr__(self):
         return f'<Upgrade {self.id} {self.name}>'
 
 
 def connect_db(app):
     """Connect to database."""
-
     db.app = app
     db.init_app(app)
