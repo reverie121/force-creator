@@ -1,0 +1,15 @@
+// AFTER MAKING CHANGES: Execute 'npm run compile_sass' from inside 'static/'.
+// Hard refresh in browser required to see changes.
+
+// Scottish Theme Colors.
+$theme-color-1: rgb(0, 79, 158) !default;
+$theme-color-2: white !default;
+$contrast-color: rgb(220,240,255) !default;
+// $supplemental-color: rgb(0, 79, 158) !default;
+$supplemental-color: rgb(0,94,184) !default;
+
+// Bootstrap variables set to custom theme color variables.
+$primary: $theme-color-1 !default;
+$secondary: $theme-color-2 !default;
+$info: $contrast-color !default;
+$warning: $supplemental-color !default;

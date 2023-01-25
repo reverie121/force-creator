@@ -1,0 +1,80 @@
+// Custom overrides/additions for Bootstrap
+
+.fell {
+    font-family: 'IM Fell English', serif;
+}
+
+.main_header {
+        color: $info;
+        font-family: 'IM Fell English', serif;
+        font-size: 6.2vw;
+        text-shadow: -1px -1px 0 $primary, 1px -1px 0 $primary, -1px 1px 0 $primary, 1px 1px 0 $primary;
+    }
+
+@media screen and (max-width: 767px) {
+    .main_header {
+        font-size: 5.8vw;
+    }
+}    
+
+@media screen and (min-width: 1200px) {
+    .main_header {
+        font-size: 8vh;
+    }
+}
+
+.type-shadow {
+    text-shadow: -1px -1px 0 $primary, 1px -1px 0 $primary, -1px 1px 0 $primary, 1px 1px 0 $primary;
+}
+
+.force-selector-label {
+    font-family: 'IM Fell English', serif;
+    font-size: 2vw;
+    color: $info;
+    // text-shadow: -0.75px -0.75px 0 $primary, 0.75px -0.75px 0 $primary, -0.75px 0.75px 0 $primary, 0.75px 0.75px 0 $primary;
+}
+
+@media screen and (max-width: 575px) {
+    .force-selector-label {
+        font-size: 2.4vw;
+        // text-shadow: -0.5px -0.5px 0 $primary, 0.5px -0.5px 0 $primary, -0.5px 0.5px 0 $primary, 0.5px 0.5px 0 $primary;
+    }
+}
+
+@media screen and (min-width: 1200px) {
+    .force-selector-label {
+        font-size: 1.6vw;
+    }
+}
+
+@media screen and (min-width: 1400px) {
+    .force-selector-label {
+        font-size: 1.4vw;
+        // text-shadow: -1px -1px 0 $primary, 1px -1px 0 $primary, -1px 1px 0 $primary, 1px 1px 0 $primary;
+    }
+}
+
+.force-selector-field {
+    font-family: 'IM Fell English', serif;
+    font-size: 1.6vw;
+    color: $primary;
+    background-color: $info;
+}
+
+@media screen and (max-width: 575px) {
+    .force-selector-field {
+        font-size: 2.3vw;
+    }
+}
+
+@media screen and (min-width: 1200px) {
+    .force-selector-field {
+        font-size: 1.3vw;
+    }
+}
+
+@media screen and (min-width: 1400px) {
+    .force-selector-field {
+        font-size: 1.2vw;
+    }
+}

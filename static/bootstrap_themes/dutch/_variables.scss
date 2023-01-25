@@ -1,0 +1,15 @@
+// AFTER MAKING CHANGES: Execute 'npm run compile_sass' from inside 'static/'.
+// Hard refresh in browser required to see changes.
+
+// Dutch Theme Colors.
+$theme-color-1: dodgerblue !default;
+$theme-color-2: rgb(200, 110, 0) !default;
+$contrast-color: white !default;
+// $supplemental-color: rgb(225, 160, 105) !default;
+$supplemental-color: rgb(215, 150, 90) !default;
+
+// Bootstrap variables set to custom theme color variables.
+$primary: $theme-color-1 !default;
+$secondary: $theme-color-2 !default;
+$info: $contrast-color !default;
+$warning: $supplemental-color !default;

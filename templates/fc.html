@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Force Creator
+{% endblock title %}
+
+{% block content %}
+    
+    <div class='container-fluid min-vh-100 bg-primary'>
+        <div class='container min-vh-100 p-0 bg-secondary border border-2 border-top-0 border-bottom-0 border-info'>
+            
+            <!-- HEADER -->
+            <div class='container-fluid border border-5 border-start-0 border-end-0 border-secondary bg-warning'>
+                <h1 class='main_header m-1 text-center'>
+                    <i>Blood & Plunder Force Creator</i>
+                </h1>
+            </div>
+
+            <div class='container p-2 pt-0 pb-0 m-0'>
+                
+                <!-- MAIN SELECT  -->
+                <div class='container-fluid rounded-3 bg-warning p-0 pe-3'>
+
+                    <form>
+                    <div class='row'>
+
+                        <div class='col m-1 ms-0'>                            
+                            <div class='row mt-1 align-items-center'>
+                                <div class='col-4 p-0 pe-2 text-end'>
+                                    <i class='force-selector-label form-label'>{{force_selection.force_name.label}}:</i>
+                                </div>
+                                <div class='col-8 p-0'>
+                                    {{force_selection.force_name(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0')}}
+                                </div>
+                            </div>
+
+                            <div class='row mt-1 align-items-center'>
+                                <div class='col-4 p-0 pe-2 text-end'>
+                                    <i class='force-selector-label form-label'>{{force_selection.point_max.label}}:</i>
+                                </div>
+                                <div class='col-8 p-0'>
+                                    {{force_selection.point_max(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0')}}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class='col m-1 ms-0'>      
+
+                            <div class='row mt-1 align-items-center'>
+                                <div class='col-4 p-0 pe-2 text-end'>
+                                    <i class='force-selector-label form-label'>{{force_selection.select_nation.label}}:</i>
+                                </div>
+                                <div class='col-8 p-0'>
+                                    {{force_selection.select_nation(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0')}}
+                                </div>
+                            </div>
+                                          
+                            <div class='row mt-1 align-items-center'>
+                                <div class='col-4 p-0 pe-2 text-end'>
+                                    <i class='force-selector-label form-label'>{{force_selection.select_faction.label}}:</i>
+                                </div>
+                                <div class='col-8 p-0'>
+                                    {{force_selection.select_faction(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0')}}
+                                </div>
+                            </div>
+
+                            <div class='row mt-1 align-items-center'>
+                                <div class='col-4 p-0 pe-2 text-end'>
+                                    <i class='force-selector-label form-label'>{{force_selection.select_commander.label}}:</i>
+                                </div>
+                                <div class='col-8 p-0'>
+                                    {{force_selection.select_commander(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0')}}
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    </form>
+                    
+                </div>
+
+                <!-- BUILD AREA -->
+                <div class='container-fluid m-0'>
+                    <div class='row'>
+
+                        <!-- SELECTION SIDE -->
+                        <div class='col m-2 mt-1 ms-0 pt-2 min-vh-100 rounded-3 bg-warning'>
+                            
+                            <form>
+                                {{add_to_list.component_selector(class_='form-control rounded-2 text-center force-selector-field pt-0 pb-0')}}
+                            </form>
+
+                        </div>
+
+                        <!-- LIST SIDE -->
+                        <div class='col m-2 mt-1 ms-0 me-0 pt-2 min-vh-100 rounded-3 bg-warning'>
+                            
+                            <div id='armyTitle' class='rounded-2 text-center force-selector-field'>
+                                <i>A Force With No Name</i>
+                            </div>
+                            
+                            <div id='armyInfo'>
+                                <span id='forceDisplay'></span>
+                                <span id='factionDisplay'></span>
+                                <span id='pointDisplay'></span>
+                            </div>
+
+                            <div id='unitAndCharDisplay'>
+        
+                            </div>
+
+                            <div id='shipAndArtilleryDisplay'>
+        
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class='container-fluid border border-5 border-top-0 border-start-0 border-end-0 border-secondary bg-warning'>
+&nbsp;
+            </div>
+
+        </div>
+    </div>
+
+{% endblock content %}

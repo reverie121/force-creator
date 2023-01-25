@@ -1,0 +1,18 @@
+// AFTER MAKING CHANGES: Execute 'npm run compile_sass' from inside 'static/'.
+// Hard refresh in browser required to see changes.
+
+// Native Theme Colors.
+// $theme-color-1: rgb(87, 67, 58) !default;
+$theme-color-1: rgb(85, 60, 42) !default;
+$theme-color-2: rgb(69, 75, 27) !default;
+$contrast-color: rgb(199, 174, 144) !default;
+// $contrast-color: rgb(200, 160, 110) !default;
+// $supplemental-color: rgb(74, 80, 32) !default;
+// $supplemental-color: rgb(78, 82, 46) !default;
+$supplemental-color: rgb(75, 80, 46) !default;
+
+// Bootstrap variables set to custom theme color variables.
+$primary: $theme-color-1 !default;
+$secondary: $theme-color-2 !default;
+$info: $contrast-color !default;
+$warning: $supplemental-color !default;
