@@ -51,12 +51,17 @@ def process_data(string):
     write_data_to_csv(name, json_data)
 
 def handle_artillery_data(string):
+    """ Splits artillery data into artillery, character, and misc data.
+        Writes each dataset to its own file. """
     data = extract_data_from_string(string)
     name = extract_name(string)
     json_data = json.loads(data)
+
     artillery = []
     characters = []
     misc = []
+
+    # Add each row of data to its appropriate list.
     for row in json_data:
         if row['name'].startswith('Character'):
             characters.append(row)
@@ -64,6 +69,7 @@ def handle_artillery_data(string):
             misc.append(row)
         else:
             artillery.append(row)
+
     write_data_to_csv(name, artillery)
     write_data_to_csv('character', characters)
     write_data_to_csv('misc', misc)

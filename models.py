@@ -332,12 +332,31 @@ class Artillery(db.Model):
     arcfire = db.Column(db.VARCHAR)
     movepenalty = db.Column(db.VARCHAR)
     points = db.Column(db.Integer)
-    uifolder = db.Column(db.VARCHAR)
     sort = db.Column(db.Integer)
     wcproduct_id = db.Column(db.Integer)
 
     def __repr__(self):
         return f'<Artillery {self.id} {self.name}>'
+
+
+class Character(db.Model):
+    """ Character Model. """
+
+    __tablename__ = "character"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    name = db.Column(db.VARCHAR)
+    details = db.Column(db.Text)
+    model = db.Column(db.VARCHAR)
+    points = db.Column(db.Integer)
+    uifolder = db.Column(db.VARCHAR)
+    sort = db.Column(db.Integer)
+    wcproduct_id = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f'<Character {self.id} {self.name}>'
 
 
 class CommanderClass(db.Model):
@@ -515,6 +534,27 @@ class Location(db.Model):
 
     def __repr__(self):
         return f'<Location {self.id} {self.name}>'
+
+
+class Misc(db.Model):
+    """ Misc Model. """
+
+    __tablename__ = "misc"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    name = db.Column(db.VARCHAR)
+    details = db.Column(db.Text)
+    model = db.Column(db.VARCHAR)
+    d10 = db.Column(db.VARCHAR)
+    points = db.Column(db.Integer)
+    uifolder = db.Column(db.VARCHAR)
+    sort = db.Column(db.Integer)
+    wcproduct_id = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f'<Misc {self.id} {self.name}>'
 
 
 class ShipSpecialrule(db.Model):

@@ -51,6 +51,8 @@ def get_generic_data():
     data = pack_generic_data()
     return jsonify(data)
 
+
+
 @app.route('/artillery')
 def get_all_artillery_data():
     all_artillery_data = {
@@ -58,11 +60,14 @@ def get_all_artillery_data():
     }
     return jsonify(all_artillery_data)
 
-@app.route('/nationalities/<id>')
-def get_nation_data(id):
-    response = models.Nationality.query.get_or_404(id)
-    data = response.pack_data()
-    return jsonify(data)
+
+@app.route('/characters')
+def get_all_character_data():
+    all_character_data = {
+        'character': models.serialize(list(models.Character.query.all()))
+    }
+    return jsonify(all_character_data)
+
 
 @app.route('/commanders/<id>')
 def get_commander_data(id):
@@ -70,11 +75,36 @@ def get_commander_data(id):
     data = response.pack_data()
     return jsonify(data)
 
+    
 @app.route('/factions/<id>')
 def get_faction_data(id):
     response = models.Faction.query.get_or_404(id)
     data = response.pack_data()
     return jsonify(data)
+
+
+@app.route('/misc')
+def get_all_misc_data():
+    all_misc_data = {
+        'misc': models.serialize(list(models.Misc.query.all()))
+    }
+    return jsonify(all_misc_data)
+
+
+@app.route('/nationalities')
+def get_all_nationality_data():
+    all_nationality_data = {
+        'nationality': models.serialize(list(models.Nationality.query.all()))
+    }
+    return jsonify(all_nationality_data)
+
+
+@app.route('/nationalities/<id>')
+def get_nation_data(id):
+    response = models.Nationality.query.get_or_404(id)
+    data = response.pack_data()
+    return jsonify(data)
+
 
 @app.route('/ships')
 def get_all_ship_data():
@@ -85,11 +115,21 @@ def get_all_ship_data():
     }
     return jsonify(all_ship_data)
 
+
 @app.route('/ships/<id>')
 def get_ship_data(id):
     response = models.Ship.query.get_or_404(id)
     data = response.pack_data()
     return jsonify(data)
+
+
+@app.route('/units')
+def get_all_unit_data():
+    all_unit_data = {
+        'unit': models.serialize(list(models.Unit.query.all()))
+    }
+    return jsonify(all_unit_data)
+
 
 @app.route('/units/<id>')
 def get_unit_data(id):
