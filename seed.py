@@ -110,11 +110,11 @@ for filename in os.listdir(directory):
 # Additional database construction and structuring.
 with engine.connect() as con:
     
-    # Create nationality table.
-    nationalities = ['Spanish', 'English', 'French', 'Unaligned', 'Dutch', 'Golden Age Pirates', 'placeholder', 'Natives']
-    con.execute('CREATE TABLE IF NOT EXISTS nationality(id serial PRIMARY KEY, name VARCHAR UNIQUE);')
-    for nation in nationalities:
-        con.execute(f"INSERT INTO nationality (name) VALUES ('{nation}');")
+    # # Create nationality table. ** NO LONGER NEEDED NOW THAT Force Builder SCRAPES ARE SCRIPTED. **
+    # nationalities = ['Spanish', 'English', 'French', 'Unaligned', 'Dutch', 'Golden Age Pirates', 'placeholder', 'Natives']
+    # con.execute('CREATE TABLE IF NOT EXISTS nationality(id serial PRIMARY KEY, name VARCHAR UNIQUE);')
+    # for nation in nationalities:
+    #     con.execute(f"INSERT INTO nationality (name) VALUES ('{nation}');")
 
     # Create Foreign Keys where needed.
     for table in tables:
