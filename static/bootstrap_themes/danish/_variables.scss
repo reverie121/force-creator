@@ -1,11 +1,11 @@
 // AFTER MAKING CHANGES: Execute 'npm run compile_sass' from inside 'static/'.
 // Hard refresh in browser required to see changes.
 
-// Swedish Theme Colors.
-$theme-color-1: darkblue !default;
-$theme-color-2: gold !default;
-$contrast-color: ghostwhite !default;
-$supplemental-color: rgb(188, 153, 0) !default;
+// Danish Theme Colors.
+$theme-color-1: #C8102E !default;
+$theme-color-2: rgb(255, 230, 230) !default;
+$contrast-color: white !default;
+$supplemental-color: #C8102E !default;
 
 // Bootstrap variables set to custom theme color variables.
 $primary: $theme-color-1 !default;

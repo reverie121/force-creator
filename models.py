@@ -8,6 +8,7 @@ db = SQLAlchemy()
 
 def serialize_one(query_object):
     """ Serializes an individual query response object by turning it into a dict. """
+    # TO DO: Add recursion.
     try:
         object_dict = vars(query_object)
         data = object_dict.copy()

@@ -8,7 +8,7 @@ The Blood & Plunder Force Creator is intended as an improvement on and alternati
 The Blood & Plunder Force Creator is for anyone who plays or might be interested in playing Blood & Plunder by Firelock Games.
 
 ## Data
-Most necessary data can be obtained from the current Force Builder. Some additional data from official Firelock sources as well as third-party sources will be added manually after the database is established. A local API will be created to provide this data for the front-end.
+Most if not all necessary data can be obtained from the current Force Builder. Additional data from official Firelock sources as well as third-party sources will be added manually as needed. A local API will be created to provide this data for the front-end.
 
 ## Features and Improvements
 The Force Creator will retain the current features of the Force Builder to aid the user in creating valid force lists for Blood & Plunder, as well as storage and print-formatting of lists. The Force Creator will build on this functionality with the following improvements:
@@ -20,13 +20,14 @@ The Force Creator will retain the current features of the Force Builder to aid t
 
 ## User Flow
 1. Force list may optionally be assigned a name and the point total may be changed (defaults to 150).
-2. User selects Nationality for list.
-   - Front-end checks session storage for commander and faction options for that nationality.
-   - If not already present in session, complete commander and faction options for the selected nationality are retrieved via API call and then stored in the session.
-3. User selects Commander and Faction from lists.
-   - Lists are interdependent.
-   - Data accessed from session.
-4. User adds elements to their list and modifies those elements as desired based upon provided options. Elements may be added and modified in any order. Elements include units, artillery, characters, ships, terrain, and fortifications. Points (x / Total) will be updated live based on selections and modifications.
+2. User selects Nationality.
+   - Front-end checks session storage for Commander and Faction options for that Nationality.
+   - If not already present in session, complete Commander and Faction options for the selected Nationality are retrieved via API call and then stored in the session.
+   - Commander and Faction lists are generated from session data and the dropdowns are populated.
+3. User selects Commander and Faction from interdependent lists.
+   - Data retrieved from session.
+   - When user changes the value of either dropdown the other dropdown will be reset. If a valid option was present in other dropdown it will be automatically selected.
+4. User adds elements to their list and modifies those elements as desired based upon provided options. Elements may be added and modified in any order. Elements include units, artillery, characters, ships, terrain, and misc. Points (x / Total) will be updated live based on selections and modifications.
    - Lists of all elements other than units may be obtained from the API as soon as a Commander and Faction have been selected.
    - Unit options will vary based on Commander and Faction selections. The number of API calls used to obtain these lists and how much data is transferred in each will be decided later.
    - Data will be stored in the session.
@@ -36,6 +37,7 @@ The Force Creator will retain the current features of the Force Builder to aid t
 ## Further Potential Features and Improvements
 
 ### Additional Force Creator Features
+- Alternate Layout: Option for traditional Force Builder layout.
 - Content Creator Links: A list of links to third-party content generated dynamically based upon user selection.
 - Ship GUI: An interface that displays a ship hull for each ship in a list, demarcated by deck. Units may be assigned to decks and moved around via drag-and-drop.
 

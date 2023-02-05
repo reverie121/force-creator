@@ -22,21 +22,23 @@ def main():
 
 @app.route('/creator')
 def show_creator():
-    force_selection = ForceSelection(select_nation='english')
+    force_selection = ForceSelection(select_nation=2)
     add_to_list = AddToList(component_type='units')
     return render_template('fc.html', force_selection=force_selection, add_to_list=add_to_list)
 
 #################### API Routes ####################
 
-def pack_generic_data():    
-    generic_data = {
+def pack_universal_data():    
+    universal_data = {
         'nationality': models.serialize(list(models.Nationality.query.all())),
         'commanderclass': models.serialize(list(models.CommanderClass.query.all())),
         'experience': models.serialize(list(models.Experience.query.all())),
         'factionunitclass': models.serialize(list(models.FactionUnitclass.query.all())),
         # The following data is sent selectively with Commander, Unit, and Faction queries
+        'commanderfaction': models.serialize(list(models.CommanderFaction.query.all())),
         'commanderspecialrule': models.serialize(list(models.CommanderSpecialrule.query.all())),
         'factionupgrade': models.serialize(list(models.FactionUpgrade.query.all())),
+        'factionunit': models.serialize(list(models.FactionUnit.query.all())),
         'forceoption': models.serialize(list(models.ForceOption.query.all())),
         'forcespecialrule': models.serialize(list(models.ForceSpecialrule.query.all())),
         'specialrule': models.serialize(list(models.Specialrule.query.all())),
@@ -44,11 +46,11 @@ def pack_generic_data():
         'unitspecialrule': models.serialize(list(models.UnitSpecialrule.query.all())),
         'upgrade': models.serialize(list(models.Upgrade.query.all()))
     }  
-    return generic_data
+    return universal_data
 
-@app.route('/generic')
+@app.route('/universal')
 def get_generic_data():
-    data = pack_generic_data()
+    data = pack_universal_data()
     return jsonify(data)
 
 

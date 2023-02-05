@@ -78,3 +78,9 @@
         font-size: 1.2vw;
     }
 }
+
+.fill-screen-scrollable {
+    min-height: 95vh !important;
+    height: 95vh !important;
+    overflow-y: auto;
+  }
