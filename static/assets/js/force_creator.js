@@ -1,6 +1,7 @@
 const $unitSizeRangeDisplay = $('#unit-size-range-display');
 const $forceName = $('#force_name');
-const $selectNation = $('#select_nation');
+const $pointMax = $('#point_max');
+const $selectNationality = $('#select_nation');
 const $selectFaction = $('#select_faction');
 const $selectCommander = $('#select_commander');
 const $componentSelector = $('#component_selector');
@@ -9,75 +10,34 @@ class ForceList {
     constructor(maxPoints) {
         this.maxPoints = maxPoints;
         this.updateUnitSize();
+        this.name = 'A Force Without A Name';
     }
-    name = 'A Force Without A Name';
-    nationality;
-    faction;
-    commander;
 
+    // Update unit size range display based on this ForceList's current maximum point value.
+    updateUnitSize() {
+        $unitSizeRangeDisplay.html(`<i>${Math.floor(this.maxPoints / 100) + 2} to ${(Math.floor(this.maxPoints / 100) + 1)*4} models per unit</i>`);
+    }
+    
+    // Assign a nationality object to the force list.
+    setNationality(nationality) {
+        this.nationality = nationality;
+        this.nationality.getNationalCommanderList();
+        this.nationality.getNationalFactionList();
+    }
+
+    // Assign a commander object to the force list.
     setCommander(commander) {
         this.commander = commander;    
         $('#force-commander').show('medium', 'swing');
     }
 
-    // Get a list of the chosen commander's valid faction IDs
-    // and add to this object as a property.
-    setCommanderFactionIDs() {
-        const commanderFaction = JSON.parse(sessionStorage.getItem('commanderfaction'));
-        const commanderFactionIDs = [];
-        for (const cf of commanderFaction) {
-            if (cf.commander_id == this.commander.id) {
-                commanderFactionIDs.push(cf.faction_id);
-            }
-        }
-        this.commander.factionIDs = commanderFactionIDs;
+    // Assign a faction object to the force list.
+    setFaction(faction) {
+        this.faction = faction;
+        $('#force-faction').show('medium', 'swing');
     }
 
-    // Get a list of the chosen commander's valid factions 
-    // and add to this object as a property.
-    setCommanderFactionList() {
-        const nationFactionList = JSON.parse(sessionStorage.getItem(`${this.nationality.name}_factions`));
-        const commanderFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
-        for (const faction of nationFactionList) {
-            if (this.commander.factionIDs.includes(faction.id)) {
-                const newFaction = {'id': faction.id, 'name': faction.name};
-                commanderFactionList.push(newFaction);
-            }
-        }
-        this.commander.factionList = commanderFactionList;
-    }
-
-    
-    // Get a list of the chosen commander's special rule IDs
-    // and add to this object as a property.
-    setCommanderSpecialruleIDs() {
-        const commanderSpecialrule = JSON.parse(sessionStorage.getItem('commanderspecialrule'));
-        const commanderSpecialruleIDs = [];
-        for (const csr of commanderSpecialrule) {
-            if (csr.commander_id == this.commander.id) {
-                commanderSpecialruleIDs.push(csr.specialrule_id);
-            }
-        }
-        this.commander.specialruleIDs = commanderSpecialruleIDs;
-    }
-
-    // Get a list of the chosen commander's special rules as objects
-    // and add to this object as a property.
-    setCommanderSpecialruleList() {
-        const specialRule = JSON.parse(sessionStorage.getItem('specialrule'));
-        const commanderSpecialruleList = [];
-        for (const sr of specialRule) {
-            if (this.commander.specialruleIDs.includes(sr.id)) {
-                const newSpecialrule = {};
-                Object.assign(newSpecialrule, sr);
-                commanderSpecialruleList.push(newSpecialrule);
-            }
-        }
-        this.commander.specialrule = commanderSpecialruleList;
-    }
-
-
-    // Show chosen commander in build area.
+    // Show force commander in build area.
     displayCommander() {
         // Empty force's commander display.
         $('#force-commander').empty()
@@ -147,110 +107,13 @@ class ForceList {
             if (this.faction) {
                 populateCommanderDropdown(this.faction.commanderList)            }
             else {
-                const commanderList = getNationalCommanderList(this.nationality.name);
-                const factionList = getNationalFactionList(this.nationality.name);
-                populateFactionDropdown(factionList);
-                populateCommanderDropdown(commanderList);
+                populateFactionDropdown(this.nationality.factionList);
+                populateCommanderDropdown(this.nationality.commanderList);
             }
         });
     }
 
-    setFaction(faction) {
-        this.faction = faction;
-        $('#force-faction').show('medium', 'swing');
-    }
-
-    // Get a list of the chosen factions's valid commander IDs
-    // and add to this object as a property.
-    setFactionCommanderIDs() {
-        const commanderFaction = JSON.parse(sessionStorage.getItem('commanderfaction'));
-        const factionCommanderIDs = [];
-        for (const cf of commanderFaction) {
-            if (cf.faction_id == this.faction.id) {
-                factionCommanderIDs.push(cf.commander_id);
-            }
-        }
-        this.faction.commanderIDs = factionCommanderIDs;
-    }
-
-    // Get a list of the chosen faction's valid commanders 
-    // and add to this object as a property.
-    setFactionCommanderList() {
-        const nationCommanderList = JSON.parse(sessionStorage.getItem(`${this.nationality.name}_commanders`));
-        const factionCommanderList = [{'id': 0, 'name': 'Who Leads Your Force...'}];
-        for (const commander of nationCommanderList) {
-            if (this.faction.commanderIDs.includes(commander.id)) {
-                const newCommander = {'id': commander.id, 'name': `${commander.name} (${commander.points})`};
-                factionCommanderList.push(newCommander);
-            }
-        this.faction.commanderList = factionCommanderList;
-        }
-    }
-
-    // Get a list of the chosen factions's valid unit IDs
-    // and add to this object as a property.
-    setFactionUnitIDs() {
-        const factionUnit = JSON.parse(sessionStorage.getItem('factionunit'));
-        const factionUnitIDs = [];
-        const unitClasses = {};
-        for (const fu of factionUnit) {
-            if (fu.faction_id == this.faction.id) {
-                let unitID = fu.unit_id;
-                let unitClass = fu.factionunitclass_id;
-                factionUnitIDs.push(fu.unit_id);
-                unitClasses[`${unitID}`] = unitClass;
-            }
-        }
-        this.faction.unitIDs = factionUnitIDs;
-        this.faction.unitClass = unitClasses;
-    }
-
-    // Get a list of the chosen faction's valid unit objects 
-    // and add to this object as a property.
-    async setFactionUnits() {
-        if (!sessionStorage.getItem('unit')) {
-            let response = await axios.get(`/units`);
-            sessionStorage.setItem('unit', JSON.stringify(response.data.unit));
-        }
-        let units = JSON.parse(sessionStorage.getItem('unit'));
-        let factionUnits = [];
-        for (const u of units) {
-            if (this.faction.unitIDs.includes(u.id)) {
-                let newUnit = {};
-                Object.assign(newUnit, u);
-                factionUnits.push(newUnit);
-            }
-        }
-        this.faction.unitList = factionUnits;
-    }
-
-    setFactionSpecialrules() {
-        let forceSpecialrule = JSON.parse(sessionStorage.getItem('forcespecialrule'));
-        let factionSpecialruleList = [];
-        for (const fsr of forceSpecialrule) {
-            if (fsr.faction_id == this.faction.id) {
-                let newFactionSpecialrule = {};
-                Object.assign(newFactionSpecialrule, fsr);
-                factionSpecialruleList.push(newFactionSpecialrule);
-            }
-        }
-        this.faction.specialrule = factionSpecialruleList;
-    }
-
-    setFactionOptions() {
-        let forceOption = JSON.parse(sessionStorage.getItem('forceoption'));
-        let factionOptionList = [];
-        for (const fo of forceOption) {
-            if (fo.faction_id == this.faction.id) {
-                let newFactionOption = {};
-                Object.assign(newFactionOption, fo);
-                factionOptionList.push(newFactionOption);
-            }
-        }
-        this.faction.option = factionOptionList;
-    }
-
-    // Show chosen faction in build area.
+    // Show force faction in build area.
     displayFaction() {
         // Empty force's faction display.
         $('#force-faction').empty()
@@ -347,17 +210,10 @@ class ForceList {
             if (this.commander) {
                 populateFactionDropdown(this.commander.factionList)            }
             else {
-                const commanderList = getNationalCommanderList(this.nationality.name);
-                const factionList = getNationalFactionList(this.nationality.name);
-                populateFactionDropdown(factionList);
-                populateCommanderDropdown(commanderList);
+                populateFactionDropdown(this.nationality.factionList);
+                populateCommanderDropdown(this.nationality.commanderList);
             }
         });
-    }
-
-    // Update unit size range display based on this ForceList's current maximum point value.
-    updateUnitSize() {
-        $unitSizeRangeDisplay.html(`<i>${Math.floor(this.maxPoints / 100) + 2} to ${(Math.floor(this.maxPoints / 100) + 1)*4} models per unit</i>`);
     }
 }
 
@@ -366,24 +222,25 @@ class Artillery {
     constructor(item) {
         Object.assign(this, item);
     }
+
     display() {
-        let newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
-        let cardBody = $('<div>').addClass(['card-body']);
-        let cardHeader = $('<div>').addClass(['row']);
-        let nameColumn = $('<div>').addClass(['col-8']);
-        let itemName = $('<h5>').addClass(['card-title']).text(this.name);    
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
         nameColumn.append(itemName);
-        let pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
-        let expandColumn = $('<div>').addClass(['col-1']);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
             <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
             </button>
             `);
-        let addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus' ></i>`)
+            const addColumn = $('<div>').addClass(['col-1']);
+        addColumn.html(`<i class='fa-solid fa-plus'></i>`)
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        let cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
             <hr class='border border-2 border-primary rounded-2'>
             <div class='row'>
                 <div class='col-7'>
@@ -419,9 +276,7 @@ class Artillery {
             $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
     }
-
 }
-
 
 class Character {
     constructor(item) {
@@ -429,14 +284,14 @@ class Character {
     }
 
     display() {
-        let newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
-        let cardBody = $('<div>').addClass(['card-body']);
-        let cardHeader = $('<div>').addClass(['row']);
-        let nameColumn = $('<div>').addClass(['col-8']);
-        let itemName = $('<h5>').addClass(['card-title']).text(this.name.slice(11));    
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(this.name.slice(11));    
         nameColumn.append(itemName);
-        let pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
-        let expandColumn = $('<div>').addClass(['col-1']);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
         if (this.details) {
             expandColumn.html(`
                 <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
@@ -444,16 +299,14 @@ class Character {
                 </button>
                 `);
         }
-        
-        let addColumn = $('<div>').addClass(['col-1']);
+        const addColumn = $('<div>').addClass(['col-1']);
         addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        let cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
         if (this.details) {
-            let itemDetails = $('<div>').addClass(['card-text']).html(`${this.details}`);
+            const itemDetails = $('<div>').addClass(['card-text']).html(`${this.details}`);
             cardDetails.append(itemDetails);
         }
-
         cardBody.append(cardHeader, cardDetails);
         newItem.append(cardBody);
         $('#menu-item-container').append(newItem);
@@ -462,7 +315,174 @@ class Character {
             $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
     }
+}
 
+class Commander {
+
+    // These functions require an 'id' property thay may not be available 
+    // at initialization so they cannot go in constructor.
+    initialize(nationality_name) {
+        this.setCommanderFactionIDs();
+        this.setCommanderFactionList(nationality_name);
+        this.setCommanderSpecialruleIDs();
+        this.setCommanderSpecialruleList();
+    }
+
+    // Get a list of the chosen commander's valid faction IDs
+    // and add to this object as a property.
+    setCommanderFactionIDs() {
+        const commanderFaction = JSON.parse(sessionStorage.getItem('commanderfaction'));
+        const commanderFactionIDs = [];
+        for (const cf of commanderFaction) {
+            if (cf.commander_id == this.id) {
+                commanderFactionIDs.push(cf.faction_id);
+            }
+        }
+        this.factionIDs = commanderFactionIDs;
+    }
+
+    // Get a list of the chosen commander's valid factions 
+    // and add to this object as a property.
+    setCommanderFactionList(nationality_name) {
+        const nationFactionList = JSON.parse(sessionStorage.getItem(`${nationality_name}_factions`));
+        const commanderFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
+        for (const faction of nationFactionList) {
+            if (this.factionIDs.includes(faction.id)) {
+                const newFaction = {'id': faction.id, 'name': faction.name};
+                commanderFactionList.push(newFaction);
+            }
+        }
+        this.factionList = commanderFactionList;
+    }
+    
+    // Get a list of the chosen commander's special rule IDs
+    // and add to this object as a property.
+    setCommanderSpecialruleIDs() {
+        const commanderSpecialrule = JSON.parse(sessionStorage.getItem('commanderspecialrule'));
+        const commanderSpecialruleIDs = [];
+        for (const csr of commanderSpecialrule) {
+            if (csr.commander_id == this.id) {
+                commanderSpecialruleIDs.push(csr.specialrule_id);
+            }
+        }
+        this.specialruleIDs = commanderSpecialruleIDs;
+    }
+
+    // Get a list of the chosen commander's special rules as objects
+    // and add to this object as a property.
+    setCommanderSpecialruleList() {
+        const specialRule = JSON.parse(sessionStorage.getItem('specialrule'));
+        const commanderSpecialruleList = [];
+        for (const sr of specialRule) {
+            if (this.specialruleIDs.includes(sr.id)) {
+                const newSpecialrule = {};
+                Object.assign(newSpecialrule, sr);
+                commanderSpecialruleList.push(newSpecialrule);
+            }
+        }
+        this.specialrule = commanderSpecialruleList;
+    }
+}
+
+class Faction {
+
+    initialize(nationality_name) {
+        this.setFactionCommanderIDs();
+        this.setFactionCommanderList(nationality_name);
+        this.setFactionSpecialrules();
+        this.setFactionOptions();
+        this.setFactionUnitIDs();
+    }
+
+    // Get a list of the chosen factions's valid commander IDs
+    // and add to this object as a property.
+    setFactionCommanderIDs() {
+        const commanderFaction = JSON.parse(sessionStorage.getItem('commanderfaction'));
+        const factionCommanderIDs = [];
+        for (const cf of commanderFaction) {
+            if (cf.faction_id == this.id) {
+                factionCommanderIDs.push(cf.commander_id);
+            }
+        }
+        this.commanderIDs = factionCommanderIDs;
+    }
+
+    // Get a list of the chosen faction's valid commanders 
+    // and add to this object as a property.
+    setFactionCommanderList(nationality_name) {
+        const nationCommanderList = JSON.parse(sessionStorage.getItem(`${nationality_name}_commanders`));
+        const factionCommanderList = [{'id': 0, 'name': 'Who Leads Your Force...'}];
+        for (const commander of nationCommanderList) {
+            if (this.commanderIDs.includes(commander.id)) {
+                const newCommander = {'id': commander.id, 'name': `${commander.name} (${commander.points})`};
+                factionCommanderList.push(newCommander);
+            }
+        this.commanderList = factionCommanderList;
+        }
+    }
+
+    // Get a list of the chosen factions's valid unit IDs
+    // and add to this object as a property.
+    setFactionUnitIDs() {
+        const factionUnit = JSON.parse(sessionStorage.getItem('factionunit'));
+        const factionUnitIDs = [];
+        const unitClasses = {};
+        for (const fu of factionUnit) {
+            if (fu.faction_id == this.id) {
+                let unitID = fu.unit_id;
+                let unitClass = fu.factionunitclass_id;
+                factionUnitIDs.push(fu.unit_id);
+                unitClasses[`${unitID}`] = unitClass;
+            }
+        }
+        this.unitIDs = factionUnitIDs;
+        this.unitClass = unitClasses;
+    }
+
+    // Get a list of the chosen faction's valid unit objects 
+    // and add to this object as a property.
+    async setFactionUnits() {
+        if (!sessionStorage.getItem('unit')) {
+            let response = await axios.get(`/units`);
+            sessionStorage.setItem('unit', JSON.stringify(response.data.unit));
+        }
+        let units = JSON.parse(sessionStorage.getItem('unit'));
+        let factionUnits = [];
+        for (const u of units) {
+            if (this.unitIDs.includes(u.id)) {
+                let newUnit = new Unit();
+                Object.assign(newUnit, u);
+                factionUnits.push(newUnit);
+            }
+        }
+        this.unitList = factionUnits;
+    }
+
+    setFactionSpecialrules() {
+        let forceSpecialrule = JSON.parse(sessionStorage.getItem('forcespecialrule'));
+        let factionSpecialruleList = [];
+        for (const fsr of forceSpecialrule) {
+            if (fsr.faction_id == this.id) {
+                let newFactionSpecialrule = {};
+                Object.assign(newFactionSpecialrule, fsr);
+                factionSpecialruleList.push(newFactionSpecialrule);
+            }
+        }
+        this.specialrule = factionSpecialruleList;
+    }
+
+    setFactionOptions() {
+        let forceOption = JSON.parse(sessionStorage.getItem('forceoption'));
+        let factionOptionList = [];
+        for (const fo of forceOption) {
+            if (fo.faction_id == this.id) {
+                let newFactionOption = {};
+                Object.assign(newFactionOption, fo);
+                factionOptionList.push(newFactionOption);
+            }
+        }
+        this.option = factionOptionList;
+    }
 }
 
 class Ship {
@@ -511,24 +531,24 @@ class Ship {
     }
 
     display() {
-        let newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
-        let cardBody = $('<div>').addClass(['card-body']);
-        let cardHeader = $('<div>').addClass(['row']);
-        let nameColumn = $('<div>').addClass(['col-8']);
-        let itemName = $('<h5>').addClass(['card-title']).text(this.name);    
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
         nameColumn.append(itemName);
-        let pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
-        let expandColumn = $('<div>').addClass(['col-1']);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
             <a href='#ship-${this.id}-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='ship-${this.id}-expand'></i>
             </button>
             `);
-        let addColumn = $('<div>').addClass(['col-1']);
+        const addColumn = $('<div>').addClass(['col-1']);
         addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        let cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
-        let leftBox = $('<div>').addClass('col-8').html(`
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
+        const leftBox = $('<div>').addClass('col-8').html(`
             <div><b>Size:</b> ${this.size}</div>
             <div><b>Draft:</b> ${this.draft}</div>
             <div><b>Speed:</b> ${this.topspeed}</div>
@@ -537,38 +557,38 @@ class Ship {
             <div><b>Sail Settings:</b> ${this.sailssettings}</div>
         `);
         if (this.swivels > 0 || this.cannons > 0) {
-            let deckPlan = $('<div>');
-            let dpHeader = $('<div>').addClass('row');
-            let labelColumn = $('<div>').addClass(`col-${(7-this.size)}`)
-            let headerLabel = $('<div>').html('<b>Deck</b>');
+            const deckPlan = $('<div>');
+            const dpHeader = $('<div>').addClass('row');
+            const labelColumn = $('<div>').addClass(`col-${(7-this.size)}`)
+            const headerLabel = $('<div>').html('<b>Deck</b>');
             labelColumn.append(headerLabel);
-            let n_of_cols = 12 / this.size;
-            let dataColumn = $('<div>').addClass(`col-${(5+this.size)}`);
-            let headerColumns = $('<div>').addClass('row');
+            const n_of_cols = 12 / this.size;
+            const dataColumn = $('<div>').addClass(`col-${(5+this.size)}`);
+            const headerColumns = $('<div>').addClass('row');
             for (let i = 0; i < this.size; i++) {
-                let newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`<b>${i+1}</b>`);
+                const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`<b>${i+1}</b>`);
                 headerColumns.append(newColumn);
             }
             dataColumn.append(headerColumns);
             dpHeader.append(labelColumn, dataColumn);
             if (this.cannons > 0) {
-                let gunsLabel = $('<div>').html('Guns');
+                const gunsLabel = $('<div>').html('Guns');
                 labelColumn.append(gunsLabel);
-                let gunsData = $('<div>').addClass('row');
-                let gunsPerDeck = this.cannonsdecks.split('/');
+                const gunsData = $('<div>').addClass('row');
+                const gunsPerDeck = this.cannonsdecks.split('/');
                 for (let i = 0; i < this.size; i++) {
-                    let newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${gunsPerDeck[i]}`);
+                    const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${gunsPerDeck[i]}`);
                     gunsData.append(newColumn);
                 }
                 dataColumn.append(gunsData);
             }
             if (this.swivels > 0) {
-                let swivelsLabel = $('<div>').html('Swivels');
+                const swivelsLabel = $('<div>').html('Swivels');
                 labelColumn.append(swivelsLabel);
-                let swivelsData = $('<div>').addClass('row');
-                let swivelsPerDeck = this.swivelsdecks.split('/');
+                const swivelsData = $('<div>').addClass('row');
+                const swivelsPerDeck = this.swivelsdecks.split('/');
                 for (let i = 0; i < this.size; i++) {
-                    let newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${swivelsPerDeck[i]}`);
+                    const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${swivelsPerDeck[i]}`);
                     swivelsData.append(newColumn);
                 }
                 dataColumn.append(swivelsData);
@@ -577,10 +597,10 @@ class Ship {
             deckPlan.append(dpHeader);
             leftBox.append(deckPlan);
         }
-        let rightBox = $('<div>').addClass('col-4');
-        let hull = $('<div>').html('<b>Hull</b>');
+        const rightBox = $('<div>').addClass('col-4');
+        const hull = $('<div>').html('<b>Hull</b>');
         for (let i = 0; i < this.hullfortitude; i++) {
-            let newDiv = $('<div>');
+            const newDiv = $('<div>');
             if (i == (this.hullfortitude - 1)) {
                 newDiv.append(`${this.hullfortitude - i}`);
             }
@@ -593,9 +613,9 @@ class Ship {
             rightBox.append(hull);
         }
         if (this.riggingfortitude > 0) {
-            let rigging = $('<div>').addClass('mt-2').html('<b>Rigging</b>');
+            const rigging = $('<div>').addClass('mt-2').html('<b>Rigging</b>');
             for (let i = 0; i < this.riggingfortitude; i++) {
-                let newDiv = $('<div>');
+                const newDiv = $('<div>');
                 if (i == (this.riggingfortitude - 1)) {
                     newDiv.append(`${this.riggingfortitude - i}`);
                 }
@@ -609,43 +629,43 @@ class Ship {
 
             }
         }
-        let topBox = $('<div>').addClass('row');
+        const topBox = $('<div>').addClass('row');
         topBox.append(leftBox,rightBox);
         cardDetails.append(topBox);
         if (this.specialrule.length > 0) {
-            let specialrulesCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
-            let shipSpecialrulesHeader = $('<div>').addClass(['row']);
-            let descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mt-1 mb-0'>Traits</h5>`);
-            let specialruleExpandColumn = $('<div>').addClass(['col-1']);
+            const specialrulesCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const shipSpecialrulesHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mt-1 mb-0'>Traits</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#ship-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='ship-${this.id}-specialrules-expand'></i>
                 </button>
             `);
             shipSpecialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            let shipSpecialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-specialrules-details`)
+            const shipSpecialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-specialrules-details`)
             for (const sr of this.specialrule) {
-                let newSpecialrule = $('<li>').html(`<b>${sr.name}:</b> ${sr.details}`);
+                const newSpecialrule = $('<li>').html(`<b>${sr.name}:</b> ${sr.details}`);
                 shipSpecialrulesDetails.append(newSpecialrule);
             }
             specialrulesCard.append(shipSpecialrulesHeader, shipSpecialrulesDetails);
             cardDetails.append(specialrulesCard);
         }
         if (this.upgrade.length > 0) {
-            let upgradeCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
-            let upgradeHeader = $('<div>').addClass(['row']);
-            let descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mt-1 mb-0'>Upgrades</h5>`);
-            let upgradeExpandColumn = $('<div>').addClass(['col-1']);
+            const upgradeCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const upgradeHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mt-1 mb-0'>Upgrades</h5>`);
+            const upgradeExpandColumn = $('<div>').addClass(['col-1']);
             upgradeExpandColumn.html(`
                 <a href='#ship-${this.id}-upgrades-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='ship-${this.id}-upgrades-expand'></i>
                 </button>
             `);
             upgradeHeader.append([descColumn, upgradeExpandColumn]);
-            let shipUpgradeDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-upgrades-details`)
+            const shipUpgradeDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-upgrades-details`)
             for (const u of this.upgrade) {
-                let newUpgrade = $('<div>').html(`<b>${u.name}</b> (${u.pointcost} pts)`);
-                let upgradeDetails = $('<div>').html(`${u.details}`);
+                const newUpgrade = $('<li>').html(`<b>${u.name}</b> (${u.pointcost} pts)`);
+                const upgradeDetails = $('<div>').html(`${u.details}`);
                 newUpgrade.append(upgradeDetails);
                 shipUpgradeDetails.append(newUpgrade);
             }
@@ -672,6 +692,37 @@ class Ship {
                 $(`#ship-${this.id}-upgrades-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
+    }
+}
+
+
+class Nationality {
+    constructor(nationality) {
+        Object.assign(this, nationality);
+    }
+    // Retrieve a list of a specific Nation's Commanders 
+    // with id and name from session storage for dropdown.
+    getNationalCommanderList() {
+        console.debug(`Getting commander list from session storage for ${this.name}.`);
+        const commandersData = JSON.parse(sessionStorage.getItem(`${this.name}_commanders`));
+        const nationalCommanderList = [{'id': 0, 'name': 'Who Leads Your Force...'}];
+        for (const commander of commandersData) {
+            const newCommander = {'id': commander.id, 'name': `${commander.name} (${commander.points})`};
+            nationalCommanderList.push(newCommander);
+        }
+        this.commanderList = nationalCommanderList;
+    }
+    // Retrieve a list of a specific Nation's Factions 
+    // with id and name from session storage for dropdown.
+    getNationalFactionList() {
+        console.debug(`Getting faction list from session storage for ${this.name}.`);
+        const factionsData = JSON.parse(sessionStorage.getItem(`${this.name}_factions`));
+        const nationalFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
+        for (const faction of factionsData) {
+            const newFaction = {'id': faction.id, 'name': faction.name};
+            nationalFactionList.push(newFaction);
+        }
+        this.factionList = nationalFactionList
     }
 }
 
@@ -722,23 +773,23 @@ class Unit {
     }
 
     display() {
-        let newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
-        let cardBody = $('<div>').addClass(['card-body']);
-        let cardHeader = $('<div>').addClass(['row']);
-        let nameColumn = $('<div>').addClass(['col-8']);
-        let itemName = $('<h5>').addClass(['card-title']).text(this.name);    
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
         nameColumn.append(itemName);
-        let pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
-        let expandColumn = $('<div>').addClass(['col-1']);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
             <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
             </button>
             `);
-        let addColumn = $('<div>').addClass(['col-1']);
+            const addColumn = $('<div>').addClass(['col-1']);
         addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        let cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
             <hr class='border border-2 border-primary rounded-2'>
             <div class='row'>
                 <div class='col-4'>
@@ -757,25 +808,25 @@ class Unit {
             </div>
         `);
         if (this.sidearms) {
-            let sidearms = $('<div>').addClass('mt-1').html(`<b>Sidearms</b>: ${this.sidearms}`);
+            const sidearms = $('<div>').addClass('mt-1').html(`<b>Sidearms</b>: ${this.sidearms}`);
             cardDetails.append(sidearms);
         }
         if (this.equipment) {
-            let equipment = $('<div>').addClass('mt-1').html(`<b>Equiment</b>: ${this.equipment}`);
+            const equipment = $('<div>').addClass('mt-1').html(`<b>Equiment</b>: ${this.equipment}`);
             cardDetails.append(equipment);
         }
         if (this.option.length > 0) {
-            let optionsCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
-            let unitOptionsHeader = $('<div>').addClass(['row']);
-            let descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Unit Options</h5>`);
-            let optionExpandColumn = $('<div>').addClass(['col-1']);
+            const optionsCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const unitOptionsHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Unit Options</h5>`);
+            const optionExpandColumn = $('<div>').addClass(['col-1']);
             optionExpandColumn.html(`
                 <a href='#unit-${this.id}-options-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='unit-${this.id}-options-expand'></i>
                 </button>
             `);
             unitOptionsHeader.append([descColumn, optionExpandColumn]);
-            let unitOptionsDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-options-details`)
+            const unitOptionsDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-options-details`)
             for (const o of this.option) {
                 let newOption = $('<li>').addClass('mt-1').html(`${o.details}`);
                 unitOptionsDetails.append(newOption);
@@ -784,19 +835,19 @@ class Unit {
             cardDetails.append(optionsCard);
         }
         if (this.specialrule.length > 0) {
-            let specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
-            let specialrulesHeader = $('<div>').addClass(['row']);
-            let descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
-            let specialruleExpandColumn = $('<div>').addClass(['col-1']);
+            const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const specialrulesHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#unit-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='unit-${this.id}-specialrules-expand'></i>
                 </button>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            let specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-specialrules-details`)
+            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-specialrules-details`)
             for (const rule of this.specialrule) {
-                let newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
+                const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
                 specialrulessDetails.append(newRule);
             }
             specialruleCard.append(specialrulesHeader, specialrulessDetails);
@@ -839,14 +890,14 @@ class Misc {
     }
 
     display() {
-        let newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
-        let cardBody = $('<div>').addClass(['card-body']);
-        let cardHeader = $('<div>').addClass(['row']);
-        let nameColumn = $('<div>').addClass(['col-8']);
-        let itemName = $('<h5>').addClass(['card-title']).text(this.name);    
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
         nameColumn.append(itemName);
-        let pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
-        let expandColumn = $('<div>').addClass(['col-1']);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
         if (this.details) {
             expandColumn.html(`
                 <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
@@ -854,12 +905,12 @@ class Misc {
                 </button>
                 `);
         }
-        let addColumn = $('<div>').addClass(['col-1']);
+        const addColumn = $('<div>').addClass(['col-1']);
         addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        let cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
         if (this.details) {
-            let itemDetails = $('<div>').addClass(['card-text']).html(`<b>Details:</b> ${this.details}`);
+            const itemDetails = $('<div>').addClass(['card-text']).html(`<b>Details:</b> ${this.details}`);
             cardDetails.append(itemDetails);
         }
 
@@ -875,10 +926,14 @@ class Misc {
 }
 
 
-let forceList = new ForceList(150);
+// ************************* END of Class Definitions *************************
+
+
+// Create new ForceList object to use throughout process.
+const forceList = new ForceList(150);
 
 // Make axios request for data required by all users 
-// and add data to sessio storage.
+// and add data to session storage.
 async function requestUniversalData() {
     console.debug('Requesting universal data.');
     const response = await axios.get('/universal');
@@ -910,10 +965,9 @@ function storeFactionsAndCommanders(axiosResponse) {
     sessionStorage.setItem(`${nationality.name}_factions`,JSON.stringify(factions));
 }
 
-// Retrieve a list of Nation dicts with id and name from session storage for dropdown.
+// Retrieve a Nationality list with id and name from session storage for dropdown.
 function getNationData() {
     console.debug('Getting nation data from session storage.');
-
     const nationalityData = JSON.parse(sessionStorage.getItem('nationality'));
     const nationList = [{'id': 0, 'name': 'Who Do You Fight For...'}];
     for (const nation of nationalityData) {
@@ -922,59 +976,6 @@ function getNationData() {
     }
     return nationList;
 }
-
-// Retrieve a list of a specific Nation's Commanders 
-// with id and name from session storage for dropdown.
-function getNationalCommanderList(nationName) {
-    console.debug(`Getting commander list from session storage for ${nationName}.`);
-    const commandersData = JSON.parse(sessionStorage.getItem(`${nationName}_commanders`));
-    const nationalCommanderList = [{'id': 0, 'name': 'Who Leads Your Force...'}];
-    for (const commander of commandersData) {
-        const newCommander = {'id': commander.id, 'name': `${commander.name} (${commander.points})`};
-        nationalCommanderList.push(newCommander);
-    }
-    return nationalCommanderList
-}
-
-// Retrieve a list of a specific Nation's Factions 
-// with id and name from session storage for dropdown.
-function getNationalFactionList(nationName) {
-    console.debug(`Getting faction list from session storage for ${nationName}.`);
-    const factionsData = JSON.parse(sessionStorage.getItem(`${nationName}_factions`));
-    const nationalFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
-    for (const faction of factionsData) {
-        const newFaction = {'id': faction.id, 'name': faction.name};
-        nationalFactionList.push(newFaction);
-    }
-    return nationalFactionList
-}
-
-// Get a list of Faction IDs for the currently selected commander.
-// function getCommanderFactionIDs() {
-//     console.debug('Filtering commander faction list from session storage for Faction IDs.')
-//     const commanderFaction = JSON.parse(sessionStorage.getItem('commanderfaction'));
-//     const commanderFactionIDs = [];
-//     for (const cf of commanderFaction) {
-//         if (cf.commander_id == $selectCommander.val()) {
-//             commanderFactionIDs.push(cf.faction_id);
-//         }
-//     }
-//     return commanderFactionIDs
-// }
-
-// Get a filtered list of Factions including Faction id and Faction name.
-// function getFilteredFactionList(faction_id_list) {
-//     const selected_nation = $selectNation.children("option").filter(":selected").text();
-//     const nationFactionList = JSON.parse(sessionStorage.getItem(`${selected_nation}_factions`));
-//     const filteredFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
-//     for (const faction of nationFactionList) {
-//         if (faction_id_list.includes(faction.id)) {
-//             const newFaction = {'id': faction.id, 'name': faction.name};
-//             filteredFactionList.push(newFaction);
-//         }
-//     }
-//     return filteredFactionList;
-// }
 
 // Empty Faction dropdown and refill with options from input variable.
 function populateFactionDropdown(factionList) {
@@ -1005,7 +1006,7 @@ $(window).ready(async function() {
     const nationList = getNationData();
     nationList.forEach(function(nation, i){
         if (nation.id != 7) {
-            $selectNation.append($('<option></option>').val(nation.id).text(nation.name)); 
+            $selectNationality.append($('<option></option>').val(nation.id).text(nation.name)); 
         }
     });
     $('#force-name').text(forceList.name);
@@ -1022,73 +1023,78 @@ $forceName.on('keyup', () => {
     forceList.name = $forceName.val();
 })
 
-
-
-$selectNation.on('change', async function(e) {
-    // Get newly selected Nation option.
-    const selected_nation = $selectNation.children("option").filter(":selected").text();
-    // Set ForceList nationality property to selected Nation.
-    forceList.nationality = {'id': $selectNation.val(), 'name': selected_nation};
-    // Remove the placeholder option.
-    if ($selectNation[0][0].name == 'Who Do You Fight For...') {
-        $selectNation[0][0].remove();
-    }
-    // If Nation option is not already in sesstion storage,
-    // send request for data and add to session storage.
-    if (sessionStorage.getItem(selected_nation) == null) {
-        const response = await axios.get(`/nationalities/${$selectNation.val()}`);
-        storeFactionsAndCommanders(response);
-    }
-    // Get arrays of selected Nation's Factions and Commanders.
-    const factionList = getNationalFactionList(selected_nation);
-    const commanderList = getNationalCommanderList(selected_nation);
-    // Populate Faction and Commander dropdowns.
-    populateFactionDropdown(factionList);
-    populateCommanderDropdown(commanderList);
-
-    $('#build-area').show('slow', 'swing');
-    
+$pointMax.on('keyup', () => {
+    forceList.maxPoints = $pointMax.val();
+    forceList.updateUnitSize();
 });
 
-$selectCommander.on('change', function(e) {
+// Handle Nationality selector dropdown.
+$selectNationality.on('change', async function(e) {
+    // Remove the placeholder option as needed.
+    if ($selectNationality[0][0].name == 'Who Do You Fight For...') {
+        $selectNationality[0][0].remove();
+    }
+    // Get newly selected Nationality option name as a string.
+    const selected_nationality = $selectNationality.children("option").filter(":selected").text();
+    // If selected Nation option is not already in sesstion storage,
+    // send request for data and add to session storage.
+    if (sessionStorage.getItem(selected_nationality) == null) {
+        const response = await axios.get(`/nationalities/${$selectNationality.val()}`);
+        storeFactionsAndCommanders(response);
+    }
+    // Get selected Nationality data from session.
+    const nationalityData = JSON.parse(sessionStorage.getItem(`${selected_nationality}`));
+    // Create new Nationality instance and assign it to ForceList object.
+    const forceNationality = new Nationality(nationalityData.nationality);
+    forceList.setNationality(forceNationality);
+    // Populate Faction and Commander dropdowns.
+    populateFactionDropdown(forceList.nationality.factionList);
+    populateCommanderDropdown(forceList.nationality.commanderList);
+    // Show display in UI.
+    $('#welcome-area').hide('fast', 'swing');
+    $('#build-area').show('slow', 'swing');    
+});
+
+// Handle Commander Selector dropdown.
+$selectCommander.on('change', function() {
+    // Remove the placeholder option as needed.
     if ($selectCommander[0][0].name == 'Be More Specific...') {
         $selectCommander[0][0].remove();
     }
     const nationalCommanderList = JSON.parse(sessionStorage.getItem(`${forceList.nationality.name}_commanders`));
     const selectedCommander = nationalCommanderList.find(commander => commander.id == $selectCommander.val());
-    forceList.setCommander(selectedCommander);
-    forceList.setCommanderFactionIDs();
-    forceList.setCommanderFactionList();
-    forceList.setCommanderSpecialruleIDs();
-    forceList.setCommanderSpecialruleList();
+    let forceCommander = new Commander();
+    Object.assign(forceCommander, selectedCommander);
+    forceCommander.initialize(forceList.nationality.name);
+    forceList.setCommander(forceCommander);
     forceList.displayCommander();
     if (!forceList.faction) {
         populateFactionDropdown(forceList.commander.factionList);
     }
 });
 
-$selectFaction.on('change', async function(e) {
+// Handle Faction Selector dropdown.
+$selectFaction.on('change', async function() {
+    // Remove the placeholder option as needed.
     if ($selectFaction[0][0].name == 'Who Leads Your Force...') {
         $selectFaction[0][0].remove();
     }
     const nationalFactionList = JSON.parse(sessionStorage.getItem(`${forceList.nationality.name}_factions`));
     const selectedFaction = nationalFactionList.find(faction => faction.id == $selectFaction.val());
-    forceList.setFaction(selectedFaction);
-    forceList.setFactionCommanderIDs();
-    forceList.setFactionCommanderList();
-    forceList.setFactionSpecialrules();
-    forceList.setFactionOptions();
+    let forceFaction = new Faction(forceList.nationality.name);
+    Object.assign(forceFaction, selectedFaction);
+    forceFaction.initialize(forceList.nationality.name);
+    forceList.setFaction(forceFaction);
+    await forceList.faction.setFactionUnits();
     forceList.displayFaction();
     if (!forceList.commander) {
         populateCommanderDropdown(forceList.faction.commanderList);
     }
-    forceList.setFactionUnitIDs();
-    await forceList.setFactionUnits();
 });
 
-// Handle menu dropdown.
-// Load user requested category of data into menu.
+// Handle menu component (artillery, characters, units, etc) dropdown.
 $componentSelector.on('change', async function(e) {
+    // Get string identifier for component type.
     const selected = $componentSelector.val();
     if (sessionStorage.getItem(`${selected}`) == null) {
         if (selected == 'artillery' || selected == 'misc') {

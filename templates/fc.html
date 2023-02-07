@@ -16,7 +16,7 @@
                 </h1>
             </div>
 
-            <div class='container p-2 pt-0 pb-0 m-0'>
+            <div class='container p-2 pt-0 m-0'>
                 
                 <!-- MAIN SELECT  -->
                 <div class='container-fluid rounded-3 bg-warning p-0 pe-3'>
@@ -33,7 +33,7 @@
                                     {{force_selection.force_name(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0 border border-2 border-secondary')}}
                                 </div>
                             </div>
-
+                            
                             <div class='row g-0 mt-1 align-items-center'>
                                 <div class='col-4 p-0 pe-2 text-end'>
                                     <i class='force-selector-label form-label'>{{force_selection.point_max.label}}:</i>
@@ -43,10 +43,19 @@
                                         <div class='col-6 col-md-4 p-0'>
                                             {{force_selection.point_max(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0 border border-2 border-secondary')}}
                                         </div>
-                                        <div class='col p-0 fell text-center text-info fs-6' id='unit-size-range-display'>
-                                            
+                                        <div class='col p-0'>
+                                            <!-- Empty space next to max point input -->
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div class='row g-0 mt-1 align-items-center'>
+                                <div class='col-4 p-0 pe-2 text-end'>
+                                    <!-- Empty space below point max label -->
+                                </div>
+                                <div class='col-8 p-0 fell text-info fs-6' id='unit-size-range-display'>
+                                    <!-- Space under point max input (filled by js) -->
                                 </div>
                             </div>
                         </div>
@@ -87,12 +96,29 @@
                     
                 </div>
 
+                <!-- WELCOME AREA -->
+                <div class='container-fluid rounded-3 bg-warning p-2 mt-1 mb-0' id='welcome-area'>
+                    <div class='container mb-0'>
+                        <h1 class='fell text-info type-shadow text-center mt-1'>Welcome to the FORCE CREATOR</h1>
+                        <h2 class='fell text-info type-shadow text-center'>for Blood & Plunder by Firelock Games</h2>
+                        <p class='fell text-info mb-0'>
+                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Facere ipsa minima voluptatibus nulla ratione dicta esse possimus dignissimos. Laboriosam dolorem cum et tempore suscipit dolorum quia neque laudantium delectus maxime. 
+                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsa, dicta? Quia autem magni, itaque repellendus sed aspernatur at ullam iste dolor explicabo ab quibusdam animi enim culpa quas accusamus molestias? 
+                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Vel voluptatem delectus, placeat, pariatur repellendus dolorum autem accusantium culpa rem amet quibusdam nostrum, obcaecati ipsum non ad. Facilis perferendis animi possimus. 
+                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsa, dicta? Quia autem magni, itaque repellendus sed aspernatur at ullam iste dolor explicabo ab quibusdam animi enim culpa quas accusamus molestias? 
+                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Vel voluptatem delectus, placeat, pariatur repellendus dolorum autem accusantium culpa rem amet quibusdam nostrum, obcaecati ipsum non ad. Facilis perferendis animi possimus. 
+                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Pariatur veniam beatae tempora provident voluptate? Repellendus perferendis, distinctio, eligendi alias eius quia inventore explicabo autem sunt, rem a possimus beatae. Tempore? 
+                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Blanditiis odio, minima beatae tempora, iste eligendi ipsum eum officia voluptas eveniet ea? Optio consectetur facilis reprehenderit! Blanditiis odit sequi nemo aspernatur? 
+                        </p>
+                    </div>
+                </div>
+
                 <!-- BUILD AREA -->
                 <div class='collapse container-fluid m-0' id='build-area'>
                     <div class='row'>
 
-                        <!-- SELECTION SIDE -->
-                        <div class='col mt-1 mb-0 me-2 ms-0 pt-2 min-vh-95 rounded-3 bg-warning'>
+                        <!-- MENU SIDE -->
+                        <div class='col mt-1 mb-0 me-2 ms-0 pt-2 pb-2 rounded-3 bg-warning'>
                             
                             <form>
                                 {{add_to_list.component_selector(class_='form-control rounded-2 text-center force-selector-field pt-0 pb-0 border border-2 border-secondary')}}
@@ -102,7 +128,7 @@
                             </div>
                         </div>
 
-                        <!-- LIST SIDE -->
+                        <!-- BUILD SIDE -->
                         <div class='col mt-1 mb-0 ms-0 me-0 pt-2 overflow-y-scroll rounded-3 bg-warning'>
                             
                             <div class='fill-screen-scrollable'>
@@ -129,13 +155,16 @@
                 </div>
 
             </div>
-
-            <!-- FOOTER -->
-            <div class='container-fluid border border-5 border-top-0 border-start-0 border-end-0 border-secondary bg-warning mt-1'>
-&nbsp;
-            </div>
-
         </div>
     </div>
+
+    <!-- FOOTER -->
+    <!-- <div class='container-fluid bg-primary sticky-bottom mb-0' id='footer'>
+        <div class='container p-0 pt-1 mb-0 bg-secondary border border-2 border-top-0 border-bottom-0 border-info text-info'>
+            <div class='container-fluid border border-5 border-top-0 border-start-0 border-end-0 border-secondary bg-warning m-0'>
+                &nbsp;
+            </div>
+        </div>
+    </div> -->
 
 {% endblock content %}
