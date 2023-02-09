@@ -6,6 +6,8 @@ const $selectFaction = $('#select_faction');
 const $selectCommander = $('#select_commander');
 const $componentSelector = $('#component_selector');
 
+// ########## ********** ########## PRIMARY FC CLASS ########## ********** ##########
+
 class ForceList {
     constructor(maxPoints) {
         this.maxPoints = maxPoints;
@@ -13,11 +15,36 @@ class ForceList {
         this.name = 'A Force Without A Name';
     }
 
-    // Update unit size range display based on this ForceList's current maximum point value.
+    // Update max points and unit size range.
     updateUnitSize() {
-        $unitSizeRangeDisplay.html(`<i>${Math.floor(this.maxPoints / 100) + 2} to ${(Math.floor(this.maxPoints / 100) + 1)*4} models per unit</i>`);
+        this.maxPoints = $pointMax.val();
+        this.unitMin = Math.floor(this.maxPoints / 100) + 2;
+        this.unitMax = (Math.floor(this.maxPoints / 100) + 1)*4;
+        $unitSizeRangeDisplay.html(`<i>${this.unitMin} to ${this.unitMax} models per unit</i>`);
     }
     
+    // Reset forceList object.
+    resetForceList() {
+        delete this.faction;
+        delete this.commander;
+        delete this.units;
+        delete this.characters;
+        delete this.artillery;
+        delete this.ships;
+        delete this.misc;
+    }
+
+    // Empty build area completely.
+    emptyBuildArea() {
+        $('#force-faction').empty().hide();
+        $('#force-commander').empty().hide();
+        $('#force-characters').empty().hide();
+        $('#force-units').empty().hide();
+        $('#force-artillery').empty().hide();
+        $('#force-ships').empty().hide();
+        $('#force-misc').empty().hide();
+    }
+
     // Assign a nationality object to the force list.
     setNationality(nationality) {
         this.nationality = nationality;
@@ -27,20 +54,30 @@ class ForceList {
 
     // Assign a commander object to the force list.
     setCommander(commander) {
-        this.commander = commander;    
+        this.commander = commander;
+        if (!this.faction || !this.faction.commanderIDs.includes(commander.id)) {
+            delete this.faction
+            $('#force-faction').hide('medium', 'swing');
+            populateFactionDropdown(this.commander.factionList);
+        }
         $('#force-commander').show('medium', 'swing');
     }
 
     // Assign a faction object to the force list.
     setFaction(faction) {
         this.faction = faction;
+        if (!this.commander || !this.commander.factionIDs.includes(faction.id)) {
+            delete this.commander
+            $('#force-commander').hide('medium', 'swing');
+            populateCommanderDropdown(this.faction.commanderList);
+        }
         $('#force-faction').show('medium', 'swing');
     }
 
     // Show force commander in build area.
     displayCommander() {
-        // Empty force's commander display.
-        $('#force-commander').empty()
+        // Empty and show force's commander display.
+        $('#force-commander').empty();
         // Create new commander display and add to page.
         let commanderDisplay = $('<div>').addClass(['card-body bg-info', 'text-primary', 'rounded-2', 'fell']);
         let cardHeader = $('<div>').addClass(['row']);
@@ -94,13 +131,16 @@ class ForceList {
         });
         if (this.commander.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
-            $(`#commander-${this.id}-specialrules-expand`).on('click', () => {
+            $(`#commander-${this.id}-specialrules-expand`).parent().on('click', () => {
                 $(`#commander-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
         // Handle removal of force's commander.
         $('#commander-remove').on('click', () => {
-            $('#force-commander').empty().hide();
+            $('#force-commander').hide('medium', 'swing');
+            setTimeout(() => {
+                $('#force-commander').empty()
+            }, 500)
             delete this.commander;
             // If this force has a faction, re-populate commander dropdown with valid commanders.
             // Otherwise re-populate faction and commander dropdowns using the Nation's lists.
@@ -116,7 +156,7 @@ class ForceList {
     // Show force faction in build area.
     displayFaction() {
         // Empty force's faction display.
-        $('#force-faction').empty()
+        $('#force-faction').empty();
         // Create new commander display and add to page.
         let factionDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-2', 'fell']);
         let cardHeader = $('<div>').addClass(['row']);
@@ -191,19 +231,22 @@ class ForceList {
         });
         if (this.faction.option.length > 0) {
             // Handle expanding/contracting of item information.
-            $(`#faction-${this.id}-options-expand`).on('click', () => {
+            $(`#faction-${this.id}-options-expand`).parent().on('click', () => {
                 $(`#faction-${this.id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });            
         }
         if (this.faction.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
-            $(`#faction-${this.id}-specialrules-expand`).on('click', () => {
+            $(`#faction-${this.id}-specialrules-expand`).parent().on('click', () => {
                 $(`#faction-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
         // Handle removal of force's faction.
         $('#faction-remove').on('click', () => {
-            $('#force-faction').empty().hide();
+            $('#force-faction').hide('medium','swing');
+            setTimeout(() => {
+                $('#force-faction').empty()
+            }, 500)
             delete this.faction;
             // If this force has a commander, re-populate faction dropdown with valid factions.
             // Otherwise re-populate faction and commander dropdowns using the Nation's lists.
@@ -218,175 +261,44 @@ class ForceList {
 }
 
 
-class Artillery {
-    constructor(item) {
-        Object.assign(this, item);
-    }
+// ########## ********** ########## TOP LEVEL FC CLASSES ########## ********** ##########
 
-    display() {
-        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
-        const cardBody = $('<div>').addClass(['card-body']);
-        const cardHeader = $('<div>').addClass(['row']);
-        const nameColumn = $('<div>').addClass(['col-8']);
-        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
-        nameColumn.append(itemName);
-        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
-        const expandColumn = $('<div>').addClass(['col-1']);
-        expandColumn.html(`
-            <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
-                <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
-            </button>
-            `);
-            const addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus'></i>`)
-        cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
-            <hr class='border border-2 border-primary rounded-2'>
-            <div class='row'>
-                <div class='col-7'>
-                    <b>Dice:</b> ${this.d10}
-                </div>
-                <div class='col-5'>
-                    <b>Crew</b>: ${this.minimumcrew}
-                </div>
-            </div>
-            <div class='row'>
-                <div class='col-7'>
-                <b>Arc of Fire</b>: ${this.arcfire}
-                </div>
-                <div class='col-5'>
-                <b>Shoot Base</b>: ${this.shootbase}
-                </div>
-            </div>
-            <div class='row'>
-                <div class='col-7'>
-                <b>Movement Penalty</b>: ${this.movepenalty}
-                </div>
-                <div class='col-5'>
-                <b>Reload Markers</b>: ${this.reloadmarkers}
-                </div>
-            </div>
-        
-        `);
-        cardBody.append(cardHeader, cardDetails);
-        newItem.append(cardBody);
-        $('#menu-item-container').append(newItem);
-        // Handle expanding/contracting of item information.
-        $(`#misc-${this.id}-expand`).on('click', () => {
-            $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
-        });
+
+class Nationality {
+    constructor(nationality) {
+        Object.assign(this, nationality);
+    }
+    // Retrieve a list of a specific Nation's Commanders 
+    // with id and name from session storage for dropdown.
+    getNationalCommanderList() {
+        console.debug(`Getting commander list from session storage for ${this.name}.`);
+        const commandersData = JSON.parse(sessionStorage.getItem(`${this.name}_commanders`));
+        const nationalCommanderList = [{'id': 0, 'name': 'Who Leads Your Force...'}];
+        for (const commander of commandersData) {
+            const newCommander = {'id': commander.id, 'name': `${commander.name} (${commander.points})`};
+            nationalCommanderList.push(newCommander);
+        }
+        this.commanderList = nationalCommanderList;
+    }
+    // Retrieve a list of a specific Nation's Factions 
+    // with id and name from session storage for dropdown.
+    getNationalFactionList() {
+        console.debug(`Getting faction list from session storage for ${this.name}.`);
+        const factionsData = JSON.parse(sessionStorage.getItem(`${this.name}_factions`));
+        const nationalFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
+        for (const faction of factionsData) {
+            const newFaction = {'id': faction.id, 'name': faction.name};
+            nationalFactionList.push(newFaction);
+        }
+        this.factionList = nationalFactionList
     }
 }
 
-class Character {
-    constructor(item) {
-        Object.assign(this, item);
-    }
-
-    display() {
-        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
-        const cardBody = $('<div>').addClass(['card-body']);
-        const cardHeader = $('<div>').addClass(['row']);
-        const nameColumn = $('<div>').addClass(['col-8']);
-        const itemName = $('<h5>').addClass(['card-title']).text(this.name.slice(11));    
-        nameColumn.append(itemName);
-        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
-        const expandColumn = $('<div>').addClass(['col-1']);
-        if (this.details) {
-            expandColumn.html(`
-                <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
-                </button>
-                `);
-        }
-        const addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
-        cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
-        if (this.details) {
-            const itemDetails = $('<div>').addClass(['card-text']).html(`${this.details}`);
-            cardDetails.append(itemDetails);
-        }
-        cardBody.append(cardHeader, cardDetails);
-        newItem.append(cardBody);
-        $('#menu-item-container').append(newItem);
-        // Handle expanding/contracting of item information.
-        $(`#misc-${this.id}-expand`).on('click', () => {
-            $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
-        });
-    }
-}
-
-class Commander {
-
-    // These functions require an 'id' property thay may not be available 
-    // at initialization so they cannot go in constructor.
-    initialize(nationality_name) {
-        this.setCommanderFactionIDs();
-        this.setCommanderFactionList(nationality_name);
-        this.setCommanderSpecialruleIDs();
-        this.setCommanderSpecialruleList();
-    }
-
-    // Get a list of the chosen commander's valid faction IDs
-    // and add to this object as a property.
-    setCommanderFactionIDs() {
-        const commanderFaction = JSON.parse(sessionStorage.getItem('commanderfaction'));
-        const commanderFactionIDs = [];
-        for (const cf of commanderFaction) {
-            if (cf.commander_id == this.id) {
-                commanderFactionIDs.push(cf.faction_id);
-            }
-        }
-        this.factionIDs = commanderFactionIDs;
-    }
-
-    // Get a list of the chosen commander's valid factions 
-    // and add to this object as a property.
-    setCommanderFactionList(nationality_name) {
-        const nationFactionList = JSON.parse(sessionStorage.getItem(`${nationality_name}_factions`));
-        const commanderFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
-        for (const faction of nationFactionList) {
-            if (this.factionIDs.includes(faction.id)) {
-                const newFaction = {'id': faction.id, 'name': faction.name};
-                commanderFactionList.push(newFaction);
-            }
-        }
-        this.factionList = commanderFactionList;
-    }
-    
-    // Get a list of the chosen commander's special rule IDs
-    // and add to this object as a property.
-    setCommanderSpecialruleIDs() {
-        const commanderSpecialrule = JSON.parse(sessionStorage.getItem('commanderspecialrule'));
-        const commanderSpecialruleIDs = [];
-        for (const csr of commanderSpecialrule) {
-            if (csr.commander_id == this.id) {
-                commanderSpecialruleIDs.push(csr.specialrule_id);
-            }
-        }
-        this.specialruleIDs = commanderSpecialruleIDs;
-    }
-
-    // Get a list of the chosen commander's special rules as objects
-    // and add to this object as a property.
-    setCommanderSpecialruleList() {
-        const specialRule = JSON.parse(sessionStorage.getItem('specialrule'));
-        const commanderSpecialruleList = [];
-        for (const sr of specialRule) {
-            if (this.specialruleIDs.includes(sr.id)) {
-                const newSpecialrule = {};
-                Object.assign(newSpecialrule, sr);
-                commanderSpecialruleList.push(newSpecialrule);
-            }
-        }
-        this.specialrule = commanderSpecialruleList;
-    }
-}
 
 class Faction {
 
-    initialize(nationality_name) {
+    initialize(faction_data, nationality_name) {
+        Object.assign(this, faction_data);
         this.setFactionCommanderIDs();
         this.setFactionCommanderList(nationality_name);
         this.setFactionSpecialrules();
@@ -484,6 +396,373 @@ class Faction {
         this.option = factionOptionList;
     }
 }
+
+
+class Commander {
+
+    // These functions require an 'id' property thay may not be available 
+    // at initialization so they cannot go in constructor.
+    initialize(commander_data, nationality_name) {
+        Object.assign(this, commander_data);
+        this.setCommanderFactionIDs();
+        this.setCommanderFactionList(nationality_name);
+        this.setCommanderSpecialruleIDs();
+        this.setCommanderSpecialruleList();
+    }
+
+    // Get a list of the chosen commander's valid faction IDs
+    // and add to this object as a property.
+    setCommanderFactionIDs() {
+        const commanderFaction = JSON.parse(sessionStorage.getItem('commanderfaction'));
+        const commanderFactionIDs = [];
+        for (const cf of commanderFaction) {
+            if (cf.commander_id == this.id) {
+                commanderFactionIDs.push(cf.faction_id);
+            }
+        }
+        this.factionIDs = commanderFactionIDs;
+    }
+
+    // Get a list of the chosen commander's valid factions 
+    // and add to this object as a property.
+    setCommanderFactionList(nationality_name) {
+        const nationFactionList = JSON.parse(sessionStorage.getItem(`${nationality_name}_factions`));
+        const commanderFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
+        for (const faction of nationFactionList) {
+            if (this.factionIDs.includes(faction.id)) {
+                const newFaction = {'id': faction.id, 'name': faction.name};
+                commanderFactionList.push(newFaction);
+            }
+        }
+        this.factionList = commanderFactionList;
+    }
+    
+    // Get a list of the chosen commander's special rule IDs
+    // and add to this object as a property.
+    setCommanderSpecialruleIDs() {
+        const commanderSpecialrule = JSON.parse(sessionStorage.getItem('commanderspecialrule'));
+        const commanderSpecialruleIDs = [];
+        for (const csr of commanderSpecialrule) {
+            if (csr.commander_id == this.id) {
+                commanderSpecialruleIDs.push(csr.specialrule_id);
+            }
+        }
+        this.specialruleIDs = commanderSpecialruleIDs;
+    }
+
+    // Get a list of the chosen commander's special rules as objects
+    // and add to this object as a property.
+    setCommanderSpecialruleList() {
+        const specialRule = JSON.parse(sessionStorage.getItem('specialrule'));
+        const commanderSpecialruleList = [];
+        for (const sr of specialRule) {
+            if (this.specialruleIDs.includes(sr.id)) {
+                const newSpecialrule = {};
+                Object.assign(newSpecialrule, sr);
+                commanderSpecialruleList.push(newSpecialrule);
+            }
+        }
+        this.specialrule = commanderSpecialruleList;
+    }
+}
+
+
+// ########## ********** ########## COMPONENT LEVEL FC CLASSES ########## ********** ##########
+
+
+class Artillery {
+    constructor(item) {
+        Object.assign(this, item);
+    }
+
+    display() {
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
+        nameColumn.append(itemName);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
+        expandColumn.html(`
+            <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
+                <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
+            </button>
+            `);
+            const addColumn = $('<div>').addClass(['col-1']);
+        addColumn.html(`<i class='fa-solid fa-plus'></i>`)
+        cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
+            <hr class='border border-2 border-primary rounded-2'>
+            <div class='row'>
+                <div class='col-7'>
+                    <b>Dice:</b> ${this.d10}
+                </div>
+                <div class='col-5'>
+                    <b>Crew</b>: ${this.minimumcrew}
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-7'>
+                <b>Arc of Fire</b>: ${this.arcfire}
+                </div>
+                <div class='col-5'>
+                <b>Shoot Base</b>: ${this.shootbase}
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-7'>
+                <b>Movement Penalty</b>: ${this.movepenalty}
+                </div>
+                <div class='col-5'>
+                <b>Reload Markers</b>: ${this.reloadmarkers}
+                </div>
+            </div>
+        
+        `);
+        cardBody.append(cardHeader, cardDetails);
+        newItem.append(cardBody);
+        $('#menu-item-container').append(newItem);
+        // Handle expanding/contracting of item information.
+        $(`#misc-${this.id}-expand`).parent().on('click', () => {
+            $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+    }
+}
+
+class Character {
+    constructor(item) {
+        Object.assign(this, item);
+        this.setCharacterNationalityIDs();
+        this.setCharacterNationalityList();
+        this.setCharacterFactionIDs();
+        this.setCharacterFactionList();
+        this.setCharacterSpecialruleIDs();
+        this.setCharacterSpecialruleList();
+    }
+
+    // Get a list of the character's valid Nationality IDs
+    // and add to this object as a property.
+    setCharacterNationalityIDs() {
+        const characterNationality = JSON.parse(sessionStorage.getItem('characternationality'));
+        const characterNationalityIDs = [];
+        for (const cf of characterNationality) {
+            if (cf.character_id == this.id) {
+                characterNationalityIDs.push(cf.nationality_id);
+            }
+        }
+        this.nationalityIDs = characterNationalityIDs;
+    }
+
+    // Get a list of the chosen characters's valid Nationalities
+    // and add to this object as a property.
+    setCharacterNationalityList() {
+        const nationalityList = JSON.parse(sessionStorage.getItem(`nationality`));
+        const characterNationalityList = [];
+        for (const nationality of nationalityList) {
+            if (this.nationalityIDs.includes(nationality.id)) {
+                const newNationality = {'id': nationality.id, 'name': nationality.name};
+                characterNationalityList.push(newNationality);
+            }
+        }
+        this.nationalityList = characterNationalityList;
+    }
+
+    // Get a list of the character's valid faction IDs
+    // and add to this object as a property.
+    setCharacterFactionIDs() {
+        const characterFaction = JSON.parse(sessionStorage.getItem('characterfaction'));
+        const characterFactionIDs = [];
+        for (const cf of characterFaction) {
+            if (cf.character_id == this.id) {
+                characterFactionIDs.push(cf.faction_id);
+            }
+        }
+        this.factionIDs = characterFactionIDs;
+    }
+
+    // Get a list of the characters's valid factions
+    // and add to this object as a property.
+    setCharacterFactionList() {
+        const factionList = JSON.parse(sessionStorage.getItem(`faction`));
+        const characterFactionList = [];
+        for (const faction of factionList) {
+            if (this.factionIDs.includes(faction.id)) {
+                const newFaction = {'id': faction.id, 'name': faction.name};
+                characterFactionList.push(newFaction);
+            }
+        }
+        this.factionList = characterFactionList;
+    }
+    
+    // Get a list of the Character's specialrule IDs
+    // and add to this object as a property.
+    setCharacterSpecialruleIDs() {
+        const characterSpecialrule = JSON.parse(sessionStorage.getItem('characterspecialrule'));
+        const characterSpecialruleIDs = [];
+        for (const csr of characterSpecialrule) {
+            if (csr.character_id == this.id) {
+                characterSpecialruleIDs.push(csr.specialrule_id);
+            }
+        }
+        this.specialruleIDs = characterSpecialruleIDs;
+    }
+
+    // Get a list of the Character's special rules as objects
+    // and add to this object as a property.
+    setCharacterSpecialruleList() {
+        const specialRule = JSON.parse(sessionStorage.getItem('specialrule'));
+        const characterSpecialruleList = [];
+        for (const sr of specialRule) {
+            if (this.specialruleIDs.includes(sr.id)) {
+                const newSpecialrule = {};
+                Object.assign(newSpecialrule, sr);
+                characterSpecialruleList.push(newSpecialrule);
+            }
+        }
+        this.specialrule = characterSpecialruleList;
+    }
+
+    // Display method for Characters on menu side.
+    display() {
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
+        nameColumn.append(itemName);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
+        expandColumn.html(`
+                <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
+                </button>
+                `);
+        const addColumn = $('<div>').addClass(['col-1']);
+        addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
+        cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
+        // Beginning of Card Details.
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
+        // Beginning of Nationality/Faction restrictions for Character.
+        const forceRestrictions = $('<div>').addClass('mt-1');
+        if (this.nonatives) {
+            const noNatives = $('<div>').addClass('text-secondary').html('This Character is available to all Factions, except for Native American Factions.');
+            forceRestrictions.append(noNatives);
+        }
+        else {
+            if (this.certainnations) {
+                const certainNations = $('<div>');
+                if ((this.nationalityList).length == 1) {
+                    const nationality = this.nationalityList[0];
+                    const nationsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Nation: ${nationality.name}.`);
+                    certainNations.append(nationsList);
+                }
+                else {
+                    const nationsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Nations:`);
+                    for (const [i, nationality] of this.nationalityList.entries()) {
+                        if (i+1 == this.nationalityList.length) {
+                            const newNationality = ` and ${nationality.name}.`;
+                            nationsList.append(newNationality);
+                        }
+                        else {
+                            const newNationality = ` ${nationality.name},`;
+                            nationsList.append(newNationality);
+                        }
+                    }
+                    certainNations.append(nationsList);
+                }
+                forceRestrictions.append(certainNations);
+            }
+            if (this.certainfactions) {
+                const certainFactions = $('<div>');
+                if ((this.factionList).length == 1) {
+                    const faction = this.factionList[0];
+                    const factionsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Faction: ${faction.name}`);
+                    certainFactions.append(factionsList);
+                }
+                else {
+                    const factionsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Factions:`);
+                    for (const [i, faction] of this.factionList.entries()) {
+                        if (i+1 == this.factionList.length) {
+                            const newFaction = ` and ${faction.name}.`;
+                            factionsList.append(newFaction);
+                        }
+                        else {
+                            const newFaction = ` ${faction.name},`;
+                            factionsList.append(newFaction);
+                        }
+                    }
+                    certainFactions.append(factionsList);
+                }
+                forceRestrictions.append(certainFactions);
+            }
+            if (this.certainnations == 0 && this.certainfactions == 0) {
+                const allFactions = $('<div>').addClass('text-secondary').html('This Character is available to all Factions.');
+                forceRestrictions.append(allFactions);
+            }
+        }
+        cardDetails.append(forceRestrictions);
+        // Beginning of command point data for Character.
+        if (this.commandpoints > 0) {
+            const commandPointData = $('<div>');
+            const pointsRange = $('<div>').addClass('row');
+            const commandPoints = $('<div>').addClass('col-6').html(`Command Points: ${this.commandpoints}`);
+            const commandRange = $('<div>').addClass('col-6').html(`Command Range: ${this.commandrange}"`);
+            pointsRange.append(commandPoints,commandRange);
+            commandPointData.append(pointsRange);
+            if (this.commandpointconditions) {
+                const commandPointConditions = $('<div>').html(this.commandpointconditions);
+                commandPointData.append(commandPointConditions);
+            }
+            cardDetails.append(commandPointData);
+        }
+        // Beginning of Unit/Commander restrictions for Character.
+        if (this.unitrestrictions) {
+            const itemrestrictions = $('<div>').addClass(['m-0 p-0 mt-2']).html(`<b>Unit Restrictions:</b><p>${this.unitrestrictions}</p>`);
+            cardDetails.append(itemrestrictions);
+        }
+        // Beginning of extra abilities for Character
+        if (this.extraabilities) {
+            const additionalRules = $('<div>').addClass(['m-0 p-0']).html(`<b>Additional Rules:</b>${this.extraabilities}`);
+            cardDetails.append(additionalRules);
+        }
+        // Beginning of special rules for Character.
+        if (this.specialrule.length > 0) {
+            const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const specialrulesHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
+            specialruleExpandColumn.html(`
+                <a href='#character-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='character-${this.id}-specialrules-expand'></i>
+                </button>
+            `);
+            specialrulesHeader.append([descColumn, specialruleExpandColumn]);
+            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `character-${this.id}-specialrules-details`)
+            for (const rule of this.specialrule) {
+                const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
+                specialrulessDetails.append(newRule);
+            }
+            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            cardDetails.append(specialruleCard);
+        }
+        // End of Chcracter information
+        cardBody.append(cardHeader, cardDetails);
+        newItem.append(cardBody);
+        // Add Character to appropriate div.
+        if (this.charactertype == 1) {
+            $('#fighting-man-characters').append(newItem);
+        }
+        else if (this.charactertype == 2) {
+            $('#hostage-advisor-characters').append(newItem);
+        }
+        // Handle expanding/contracting of item information.
+        $(`#misc-${this.id}-expand`).parent().on('click', () => {
+            $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+    }
+}
+
 
 class Ship {
     constructor(item) {
@@ -677,52 +956,21 @@ class Ship {
         const model = this.model.toLowerCase().replace(/\s+/g, '');
         $(`#${model}-container`).append(newItem);
         // Handle expanding/contracting of item information.
-        $(`#ship-${this.id}-expand`).on('click', () => {
+        $(`#ship-${this.id}-expand`).parent().on('click', () => {
             $(`#ship-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
         if (this.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
-            $(`#ship-${this.id}-specialrules-expand`).on('click', () => {
+            $(`#ship-${this.id}-specialrules-expand`).parent().on('click', () => {
                 $(`#ship-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });            
         }
         if (this.upgrade.length > 0) {
             // Handle expanding/contracting of item information.
-            $(`#ship-${this.id}-upgrades-expand`).on('click', () => {
+            $(`#ship-${this.id}-upgrades-expand`).parent().on('click', () => {
                 $(`#ship-${this.id}-upgrades-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
-    }
-}
-
-
-class Nationality {
-    constructor(nationality) {
-        Object.assign(this, nationality);
-    }
-    // Retrieve a list of a specific Nation's Commanders 
-    // with id and name from session storage for dropdown.
-    getNationalCommanderList() {
-        console.debug(`Getting commander list from session storage for ${this.name}.`);
-        const commandersData = JSON.parse(sessionStorage.getItem(`${this.name}_commanders`));
-        const nationalCommanderList = [{'id': 0, 'name': 'Who Leads Your Force...'}];
-        for (const commander of commandersData) {
-            const newCommander = {'id': commander.id, 'name': `${commander.name} (${commander.points})`};
-            nationalCommanderList.push(newCommander);
-        }
-        this.commanderList = nationalCommanderList;
-    }
-    // Retrieve a list of a specific Nation's Factions 
-    // with id and name from session storage for dropdown.
-    getNationalFactionList() {
-        console.debug(`Getting faction list from session storage for ${this.name}.`);
-        const factionsData = JSON.parse(sessionStorage.getItem(`${this.name}_factions`));
-        const nationalFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
-        for (const faction of factionsData) {
-            const newFaction = {'id': faction.id, 'name': faction.name};
-            nationalFactionList.push(newFaction);
-        }
-        this.factionList = nationalFactionList
     }
 }
 
@@ -865,18 +1113,18 @@ class Unit {
             $('#support-units').append(newItem);
         }
         // Handle expanding/contracting of item information.
-        $(`#misc-${this.id}-expand`).on('click', () => {
+        $(`#misc-${this.id}-expand`).parent().on('click', () => {
             $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
         if (this.option.length > 0) {
             // Handle expanding/contracting of item information.
-            $(`#unit-${this.id}-options-expand`).on('click', () => {
+            $(`#unit-${this.id}-options-expand`).parent().on('click', () => {
                 $(`#unit-${this.id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });            
         }
         if (this.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
-            $(`#unit-${this.id}-specialrules-expand`).on('click', () => {
+            $(`#unit-${this.id}-specialrules-expand`).parent().on('click', () => {
                 $(`#unit-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
@@ -918,7 +1166,7 @@ class Misc {
         newItem.append(cardBody);
         $('#menu-item-container').append(newItem);
         // Handle expanding/contracting of item information.
-        $(`#misc-${this.id}-expand`).on('click', () => {
+        $(`#misc-${this.id}-expand`).parent().on('click', () => {
             $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
     }
@@ -942,6 +1190,7 @@ async function requestUniversalData() {
     sessionStorage.setItem('experience', JSON.stringify(response.data.experience));
     sessionStorage.setItem('factionunit', JSON.stringify(response.data.factionunit));
     sessionStorage.setItem('factionunitclass', JSON.stringify(response.data.factionunitclass));
+    sessionStorage.setItem('commandernationality', JSON.stringify(response.data.commandernationality));
     sessionStorage.setItem('commanderfaction', JSON.stringify(response.data.commanderfaction));
     sessionStorage.setItem('commanderspecialrule', JSON.stringify(response.data.commanderspecialrule));
     sessionStorage.setItem('factionupgrade', JSON.stringify(response.data.factionupgrade));
@@ -975,6 +1224,17 @@ function getNationData() {
         nationList.push(newNation);
     }
     return nationList;
+}
+
+function resetComponentSelector() {
+    if ($componentSelector[0][0].text != 'Please Select From Menu') {
+        $componentSelector.prepend($('<option></option>').val(0).text('Please Select From Menu'));
+    }
+    $componentSelector.val(0);
+    $('#menu').hide('medium', 'swing');
+    setTimeout(() => {
+        $('#menu').empty();
+    }, 500)
 }
 
 // Empty Faction dropdown and refill with options from input variable.
@@ -1024,14 +1284,13 @@ $forceName.on('keyup', () => {
 })
 
 $pointMax.on('keyup', () => {
-    forceList.maxPoints = $pointMax.val();
     forceList.updateUnitSize();
 });
 
 // Handle Nationality selector dropdown.
 $selectNationality.on('change', async function(e) {
     // Remove the placeholder option as needed.
-    if ($selectNationality[0][0].name == 'Who Do You Fight For...') {
+    if ($selectNationality[0][0].text == 'Who Do You Fight For...') {
         $selectNationality[0][0].remove();
     }
     // Get newly selected Nationality option name as a string.
@@ -1044,13 +1303,17 @@ $selectNationality.on('change', async function(e) {
     }
     // Get selected Nationality data from session.
     const nationalityData = JSON.parse(sessionStorage.getItem(`${selected_nationality}`));
+    // Reset forceList object.
+    forceList.resetForceList();
+    forceList.emptyBuildArea();
     // Create new Nationality instance and assign it to ForceList object.
     const forceNationality = new Nationality(nationalityData.nationality);
-    forceList.setNationality(forceNationality);
+    forceList.setNationality(forceNationality);    
     // Populate Faction and Commander dropdowns.
     populateFactionDropdown(forceList.nationality.factionList);
     populateCommanderDropdown(forceList.nationality.commanderList);
     // Show display in UI.
+    resetComponentSelector()
     $('#welcome-area').hide('fast', 'swing');
     $('#build-area').show('slow', 'swing');    
 });
@@ -1058,42 +1321,37 @@ $selectNationality.on('change', async function(e) {
 // Handle Commander Selector dropdown.
 $selectCommander.on('change', function() {
     // Remove the placeholder option as needed.
-    if ($selectCommander[0][0].name == 'Be More Specific...') {
+    if ($selectCommander[0][0].text == 'Who Leads Your Force...') {
         $selectCommander[0][0].remove();
     }
     const nationalCommanderList = JSON.parse(sessionStorage.getItem(`${forceList.nationality.name}_commanders`));
     const selectedCommander = nationalCommanderList.find(commander => commander.id == $selectCommander.val());
     let forceCommander = new Commander();
-    Object.assign(forceCommander, selectedCommander);
-    forceCommander.initialize(forceList.nationality.name);
+    forceCommander.initialize(selectedCommander, forceList.nationality.name);
     forceList.setCommander(forceCommander);
     forceList.displayCommander();
-    if (!forceList.faction) {
-        populateFactionDropdown(forceList.commander.factionList);
-    }
+    resetComponentSelector()
 });
 
 // Handle Faction Selector dropdown.
 $selectFaction.on('change', async function() {
     // Remove the placeholder option as needed.
-    if ($selectFaction[0][0].name == 'Who Leads Your Force...') {
+    if ($selectFaction[0][0].text == 'Be More Specific...') {
         $selectFaction[0][0].remove();
     }
     const nationalFactionList = JSON.parse(sessionStorage.getItem(`${forceList.nationality.name}_factions`));
     const selectedFaction = nationalFactionList.find(faction => faction.id == $selectFaction.val());
     let forceFaction = new Faction(forceList.nationality.name);
-    Object.assign(forceFaction, selectedFaction);
-    forceFaction.initialize(forceList.nationality.name);
+    forceFaction.initialize(selectedFaction, forceList.nationality.name);
     forceList.setFaction(forceFaction);
     await forceList.faction.setFactionUnits();
     forceList.displayFaction();
-    if (!forceList.commander) {
-        populateCommanderDropdown(forceList.faction.commanderList);
-    }
+    resetComponentSelector()
 });
 
 // Handle menu component (artillery, characters, units, etc) dropdown.
-$componentSelector.on('change', async function(e) {
+$componentSelector.on('change', async function() {
+    console.log($componentSelector.val());
     // Get string identifier for component type.
     const selected = $componentSelector.val();
     if (sessionStorage.getItem(`${selected}`) == null) {
@@ -1103,7 +1361,13 @@ $componentSelector.on('change', async function(e) {
         else {
             var response = await axios.get(`/${selected}s`);
         }
-        if (selected == 'ship') {
+        if (selected == 'character') {
+            sessionStorage.setItem(`faction`, JSON.stringify(response.data['faction']));
+            sessionStorage.setItem(`characternationality`, JSON.stringify(response.data['characternationality']));
+            sessionStorage.setItem(`characterfaction`, JSON.stringify(response.data['characterfaction']));
+            sessionStorage.setItem(`characterspecialrule`, JSON.stringify(response.data['characterspecialrule']));
+        }
+        else if (selected == 'ship') {
             sessionStorage.setItem(`shipspecialrule`, JSON.stringify(response.data['shipspecialrule']));
             sessionStorage.setItem(`shipupgrade`, JSON.stringify(response.data['shipupgrade']));
         }
@@ -1115,8 +1379,15 @@ $componentSelector.on('change', async function(e) {
     else {
         var componentData = JSON.parse(sessionStorage.getItem(`${selected}`));
     }
-    $('#menu').empty();
-    if (selected == 'ship') {
+    $('#menu').show().empty();
+    if (selected == 'character') {
+        const fightingMan = $('<div>').addClass(['collapse rounded-2', 'force-selector-field','p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'fighting-man-characters').html(`<span class='fell fs-5'>Fighting Men & Women</span>`);
+        const hostageAdvisor = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'hostage-advisor-characters').html(`<span class='fell fs-5'>Hostages & Advisors</span>`);
+        $('#menu').append(fightingMan,hostageAdvisor);
+        fightingMan.show('medium', 'swing');
+        hostageAdvisor.show('medium', 'swing');
+    }
+    else if (selected == 'ship') {
         const canoa = $('<div>').addClass(['collapse rounded-2', 'force-selector-field','p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'canoa-container').html(`<span class='fell fs-5'>Canoa</span>`);
         const longboat = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'longboat-container').html(`<span class='fell fs-5'>Longboat</span>`);
         const piragua = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'piragua-container').html(`<span class='fell fs-5'>Piragua</span>`);
@@ -1180,6 +1451,35 @@ $componentSelector.on('change', async function(e) {
         else if (selected == 'misc') {
             var menuItem = new Misc(item);
         }
-        menuItem.display();
+        if (selected == 'character') {
+            if (menuItem.certainnations == 1 && menuItem.certainfactions == 1 && forceList.faction) {
+                if (menuItem.nationalityIDs.includes(forceList.nationality.id) || menuItem.factionIDs.includes(forceList.faction.id)) {
+                    menuItem.display();
+                }
+            }
+            else if (menuItem.certainnations == 1) {
+                if (menuItem.nationalityIDs.includes(forceList.nationality.id)) {
+                    menuItem.display();
+                }
+            }
+            else if (menuItem.certainfactions == 1) {
+                if (forceList.faction) {
+                    if (menuItem.factionIDs.includes(forceList.faction.id)) {
+                        menuItem.display();
+                    }
+                }
+            }
+            else if (forceList.nationality.id == 8) {
+                if (menuItem.nonatives == 0) {
+                    menuItem.display();
+                }
+            }
+            else {
+                menuItem.display();
+            }
+        }
+        else {
+            menuItem.display();
+        }
     }
 });

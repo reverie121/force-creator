@@ -98,22 +98,55 @@
 
                 <!-- WELCOME AREA -->
                 <div class='container-fluid rounded-3 bg-warning p-2 mt-1 mb-0' id='welcome-area'>
-                    <div class='container mb-0'>
+                    <div class='container mx-auto mb-0'>
                         <h1 class='fell text-info type-shadow text-center mt-1'>Welcome to the FORCE CREATOR</h1>
                         <h2 class='fell text-info type-shadow text-center'>for Blood & Plunder by Firelock Games</h2>
-                        <p class='fell text-info mb-0'>
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Facere ipsa minima voluptatibus nulla ratione dicta esse possimus dignissimos. Laboriosam dolorem cum et tempore suscipit dolorum quia neque laudantium delectus maxime. 
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsa, dicta? Quia autem magni, itaque repellendus sed aspernatur at ullam iste dolor explicabo ab quibusdam animi enim culpa quas accusamus molestias? 
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Vel voluptatem delectus, placeat, pariatur repellendus dolorum autem accusantium culpa rem amet quibusdam nostrum, obcaecati ipsum non ad. Facilis perferendis animi possimus. 
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsa, dicta? Quia autem magni, itaque repellendus sed aspernatur at ullam iste dolor explicabo ab quibusdam animi enim culpa quas accusamus molestias? 
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Vel voluptatem delectus, placeat, pariatur repellendus dolorum autem accusantium culpa rem amet quibusdam nostrum, obcaecati ipsum non ad. Facilis perferendis animi possimus. 
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Pariatur veniam beatae tempora provident voluptate? Repellendus perferendis, distinctio, eligendi alias eius quia inventore explicabo autem sunt, rem a possimus beatae. Tempore? 
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Blanditiis odio, minima beatae tempora, iste eligendi ipsum eum officia voluptas eveniet ea? Optio consectetur facilis reprehenderit! Blanditiis odit sequi nemo aspernatur? 
-                        </p>
+                        <hr class='border border-secondary border-3 rounded-2 opacity-100'>
+                        <div class='row'>
+                            <div class='col-6'>
+                                <ul class='fell text-info fs-5'><span class='type-shadow'>DO NEXT / TODAY</span>
+                                    <li>Add User functionality. (Achieve by end of Thu)</li>
+                                    <li>Clean up special rules table and relations.</li>
+                                    <li>Check data packing function string things.</li>
+                                </ul>
+                                <ul class='fell text-info fs-5'><span class='type-shadow'>DONE SINCE SUNDAY</span>
+                                    <li>Finished change/removal effects for Nation/Faction/Commander/ComponentSelector.</li>
+                                    <li>Fixed bug where clicking near expander icon would sometimes work without changing the icon.</li>
+                                    <li>Organized models.py</li>
+                                    <li>Updated front end Character display so only viable choices are visible. Major update to Character menu display.</li>
+                                    <li>Fixed commander lists so that full lists are available for each nation (required multi to multi data).</li>
+                                    <li>Split up character.details disordered information into 10 new columns.</li>
+                                    <li>Data entry for new connecting tables.</li>
+                                    <li>Added multi-multi db structure for commandernationality, characternationality, characterfaction, and characterspecialrule.</li>
+                                    <li>Removed some unneeded records and table columns from db.</li>
+                                    <li>Added functionality for updating and storing max points and unit size range.</li>
+                                    <li>Refactored to add classes for Nationality, Faction, and Commander.</li>
+                                    <li>Added basic navbar with styling.</li>
+                                </ul>
+                            </div>
+                            <div class='col-6'>
+                                <ul class='fell text-info fs-5'><span class='type-shadow'>REQUIRED FOR RELEASE</span>
+                                    <li>Get the +'s working.</li>
+                                    <li>Create build displays for all components. (Achieve by end of Fri)</li>
+                                    <li>Add remove functionality to build displays.</li>
+                                    <li>Add qty functionality to build displays.</li>
+                                    <li>Add assign functionality to build displays.</li>
+                                    <li>Add save functionality for force lists.</li>
+                                    <li>Polish welcome div.</li>
+                                </ul>
+                                <ul class='fell text-info fs-5'><span class='type-shadow'>MORE TO DO</span>
+                                    <li>Better sorting.</li>
+                                    <li>Add settings/details dropdown for forcelist name.</li>
+                                    <li>Add theme change functionality via dropdowns.</li>
+                                    <li>Make fully responsive and finish up styling.</li>
+                                    <li>Auto-save option.</li>
+                                </ul>
+                            </div>                            
+                        </div>
                     </div>
                 </div>
 
-                <!-- BUILD AREA -->
+                <!-- CREATION AREA -->
                 <div class='collapse container-fluid m-0' id='build-area'>
                     <div class='row'>
 
@@ -141,13 +174,26 @@
                                     <div class='collapse card m-1 border border-2 border-secondary' id='force-commander'></div>
                                 </div>
     
-                                <div class='collapse card m-1 border border-2 border-secondary' id='unitAndCharDisplay'>
+                                <div class='collapse card m-1 border border-2 border-secondary' id='force-characters'>
             
                                 </div>
     
-                                <div class='collapse card m-1 border border-2 border-secondary' id='shipAndArtilleryDisplay'>
+                                <div class='collapse card m-1 border border-2 border-secondary' id='force-units'>
             
                                 </div>
+                                
+                                <div class='collapse card m-1 border border-2 border-secondary' id='force-artillery'>
+            
+                                </div>
+
+                                <div class='collapse card m-1 border border-2 border-secondary' id='force-ships'>
+            
+                                </div>
+
+                                <div class='collapse card m-1 border border-2 border-secondary' id='force-misc'>
+            
+                                </div>
+                            
                             </div>
 
                         </div>

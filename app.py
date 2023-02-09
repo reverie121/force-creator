@@ -22,8 +22,8 @@ def main():
 
 @app.route('/creator')
 def show_creator():
-    force_selection = ForceSelection(select_nation=2)
-    add_to_list = AddToList(component_type='units')
+    force_selection = ForceSelection()
+    add_to_list = AddToList()
     return render_template('fc.html', force_selection=force_selection, add_to_list=add_to_list)
 
 #################### API Routes ####################
@@ -34,8 +34,9 @@ def pack_universal_data():
         'commanderclass': models.serialize(list(models.CommanderClass.query.all())),
         'experience': models.serialize(list(models.Experience.query.all())),
         'factionunitclass': models.serialize(list(models.FactionUnitclass.query.all())),
-        # The following data is sent selectively with Commander, Unit, and Faction queries
+        # The following data is sent selectively with Character, Commander, Unit, and Faction queries
         'commanderfaction': models.serialize(list(models.CommanderFaction.query.all())),
+        'commandernationality': models.serialize(list(models.CommanderNationality.query.all())),
         'commanderspecialrule': models.serialize(list(models.CommanderSpecialrule.query.all())),
         'factionupgrade': models.serialize(list(models.FactionUpgrade.query.all())),
         'factionunit': models.serialize(list(models.FactionUnit.query.all())),
@@ -66,7 +67,11 @@ def get_all_artillery_data():
 @app.route('/characters')
 def get_all_character_data():
     all_character_data = {
-        'character': models.serialize(list(models.Character.query.all()))
+        'character': models.serialize(list(models.Character.query.all())),
+        'characternationality': models.serialize(list(models.CharacterNationality.query.all())),
+        'characterfaction': models.serialize(list(models.CharacterFaction.query.all())),
+        'characterspecialrule': models.serialize(list(models.CharacterSpecialrule.query.all())),
+        'faction': models.serialize(list(models.Faction.query.all()))
     }
     return jsonify(all_character_data)
 
