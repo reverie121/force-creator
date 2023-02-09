@@ -1,10 +1,15 @@
-from flask import Flask, render_template, redirect, jsonify
-from forms import ForceSelection, AddToList
+from flask import Flask, render_template, redirect, jsonify, session
+from forms import ForceSelection, AddToList, AddUserForm, LogInForm, EditUserForm
+from flask_debugtoolbar import DebugToolbarExtension
 
 import models
 import innocuous
 
 app = Flask(__name__)
+
+app.config['SECRET_KEY'] = innocuous.sk
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
@@ -12,9 +17,7 @@ app.config['SQLALCHEMY_ECHO'] = True
 models.connect_db(app)
 models.db.create_all()
 
-app.config['SECRET_KEY'] = innocuous.sk
-
-######################### ROUTES #########################
+############### ***** ############### ROUTES ############### ***** ###############
 
 @app.route('/')
 def main():
@@ -26,7 +29,107 @@ def show_creator():
     add_to_list = AddToList()
     return render_template('fc.html', force_selection=force_selection, add_to_list=add_to_list)
 
-#################### API Routes ####################
+
+############### ***** ########## USER ROUTES ########## ***** ###############
+
+
+@app.route('/user/new', methods=['GET','POST'])
+def new_user():
+    """ Show a form that when submitted will register/create a user. 
+    This form should accept a username, password, email, first_name, and last_name. 
+    Process the registration form by adding a new user. Then redirect to user info page. """
+    form = AddUserForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+        # Returned hashed password
+        user = models.User.register(username, password)
+        user.email = form.email.data
+        user.first_name = form.first_name.data
+        user.last_name = form.last_name.data
+        models.db.session.add(user)
+        models.db.session.commit()
+        session["username"] = user.username  # keep logged in    
+        return redirect(f'/users/{user.username}')
+    else:
+        return render_template('user-new.html', form=form)
+
+
+@app.route('/user/login', methods=['GET','POST'])
+def log_in_user():
+    """ Show a form that when submitted will login a user. 
+    This form should accept a username and a password. 
+    Process the login form, ensuring the user is 
+    authenticated and going to /secret if so. """
+    form = LogInForm()
+    if form.validate_on_submit():
+        usr = form.username.data
+        pwd = form.password.data
+        # authenticate will return a user or False
+        user = models.User.authenticate(usr, pwd)
+        if user:
+            session["username"] = user.username  # keep logged in
+            return redirect(f'/users/{user.username}')
+        else:
+            form.password.errors = ["* Username or Password is incorrect *"]
+    return render_template('user-log-in.html', form=form)
+
+
+@app.route('/user/logout')
+def log_out_user():
+    """ Clear any information from the session and redirect to /. """
+    session.pop("username")
+    return redirect('/')
+
+
+@app.route('/users/<username>')
+def show_secrets(username):
+    """ Show information about the given user. """
+    user = models.User.query.get_or_404(username)
+    return render_template('user-info.html', user=user)
+
+
+@app.route('/users/<username>/delete', methods=['POST'])
+def delete_user(username):
+    """ Remove the user from the database and delete all of their feedback. 
+    Clear any user information in the session and redirect to /. """
+    if session.get('username') == username:
+        user = models.User.query.get_or_404(username)
+        models.db.session.delete(user)
+        models.db.session.commit()
+        session.pop("username")    
+    return redirect('/')
+
+
+@app.route('/users/<username>/edit', methods=['GET','POST'])
+def edit_user(username):
+    """ Show a form that when submitted will edit a user account. """
+    form = EditUserForm()
+    if not session['username']:
+        return redirect('/user/login')
+    elif session['username'] != username:
+        return redirect(f'/users/{username}/login')
+    elif form.validate_on_submit():
+        usr = session['username']
+        pwd = form.password.data
+        # authenticate will return a user or False
+        user = models.User.authenticate(usr, pwd)
+        if user:
+            user.first_name = form.first_name.data
+            user.last_name = form.last_name.data
+            user.email = form.email.data
+            models.db.session.add(user)
+            models.db.session.commit()
+            return redirect(f'/users/{usr}')
+        else:
+            form.password.errors = ["* Password is incorrect *"]
+    else:
+        print('this is happening')
+        user = models.User.query.get_or_404(username)
+        return render_template('user-edit.html', form=form, user=user)
+
+        
+############### ***** ########## FC API ROUTES ########## ***** ###############
 
 def pack_universal_data():    
     universal_data = {

@@ -22,17 +22,26 @@
     <div class='min-vw-100 bg-warning'>
       <div class='container-fluid'>
         <div class='navbar-nav'>
-          <a class='nav-link text-info fell' href='/creator'>B&P FORCE CREATOR</a>
-          <a class='nav-link text-info fell' href='#'>Login</a>
-          <a class='nav-link text-info fell' href='#'>Logout</a>
+          <a class='nav-item nav-link text-info fell' href='/creator'>B&P FORCE CREATOR</a>
+          {% if session['username'] %}
+          <a class="nav-item nav-link text-info fell" href="/users/{{ session['username'] }}">Home <span class="sr-only">(current)</span></a>
+          <a class="nav-item nav-link text-info fell" href="/user/logout">Log Out</a>
+        {% else %}
+          <a class="nav-item nav-link text-info fell" href="/user/new">Register</a>
+          <a class="nav-item nav-link text-info fell" href="/user/login">Log In</a>         
+        {% endif %}
         </div>
       </div>
     </div>
   </nav>
 
-    {% block content %}    
-    
-    {% endblock content %}
+  <div class='container-fluid min-vh-100 bg-primary'>
+    <div class='collapse container min-vh-100 p-0 bg-secondary border border-2 border-top-0 border-bottom-0 border-info' id='main-area'>
+      {% block content %}    
+      
+      {% endblock content %}
+    </div>
+  </div>
 
     <script src="https://unpkg.com/axios/dist/axios.js"></script>
     <script src="{{url_for('static', filename='assets/js/force_creator.js')}}"></script>
