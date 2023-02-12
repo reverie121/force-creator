@@ -13,17 +13,45 @@ class ForceList {
         this.maxPoints = maxPoints;
         this.updateUnitSize();
         this.name = 'A Force Without A Name';
+        this.units = {};
+        this.characters = {};
+        this.ships = {};
+        this.artillery = {};
+        this.misc = {};
+        this.idCounter = 0
+        this.coreCount = 0;
+        this.supportCount = 0;
+        this.fightingCount = 0;
+        this.civilianCount = 0;
+        this.totalForcePoints = 0;
+        $('#force-name').text(this.name);
+        $('#point-total-display').text(this.totalForcePoints);
+        $('#point-max-display').text(this.maxPoints);
     }
 
-    // Update max points and unit size range.
-    updateUnitSize() {
+    updateMaxPoints() {
         this.maxPoints = $pointMax.val();
-        this.unitMin = Math.floor(this.maxPoints / 100) + 2;
-        this.unitMax = (Math.floor(this.maxPoints / 100) + 1)*4;
-        $unitSizeRangeDisplay.html(`<i>${this.unitMin} to ${this.unitMax} models per unit</i>`);
+        this.updateUnitSize();
+        this.setUnitsToRange();
+        $('#point-max-display').text(`${this.maxPoints}`);
     }
     
-    // Reset forceList object.
+    updateTotalForcePoints() {
+        if (this.commander) {
+            this.totalForcePoints = this.commander.points;
+        }
+        else {
+            this.totalForcePoints = 0;
+        }
+        this.updateAllArtilleryCost();
+        this.updateAllCharactersCost();
+        this.updateAllShipsCost();
+        this.updateAllUnitsCost();
+        this.totalForcePoints = this.totalForcePoints + this.allUnitsCost + this.allArtilleryCost + this.allShipsCost + this.allCharactersCost;
+        $('#point-total-display').text(`${this.totalForcePoints}`);
+    }
+
+    // Reset ForceList object.
     resetForceList() {
         delete this.faction;
         delete this.commander;
@@ -32,14 +60,25 @@ class ForceList {
         delete this.artillery;
         delete this.ships;
         delete this.misc;
+        this.units = {};
+        this.characters = {};
+        this.ships = {};
+        this.artillery = {};
+        this.misc = {};
+        this.idCounter = 0
+        this.updateUnitClassCount();
+        this.updateCharacterTypeCount();
+        this.updateTotalForcePoints();
     }
 
     // Empty build area completely.
     emptyBuildArea() {
         $('#force-faction').empty().hide();
         $('#force-commander').empty().hide();
-        $('#force-characters').empty().hide();
-        $('#force-units').empty().hide();
+        $('#force-core-units').empty().hide();
+        $('#force-support-units').empty().hide();
+        $('#force-fighting-characters').empty().hide();
+        $('#force-civilian-characters').empty().hide();
         $('#force-artillery').empty().hide();
         $('#force-ships').empty().hide();
         $('#force-misc').empty().hide();
@@ -55,8 +94,10 @@ class ForceList {
     // Assign a commander object to the force list.
     setCommander(commander) {
         this.commander = commander;
+        this.updateTotalForcePoints();
         if (!this.faction || !this.faction.commanderIDs.includes(commander.id)) {
-            delete this.faction
+            delete this.faction;
+            this.emptyUnits();
             $('#force-faction').hide('medium', 'swing');
             populateFactionDropdown(this.commander.factionList);
         }
@@ -67,19 +108,22 @@ class ForceList {
     setFaction(faction) {
         this.faction = faction;
         if (!this.commander || !this.commander.factionIDs.includes(faction.id)) {
-            delete this.commander
+            delete this.commander;
+            this.emptyUnits();
             $('#force-commander').hide('medium', 'swing');
             populateCommanderDropdown(this.faction.commanderList);
         }
         $('#force-faction').show('medium', 'swing');
     }
 
+
+
     // Show force commander in build area.
     displayCommander() {
         // Empty and show force's commander display.
         $('#force-commander').empty();
         // Create new commander display and add to page.
-        let commanderDisplay = $('<div>').addClass(['card-body bg-info', 'text-primary', 'rounded-2', 'fell']);
+        let commanderDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-1', 'fell']);
         let cardHeader = $('<div>').addClass(['row']);
         let nameColumn = $('<div>').addClass(['col-10']);
         let commanderName = $('<h5>').addClass(['card-title']).text(this.commander.name);     
@@ -88,11 +132,13 @@ class ForceList {
         expandColumn.html(`
             <a href='#commander-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='commander-expand' ></i>
-            </button>
+            </a>
         `);
         let removeColumn = $('<div>').addClass(['col-1']);
         removeColumn.html(`
-            <i class='fa-solid fa-xmark text-danger' id='commander-remove'></i>
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-xmark text-primary' id='commander-remove'></i>
+            </a>
         `);
         cardHeader.append([nameColumn,expandColumn,removeColumn]);
         let cardDetails = $('<div>').addClass(['collapse']).attr('id','commander-details').html(`<hr class='border border-2 border-primary rounded-2'>`);
@@ -112,7 +158,7 @@ class ForceList {
             specialruleExpandColumn.html(`
                 <a href='#commander-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='commander-${this.id}-specialrules-expand'></i>
-                </button>
+                </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
             let specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `commander-${this.id}-specialrules-details`)
@@ -126,7 +172,7 @@ class ForceList {
         commanderDisplay.append([cardHeader, cardDetails]);
         $('#force-commander').append(commanderDisplay);
         // Handle expanding/contracting of force's commander information.
-        $('#commander-expand').on('click', () => {
+        $('#commander-expand').parent().on('click', () => {
             $('#commander-expand').toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
         if (this.commander.specialrule.length > 0) {
@@ -136,12 +182,13 @@ class ForceList {
             });
         }
         // Handle removal of force's commander.
-        $('#commander-remove').on('click', () => {
+        $('#commander-remove').parent().on('click', () => {
             $('#force-commander').hide('medium', 'swing');
             setTimeout(() => {
                 $('#force-commander').empty()
             }, 500)
             delete this.commander;
+            this.emptyUnits();
             // If this force has a faction, re-populate commander dropdown with valid commanders.
             // Otherwise re-populate faction and commander dropdowns using the Nation's lists.
             if (this.faction) {
@@ -158,7 +205,7 @@ class ForceList {
         // Empty force's faction display.
         $('#force-faction').empty();
         // Create new commander display and add to page.
-        let factionDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-2', 'fell']);
+        let factionDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-1', 'fell']);
         let cardHeader = $('<div>').addClass(['row']);
         let nameColumn = $('<div>').addClass(['col-10']);
         let factionName = $('<h5>').addClass(['card-title']).text(this.faction.name);    
@@ -167,11 +214,13 @@ class ForceList {
         expandColumn.html(`
             <a href='#faction-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='faction-expand' ></i>
-            </button>
+            </a>
         `);
         let removeColumn = $('<div>').addClass(['col-1']);
         removeColumn.html(`
-            <i class='fa-solid fa-xmark text-danger' id='faction-remove'></i>
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-xmark text-primary' id='faction-remove'> </i>
+            </a>
         `);
         cardHeader.append([nameColumn,expandColumn,removeColumn]);
         let cardDetails = $('<div>').addClass(['collapse']).attr('id','faction-details').html(`<hr class='border border-2 border-primary rounded-2'>`);
@@ -190,7 +239,7 @@ class ForceList {
             specialruleExpandColumn.html(`
                 <a href='#faction-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='faction-${this.id}-specialrules-expand'></i>
-                </button>
+                </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
             let specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-specialrules-details`)
@@ -210,7 +259,7 @@ class ForceList {
             optionExpandColumn.html(`
                 <a href='#faction-${this.id}-options-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='faction-${this.id}-options-expand'></i>
-                </button>
+                </a>
             `);
             factionOptionsHeader.append([descColumn, optionExpandColumn]);
             let unitOptionsDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-options-details`)
@@ -225,8 +274,8 @@ class ForceList {
         }
         factionDisplay.append([cardHeader, cardDetails]);
         $('#force-faction').append(factionDisplay);
-        // Handle expanding/contracting of force's commander information.
-        $('#faction-expand').on('click', () => {
+        // Handle expanding/contracting of force's faction information.
+        $('#faction-expand').parent().on('click', () => {
             $('#faction-expand').toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
         if (this.faction.option.length > 0) {
@@ -242,12 +291,13 @@ class ForceList {
             });
         }
         // Handle removal of force's faction.
-        $('#faction-remove').on('click', () => {
+        $('#faction-remove').parent().on('click', () => {
             $('#force-faction').hide('medium','swing');
             setTimeout(() => {
                 $('#force-faction').empty()
             }, 500)
             delete this.faction;
+            this.emptyUnits();
             // If this force has a commander, re-populate faction dropdown with valid factions.
             // Otherwise re-populate faction and commander dropdowns using the Nation's lists.
             if (this.commander) {
@@ -256,6 +306,867 @@ class ForceList {
                 populateFactionDropdown(this.nationality.factionList);
                 populateCommanderDropdown(this.nationality.commanderList);
             }
+        });
+    }
+
+    // Generates a unique ForceList id number to attach to a new component
+    // by incrementing a counter property.
+    generateId() {
+        this.idCounter ++;
+        return `f_id_${this.idCounter}`;
+    }
+
+    addArtillery(newArtillery) {
+        newArtillery['f_id'] = this.generateId();
+        newArtillery['qty'] = 1;
+        newArtillery['totalCost'] = newArtillery.points * newArtillery.qty;
+        this.artillery[`${newArtillery.f_id}`] = newArtillery;
+        this.updateTotalForcePoints();
+        this.displayArtillery(this.artillery[`${newArtillery.f_id}`]);
+    }
+
+    removeArtillery(f_id) {
+        delete this.artillery[`${f_id}`];
+        this.updateTotalForcePoints();
+    }
+
+    updateArtilleryCost(f_id) {
+        this.artillery[`${f_id}`].totalCost = this.artillery[`${f_id}`].points * this.artillery[`${f_id}`].qty;
+        this.updateTotalForcePoints();
+        $(`#fl-${f_id}-qty`).html(this.artillery[`${f_id}`].qty);
+        $(`#fl-${f_id}-total-cost`).html(this.artillery[`${f_id}`].totalCost);
+    }
+
+    updateAllArtilleryCost() {
+        let allArtilleryCost = 0;
+        const artillery = this.artillery;
+        for (const f_id in artillery) {
+            allArtilleryCost = allArtilleryCost + this.artillery[`${f_id}`].totalCost;
+        }
+        this.allArtilleryCost = allArtilleryCost;
+    }
+
+    // Takes a ForceList's artillery group's unique identifier with a positive or
+    // negative integer and adjusts the artillery qty.
+    adjustArtilleryQty(f_id,adj) {
+        if (this.artillery[`${f_id}`].qty + adj < 1) {
+            return
+        }
+        else {
+            this.artillery[`${f_id}`].qty = this.artillery[`${f_id}`].qty + adj;
+            this.updateArtilleryCost(f_id);
+        }
+    }
+
+    displayArtillery(artillery) {
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']).attr('id',`fl-${artillery.f_id}`);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['container-fluid']);
+        const topRow = $('<div>').addClass(['row mb-0 gy-0'])
+        const nameColumn = $('<div>').addClass(['col-10']);
+        const itemName = $('<h5>').addClass(['card-title']).text(artillery.name);    
+        nameColumn.append(itemName);
+        const expandColumn = $('<div>').addClass(['col-1']).html(`
+            <a href='#fl-${artillery.f_id}-details' role='button' data-bs-toggle='collapse'>
+                <i class='fa-solid fa-chevron-down' id='fl-${artillery.f_id}-expand'></i>
+            </a>
+            `);
+        const removeColumn = $('<div>').addClass(['col-1']).html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-xmark text-primary' id='fl-${artillery.f_id}-remove'></i>
+            </a>
+            `)
+        topRow.append([nameColumn,expandColumn,removeColumn]);
+        const secondRow = $('<div>').addClass(['row mb-0 gy-0'])
+        const pointsEach = $('<div>').addClass(['col-4 d-flex align-items-end']).html(`<span class='text-secondary fs-5' id='fl-${artillery.f_id}-points'>${artillery.points}</span>&nbsp;pts ea`);
+        const pointAdjuster = $('<div>').addClass(['col-4 d-flex align-items-end justify-content-center']);
+            const subtractModel = $('<span>').html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-minus text-secondary align-self-center' id='fl-${artillery.f_id}-subtract-model'></i>
+            </a>
+            `)
+            const modelQty = $(`<span id='fl-${artillery.f_id}-qty'>`).addClass(['fs-5 ms-2 me-2']).html(`${artillery.qty}`);
+            const addModel = $('<span>').html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-plus text-secondary align-self-center' id='fl-${artillery.f_id}-add-model'></i>
+            </a>
+            `)
+            pointAdjuster.append(subtractModel,modelQty,addModel);
+        const pointsArtillery = $('<div>').addClass(['col-4 d-flex align-items-end justify-content-end text-primary fs-5']).html(`<span class='text-secondary' id='fl-${artillery.f_id}-total-cost'>${artillery.totalCost}</span>&nbsp;pts`);
+        secondRow.append(pointsEach,pointAdjuster,pointsArtillery);
+        cardHeader.append([topRow, secondRow]);
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${artillery.f_id}-details`).html(`
+            <hr class='border border-2 border-primary rounded-2'>
+            <div class='row'>
+                <div class='col-7'>
+                    <b>Dice:</b> ${artillery.d10}
+                </div>
+                <div class='col-5'>
+                    <b>Crew</b>: ${artillery.minimumcrew}
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-7'>
+                <b>Arc of Fire</b>: ${artillery.arcfire}
+                </div>
+                <div class='col-5'>
+                <b>Shoot Base</b>: ${artillery.shootbase}
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-7'>
+                <b>Movement Penalty</b>: ${artillery.movepenalty}
+                </div>
+                <div class='col-5'>
+                <b>Reload Markers</b>: ${artillery.reloadmarkers}
+                </div>
+            </div>
+        
+        `);
+        cardBody.append(cardHeader, cardDetails);
+        newItem.append(cardBody);
+        if (Object.keys(this.artillery).length == 1) {
+            const componentName = $('<div>').addClass('fell text-primary fs-5').text('Artillery');
+            $('#force-artillery').prepend(componentName);
+            $('#force-artillery').show('medium','swing');
+        }
+        $('#force-artillery').append(newItem);
+        // Handle expanding/contracting of item information.
+        $(`#fl-${artillery.f_id}-expand`).parent().on('click', () => {
+            $(`#fl-${artillery.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+        // Handle minus button to subtract artillery piece from group.
+        $(`#fl-${artillery.f_id}-subtract-model`).on('click', () => {
+            this.adjustArtilleryQty(artillery.f_id,-1);
+        });
+        // Handle plus button to add artillery piece to group.
+        $(`#fl-${artillery.f_id}-add-model`).on('click', () => {
+            this.adjustArtilleryQty(artillery.f_id,1);
+        });
+        // Handle removal of artillery from ForceList.
+        $(`#fl-${artillery.f_id}-remove`).parent().on('click', () => {
+            this.removeArtillery(artillery.f_id);
+            $(`#fl-${artillery.f_id}`).hide('medium','swing');
+            setTimeout(() => {
+                $(`#fl-${artillery.f_id}`).remove();
+                if (Object.keys(this.artillery).length == 0) {
+                    $(`#force-artillery`).hide('medium','swing');
+                    setTimeout(() => {
+                        $(`#force-artillery`).empty();
+                    }, 500)
+                }
+            }, 500)
+        });
+    }
+
+    // Updates the ForceList's fightingCount and civilianCount properties by iterating through
+    // an arrays of ForceList.characters and counting the 1/2 ['charactertype'] values.
+    updateCharacterTypeCount() {
+        this.fightingCount = 0;
+        this.civilianCount = 0;
+        const charactersArray = Object.values(this.characters);
+        charactersArray.forEach((character) => {
+            if (character['charactertype'] == 1) {
+                this.fightingCount ++
+            }
+            else if (character['charactertype'] == 2) {
+                this.civilianCount ++
+            }
+        })
+    }
+
+    checkForCharacter(id) {
+        const charactersArray = Object.values(this.characters);
+        // If this character is already present in the ForceList, return false to prevent adding a second.
+        for (const character of charactersArray) {
+            // DO A COUNT IN HERE AND EXCLUDE CHARACTERS THAT CAN BE FIELDED WITH OTHER CHARACTERS
+            // THEN AT THE END RETURN false IF (count >= Object.keys(this.units))
+            if (id == character.id) {
+                return false
+            }
+        }
+        return true
+    }
+
+    addCharacter(newCharacter) {
+        if (this.checkForCharacter(newCharacter.id)) {
+            newCharacter['f_id'] = this.generateId()
+            this.characters[`${newCharacter.f_id}`] = newCharacter
+            this.updateCharacterTypeCount();
+            this.updateTotalForcePoints();
+            this.displayCharacter(this.characters[`${newCharacter.f_id}`]);
+        }
+    }
+
+    removeCharacter(f_id) {
+        delete this.characters[`${f_id}`];
+        this.updateCharacterTypeCount();
+        this.updateTotalForcePoints();
+    }
+
+    updateAllCharactersCost() {
+        let allCharactersCost = 0;
+        const characters = this.characters;
+        for (const f_id in characters) {
+            allCharactersCost = allCharactersCost + this.characters[`${f_id}`].points;
+        }
+        this.allCharactersCost = allCharactersCost;
+    }
+
+    displayCharacter(character) {
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']).attr('id',`fl-${character.f_id}`);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(character.name);    
+        nameColumn.append(itemName);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${character.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
+        expandColumn.html(`
+                <a href='#fl-${character.f_id}-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='fl-${character.f_id}-expand'></i>
+                </a>
+                `);
+        const removeColumn = $('<div>').addClass(['col-1']).html(`
+        <a href='#/' role='button'>
+            <i class='fa-solid fa-xmark text-primary' id='fl-${character.f_id}-remove'></i>
+        </a>
+        `) 
+        cardHeader.append([nameColumn,pointColumn, expandColumn, removeColumn]);
+        // Beginning of Card Details.
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${character.f_id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
+        // Beginning of Nationality/Faction restrictions for Character.
+        const forceRestrictions = $('<div>').addClass('mt-1');
+        if (character.nonatives) {
+            const noNatives = $('<div>').addClass('text-secondary').html('This Character is available to all Factions, except for Native American Factions.');
+            forceRestrictions.append(noNatives);
+        }
+        else {
+            if (character.certainnations) {
+                const certainNations = $('<div>');
+                if ((character.nationalityList).length == 1) {
+                    const nationality = character.nationalityList[0];
+                    const nationsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Nation: ${nationality.name}.`);
+                    certainNations.append(nationsList);
+                }
+                else {
+                    const nationsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Nations:`);
+                    for (const [i, nationality] of character.nationalityList.entries()) {
+                        if (i+1 == character.nationalityList.length) {
+                            const newNationality = ` and ${nationality.name}.`;
+                            nationsList.append(newNationality);
+                        }
+                        else {
+                            const newNationality = ` ${nationality.name},`;
+                            nationsList.append(newNationality);
+                        }
+                    }
+                    certainNations.append(nationsList);
+                }
+                forceRestrictions.append(certainNations);
+            }
+            if (character.certainfactions) {
+                const certainFactions = $('<div>');
+                if ((character.factionList).length == 1) {
+                    const faction = character.factionList[0];
+                    const factionsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Faction: ${faction.name}`);
+                    certainFactions.append(factionsList);
+                }
+                else {
+                    const factionsList = $('<div>').addClass('text-secondary').html(`This Character is available to the following Factions:`);
+                    for (const [i, faction] of character.factionList.entries()) {
+                        if (i+1 == character.factionList.length) {
+                            const newFaction = ` and ${faction.name}.`;
+                            factionsList.append(newFaction);
+                        }
+                        else {
+                            const newFaction = ` ${faction.name},`;
+                            factionsList.append(newFaction);
+                        }
+                    }
+                    certainFactions.append(factionsList);
+                }
+                forceRestrictions.append(certainFactions);
+            }
+            if (character.certainnations == 0 && character.certainfactions == 0) {
+                const allFactions = $('<div>').addClass('text-secondary').html('This Character is available to all Factions.');
+                forceRestrictions.append(allFactions);
+            }
+        }
+        cardDetails.append(forceRestrictions);
+        // Beginning of command point data for Character.
+        if (character.commandpoints > 0) {
+            const commandPointData = $('<div>');
+            const pointsRange = $('<div>').addClass('row');
+            const commandPoints = $('<div>').addClass('col-6').html(`Command Points: ${character.commandpoints}`);
+            const commandRange = $('<div>').addClass('col-6').html(`Command Range: ${character.commandrange}"`);
+            pointsRange.append(commandPoints,commandRange);
+            commandPointData.append(pointsRange);
+            if (character.commandpointconditions) {
+                const commandPointConditions = $('<div>').html(character.commandpointconditions);
+                commandPointData.append(commandPointConditions);
+            }
+            cardDetails.append(commandPointData);
+        }
+        // Beginning of Unit/Commander restrictions for Character.
+        if (character.unitrestrictions) {
+            const itemrestrictions = $('<div>').addClass(['m-0 p-0 mt-2']).html(`<b>Unit Restrictions:</b><p>${character.unitrestrictions}</p>`);
+            cardDetails.append(itemrestrictions);
+        }
+        // Beginning of extra abilities for Character
+        if (character.extraabilities) {
+            const additionalRules = $('<div>').addClass(['m-0 p-0']).html(`<b>Additional Rules:</b>${character.extraabilities}`);
+            cardDetails.append(additionalRules);
+        }
+        // Beginning of special rules for Character.
+        if (character.specialrule.length > 0) {
+            const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const specialrulesHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
+            specialruleExpandColumn.html(`
+                <a href='#fl-${character.f_id}-specialrules-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='fl-${character.f_id}-specialrules-expand'></i>
+                </a>
+            `);
+            specialrulesHeader.append([descColumn, specialruleExpandColumn]);
+            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${character.f_id}-specialrules-details`)
+            for (const rule of character.specialrule) {
+                const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
+                specialrulessDetails.append(newRule);
+            }
+            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            cardDetails.append(specialruleCard);
+        }
+        // End of Character information
+        cardBody.append(cardHeader, cardDetails);
+        newItem.append(cardBody);
+        // Add Character to appropriate display.
+        if (character.charactertype == 1) {
+            if (this.fightingCount == 1) {
+                const containerName = $('<div>').addClass('fell text-primary fs-5').text('Fighting Men & Women');
+                $('#force-fighting-characters').prepend(containerName);
+                $('#force-fighting-characters').show('medium','swing');
+            }
+            $('#force-fighting-characters').append(newItem);
+        }
+        else if (character.charactertype == 2) {
+            if (this.civilianCount == 1) {
+                const containerName = $('<div>').addClass('fell text-primary fs-5').text('Hostages & Advisors');
+                $('#force-civilian-characters').prepend(containerName);
+                $('#force-civilian-characters').show('medium','swing');
+            }$('#force-civilian-characters').append(newItem);
+        }
+        // Handle expanding/contracting of item information.
+        $(`#fl-${character.f_id}-expand`).parent().on('click', () => {
+            $(`#fl-${character.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+        // Handle removal of Character from ForceList.
+        $(`#fl-${character.f_id}-remove`).parent().on('click', () => {
+            let thisCharacterType;
+            if (character.charactertype == 1) {
+                thisCharacterType = 'fighting';
+            }
+            else if (character.charactertype == 2) {
+                thisCharacterType = 'civilian';
+            }
+            this.removeCharacter(character.f_id);
+            $(`#fl-${character.f_id}`).hide('medium','swing');
+            setTimeout(() => {
+                $(`#fl-${character.f_id}`).remove();
+                if (this[`${thisCharacterType}Count`] == 0) {
+                    $(`#force-${thisCharacterType}-characters`).hide('medium','swing');
+                    setTimeout(() => {
+                        $(`#force-${thisCharacterType}-characters`).empty();
+                    }, 500)
+                }
+            }, 500)
+        });
+    }
+
+    addShip(newShip) {
+        newShip['f_id'] = this.generateId()
+        newShip['totalCost'] = newShip.points;
+        this.ships[`${newShip.f_id}`] = newShip
+        this.updateTotalForcePoints();
+        this.displayShip(this.ships[`${newShip.f_id}`]);
+    }
+
+    removeShip(f_id) {
+        delete this.ships[`${f_id}`];
+        this.updateTotalForcePoints();
+    }
+
+    updateShipCost(f_id) {
+        this.ships[`${f_id}`].totalCost = this.ships[`${f_id}`].points;
+        this.updateTotalForcePoints();
+        $(`#fl-${f_id}-total-cost`).html(this.ships[`${f_id}`].totalCost);
+    }
+
+    updateAllShipsCost() {
+        let allShipsCost = 0;
+        const ships = this.ships;
+        for (const f_id in ships) {
+            allShipsCost = allShipsCost + this.ships[`${f_id}`].totalCost;
+        }
+        this.allShipsCost = allShipsCost;
+    }
+
+    displayShip(ship) {
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']).attr('id',`fl-${ship.f_id}`);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-8']);
+        const itemName = $('<h5>').addClass(['card-title']).text(ship.name);    
+        nameColumn.append(itemName);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${ship.points} pts`);
+        const expandColumn = $('<div>').addClass(['col-1']);
+        expandColumn.html(`
+            <a href='#fl-${ship.f_id}-details' role='button' data-bs-toggle='collapse'>
+                <i class='fa-solid fa-chevron-down' id='fl-${ship.f_id}-expand'></i>
+            </a>
+            `);
+        const removeColumn = $('<div>').addClass(['col-1']).html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-xmark' id='fl-${ship.f_id}-remove'></i>
+            </a>
+            `);
+        cardHeader.append([nameColumn,pointColumn, expandColumn, removeColumn]);
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${ship.f_id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
+        const leftBox = $('<div>').addClass('col-8').html(`
+            <div><b>Size:</b> ${ship.size}</div>
+            <div><b>Draft:</b> ${ship.draft}</div>
+            <div><b>Speed:</b> ${ship.topspeed}</div>
+            <div><b>Windward:</b> ${ship.windward}</div>
+            <div><b>Turn:</b> ${ship.turn}</div>
+            <div><b>Sail Settings:</b> ${ship.sailssettings}</div>
+        `);
+        if (ship.swivels > 0 || ship.cannons > 0) {
+            const deckPlan = $('<div>');
+            const dpHeader = $('<div>').addClass('row');
+            const labelColumn = $('<div>').addClass(`col-${(7-ship.size)}`)
+            const headerLabel = $('<div>').html('<b>Deck</b>');
+            labelColumn.append(headerLabel);
+            const n_of_cols = 12 / ship.size;
+            const dataColumn = $('<div>').addClass(`col-${(5+ship.size)}`);
+            const headerColumns = $('<div>').addClass('row');
+            for (let i = 0; i < ship.size; i++) {
+                const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`<b>${i+1}</b>`);
+                headerColumns.append(newColumn);
+            }
+            dataColumn.append(headerColumns);
+            dpHeader.append(labelColumn, dataColumn);
+            if (ship.cannons > 0) {
+                const gunsLabel = $('<div>').html('Guns');
+                labelColumn.append(gunsLabel);
+                const gunsData = $('<div>').addClass('row');
+                const gunsPerDeck = ship.cannonsdecks.split('/');
+                for (let i = 0; i < ship.size; i++) {
+                    const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${gunsPerDeck[i]}`);
+                    gunsData.append(newColumn);
+                }
+                dataColumn.append(gunsData);
+            }
+            if (ship.swivels > 0) {
+                const swivelsLabel = $('<div>').html('Swivels');
+                labelColumn.append(swivelsLabel);
+                const swivelsData = $('<div>').addClass('row');
+                const swivelsPerDeck = ship.swivelsdecks.split('/');
+                for (let i = 0; i < ship.size; i++) {
+                    const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${swivelsPerDeck[i]}`);
+                    swivelsData.append(newColumn);
+                }
+                dataColumn.append(swivelsData);
+            }
+
+            deckPlan.append(dpHeader);
+            leftBox.append(deckPlan);
+        }
+        const rightBox = $('<div>').addClass('col-4');
+        const hull = $('<div>').html('<b>Hull</b>');
+        for (let i = 0; i < ship.hullfortitude; i++) {
+            const newDiv = $('<div>');
+            if (i == (ship.hullfortitude - 1)) {
+                newDiv.append(`${ship.hullfortitude - i}`);
+            }
+            else {
+                for (let n = 0; n < ship.hullintegrity; n++) {
+                    newDiv.append(`${ship.hullfortitude - i} `);
+                }
+            }
+            hull.append(newDiv);
+            rightBox.append(hull);
+        }
+        if (ship.riggingfortitude > 0) {
+            const rigging = $('<div>').addClass('mt-2').html('<b>Rigging</b>');
+            for (let i = 0; i < ship.riggingfortitude; i++) {
+                const newDiv = $('<div>');
+                if (i == (ship.riggingfortitude - 1)) {
+                    newDiv.append(`${ship.riggingfortitude - i}`);
+                }
+                else {
+                    for (let n = 0; n < ship.riggingintegrity; n++) {
+                        newDiv.append(`${ship.riggingfortitude - i} `);
+                    }
+                }
+                rigging.append(newDiv);
+                rightBox.append(rigging);
+            }
+        }
+        const topBox = $('<div>').addClass('row');
+        topBox.append(leftBox,rightBox);
+        cardDetails.append(topBox);
+        if (ship.specialrule.length > 0) {
+            const specialrulesCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const shipSpecialrulesHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mt-1 mb-0'>Traits</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
+            specialruleExpandColumn.html(`
+                <a href='#fl-${ship.f_id}-specialrules-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='fl-${ship.f_id}-specialrules-expand'></i>
+                </a>
+            `);
+            shipSpecialrulesHeader.append([descColumn, specialruleExpandColumn]);
+            const shipSpecialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${ship.f_id}-specialrules-details`)
+            for (const sr of ship.specialrule) {
+                const newSpecialrule = $('<li>').html(`<b>${sr.name}:</b> ${sr.details}`);
+                shipSpecialrulesDetails.append(newSpecialrule);
+            }
+            specialrulesCard.append(shipSpecialrulesHeader, shipSpecialrulesDetails);
+            cardDetails.append(specialrulesCard);
+        }
+        if (ship.upgrade.length > 0) {
+            const upgradeCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const upgradeHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mt-1 mb-0'>Upgrades</h5>`);
+            const upgradeExpandColumn = $('<div>').addClass(['col-1']);
+            upgradeExpandColumn.html(`
+                <a href='#fl-${ship.f_id}-upgrades-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='fl-${ship.f_id}-upgrades-expand'></i>
+                </a>
+            `);
+            upgradeHeader.append([descColumn, upgradeExpandColumn]);
+            const shipUpgradeDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${ship.f_id}-upgrades-details`)
+            for (const u of ship.upgrade) {
+                const newUpgrade = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${ship.f_id}-upgrade-${u.id}'> <b>${u.name}</b> (${u.pointcost} pts)`);
+                const upgradeDetails = $('<div>').html(`${u.details}`);
+                newUpgrade.append(upgradeDetails);
+                shipUpgradeDetails.append(newUpgrade);
+            }
+            upgradeCard.append(upgradeHeader, shipUpgradeDetails);
+            cardDetails.append(upgradeCard);
+        }
+        cardBody.append(cardHeader, cardDetails);
+        newItem.append(cardBody);
+        if (Object.keys(this.ships).length == 1) {
+            const componentName = $('<div>').addClass('fell text-primary fs-5').text('Ships');
+            $('#force-ships').prepend(componentName);
+            $('#force-ships').show('medium','swing');
+        }
+        $(`#force-ships`).append(newItem);
+        // Handle expanding/contracting of item information.
+        $(`#fl-${ship.f_id}-expand`).parent().on('click', () => {
+            $(`#fl-${ship.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+        if (ship.specialrule.length > 0) {
+            // Handle expanding/contracting of item information.
+            $(`#fl-${ship.f_id}-specialrules-expand`).parent().on('click', () => {
+                $(`#fl-${ship.f_id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            });            
+        }
+        if (ship.upgrade.length > 0) {
+            // Handle expanding/contracting of item information.
+            $(`#fl-${ship.f_id}-upgrades-expand`).parent().on('click', () => {
+                $(`#fl-${ship.f_id}-upgrades-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            });
+        }
+        // Handle removal of Ship from ForceList.
+        $(`#fl-${ship.f_id}-remove`).parent().on('click', () => {
+            this.removeShip(ship.f_id);
+            $(`#fl-${ship.f_id}`).hide('medium','swing');
+            setTimeout(() => {
+                $(`#fl-${ship.f_id}`).remove();
+                if (Object.keys(this.ships).length == 0) {
+                    $(`#force-ships`).hide('medium','swing');
+                    setTimeout(() => {
+                        $(`#force-ships`).empty();
+                    }, 500)
+                }
+            }, 500)
+        });
+    }
+
+    // Updates the ForceList's coreCount and supportCount properties by iterating through
+    // an arrays of ForceList.units and counting the core/support ['class'] values.
+    updateUnitClassCount() {
+        this.coreCount = 0;
+        this.supportCount = 0;
+        const unitsArray = Object.values(this.units);
+        unitsArray.forEach((element) => {
+            if (element['class'] == 'core') {
+                this.coreCount ++
+            }
+            else if (element['class'] == 'support') {
+                this.supportCount ++
+            }
+        })
+    }
+
+    addUnit(newUnit) {
+        newUnit['f_id'] = this.generateId();
+        newUnit['qty'] = this.unitMin;
+        newUnit['modelsCost'] = newUnit.points * newUnit.qty;
+        newUnit['perUnitCost'] = 0;
+        newUnit['totalUnitCost'] = newUnit.modelsCost + newUnit.perUnitCost;
+        if (this.faction.unitClass[`${newUnit.id}`] == 1) {
+            newUnit['class'] = 'core';
+        }
+        else if (this.faction.unitClass[`${newUnit.id}`] == 2) {
+            newUnit['class'] = 'support';
+        }
+        this.units[`${newUnit.f_id}`] = newUnit;
+        this.updateUnitClassCount();
+        this.updateTotalForcePoints();
+        this.displayUnit(this.units[`${newUnit.f_id}`]);
+    }
+
+    removeUnit(f_id) {
+        delete this.units[`${f_id}`];
+        this.updateUnitClassCount();     
+        this.updateTotalForcePoints();
+    }
+
+    emptyUnits() {
+        $('#force-core-units').hide('medium','swing');
+        $('#force-support-units').hide('medium','swing');
+        setTimeout(() => {
+            $('#force-core-units').empty();
+            $('#force-support-units').empty();
+        }, 500);
+        this.units = {}
+        this.updateUnitClassCount();     
+        this.updateTotalForcePoints();       
+    }
+
+    // Update the ForceList's unit size range (unitMin and unitMax)
+    // based on ForceList.maxpoints and updates UI display.
+    updateUnitSize() {
+        this.unitMin = Math.floor(this.maxPoints / 100) + 2;
+        this.unitMax = (Math.floor(this.maxPoints / 100) + 1)*4;
+        $unitSizeRangeDisplay.html(`<i>${this.unitMin} to ${this.unitMax} models per unit</i>`);
+    }
+
+    // Takes a ForceList's unit's unique identifier and recalculates the
+    // unit's total unit cost using points (per model), qty, and perUnitCost.
+    updateUnitCost(f_id) {
+        this.units[`${f_id}`].modelsCost = this.units[`${f_id}`].points * this.units[`${f_id}`].qty;
+        this.units[`${f_id}`].totalUnitCost = this.units[`${f_id}`].modelsCost + this.units[`${f_id}`].perUnitCost;
+        this.updateTotalForcePoints();
+        $(`#fl-${f_id}-qty`).html(this.units[`${f_id}`].qty);
+        $(`#fl-${f_id}-total-cost`).html(this.units[`${f_id}`].totalUnitCost);
+    }
+
+    updateAllUnitsCost() {
+        let allUnitsCost = 0;
+        const units = this.units;
+        for (const f_id in units) {
+            allUnitsCost = allUnitsCost + this.units[`${f_id}`].totalUnitCost;
+        }
+        this.allUnitsCost = allUnitsCost;
+    }
+
+    // Iterate through units in ForceList and if Qty is not in range, adjust to min/max.
+    setUnitsToRange() {
+        const units = this.units;
+        for (const f_id in units) {
+            this.updateUnitQty(f_id);
+            this.updateUnitCost(f_id);
+        }
+    }
+
+    // Takes a ForceList's unit's unique identifier and changes the unit's
+    // qty to unitMin if currently below, or to unitMax if currently above.
+    updateUnitQty(f_id) {
+        const unit = this.units[f_id];
+        if (unit.qty < this.unitMin) {
+            this.units[`${f_id}`].qty = this.unitMin;
+        }
+        else if (unit.qty > this.unitMax) {
+            this.units[`${f_id}`].qty = this.unitMax;
+        }
+    }
+
+    // Takes a ForceList's unit's unique identifier with a positive or
+    // negative integer and adjusts the unit's qty, id change would be in range.
+    adjustUnitQty(f_id,adj) {
+        if (this.units[`${f_id}`].qty + adj < this.unitMin || this.units[`${f_id}`].qty + adj > this.unitMax) {
+            return
+        }
+        else {
+            this.units[`${f_id}`].qty = this.units[`${f_id}`].qty + adj;
+            this.updateUnitCost(f_id);
+        }
+    }
+
+    displayUnit(unit) {
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']).attr('id',`fl-${unit.f_id}`);
+        const cardBody = $('<div>').addClass(['card-body']);
+        const cardHeader = $('<div>').addClass(['container-fluid']);
+        const topRow = $('<div>').addClass(['row mb-0 gy-0'])
+        const nameColumn = $('<div>').addClass(['col-10']);
+        const itemName = $('<h5>').addClass(['card-title']).text(unit.name);    
+        nameColumn.append(itemName);
+        const expandColumn = $('<div>').addClass(['col-1']);
+        expandColumn.html(`
+            <a href='#fl-${unit.f_id}-details' role='button' data-bs-toggle='collapse'>
+                <i class='fa-solid fa-chevron-down' id='fl-${unit.f_id}-expand'></i>
+            </a>
+            `);
+        const removeColumn = $('<div>').addClass(['col-1']);
+        removeColumn.html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-xmark text-primary' id='fl-${unit.f_id}-remove'></i>
+            </a>
+            `)
+        topRow.append([nameColumn,expandColumn,removeColumn]);
+        const secondRow =  $('<div>').addClass(['row mt-0 gy-0']);
+        const pointsEach = $('<div>').addClass(['col-3 d-flex align-items-end']).html(`<span class='text-secondary fs-5' id='fl-${unit.f_id}-points'>${unit.points}</span>&nbsp;pts ea`);
+        const pointAdjuster = $('<div>').addClass(['col-3 d-flex align-items-end']);
+            const subtractModel = $('<span>').html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-minus text-secondary align-self-center' id='fl-${unit.f_id}-subtract-model'></i>
+            </a>
+            `)
+            const modelQty = $(`<span id='fl-${unit.f_id}-qty'>`).addClass(['fs-5 ms-2 me-2']).html(`${unit.qty}`);
+            const addModel = $('<span>').html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-plus text-secondary align-self-center' id='fl-${unit.f_id}-add-model'></i>
+            </a>
+            `)
+            pointAdjuster.append(subtractModel,modelQty,addModel);
+        const perUnitCost = $('<div>').addClass(['col-3 d-flex align-items-end justify-content-middle']).html(`+ <span class='text-secondary fs-5' id='fl-${unit.f_id}-per-cost'>${unit.perUnitCost}</span>&nbsp;pts`);
+        const pointsUnit = $('<div>').addClass(['col-3 text-center text-primary fs-5']).html(`<span class='text-secondary' id='fl-${unit.f_id}-total-cost'>${unit.totalUnitCost}</span> pts`);
+        secondRow.append(pointsEach,pointAdjuster,perUnitCost,pointsUnit);
+        cardHeader.append(topRow,secondRow);
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${unit.f_id}-details`).html(`
+            <hr class='border border-2 border-primary rounded-2'>
+            <div class='row'>
+                <div class='col-4'>
+                    <b>Fight:</b> ${unit.fightskill} / ${unit.fightsave}
+                </div>
+                <div class='col-4'>
+                    <b>Shoot:</b> ${unit.shootskill} / ${unit.shootsave}
+                </div>
+                <div class='col-4'>
+                    <b>Resolve:</b> ${unit.resolve}
+                </div>
+            </div>
+            <div class='mt-1'>
+                <b>Main Weapons</b>:
+                <div class='mt-0'>${unit.mainweapons}</div>
+            </div>
+        `);
+        if (unit.sidearms) {
+            const sidearms = $('<div>').addClass('mt-1').html(`<b>Sidearms</b>: ${unit.sidearms}`);
+            cardDetails.append(sidearms);
+        }
+        if (unit.equipment) {
+            const equipment = $('<div>').addClass('mt-1').html(`<b>Equiment</b>: ${unit.equipment}`);
+            cardDetails.append(equipment);
+        }
+        if (unit.option.length > 0) {
+            const optionsCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const unitOptionsHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Unit Options</h5>`);
+            const optionExpandColumn = $('<div>').addClass(['col-1']);
+            optionExpandColumn.html(`
+                <a href='#fl-${unit.f_id}-options-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='fl-${unit.f_id}-options-expand'></i>
+                </a>
+            `);
+            unitOptionsHeader.append([descColumn, optionExpandColumn]);
+            const unitOptionsDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${unit.f_id}-options-details`)
+            for (const o of unit.option) {
+                let newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${unit.f_id}-option-${o.id}'> ${o.details}`);
+                unitOptionsDetails.append(newOption);
+            }
+            optionsCard.append(unitOptionsHeader, unitOptionsDetails);
+            cardDetails.append(optionsCard);
+        }
+        if (unit.specialrule.length > 0) {
+            const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const specialrulesHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
+            specialruleExpandColumn.html(`
+                <a href='#fl-${unit.f_id}-specialrules-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='fl-${unit.f_id}-specialrules-expand'></i>
+                </a>
+            `);
+            specialrulesHeader.append([descColumn, specialruleExpandColumn]);
+            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${unit.f_id}-specialrules-details`)
+            for (const rule of unit.specialrule) {
+                const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
+                specialrulessDetails.append(newRule);
+            }
+            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            cardDetails.append(specialruleCard);
+        }
+        cardBody.append(cardHeader, cardDetails);
+        newItem.append(cardBody);
+        if (unit.class == 'core') {
+            if (this.coreCount == 1) {
+                const containerName = $('<div>').addClass('fell text-primary fs-5').text('Core Units');
+                $('#force-core-units').prepend(containerName);
+                $('#force-core-units').show('medium','swing');
+            }
+            $('#force-core-units').append(newItem);
+        }
+        else if (unit.class == 'support') {
+            if (this.supportCount == 1) {
+                const containerName = $('<div>').addClass('fell text-primary fs-5').text('Support Units');
+                $('#force-support-units').prepend(containerName);
+                $('#force-support-units').show('medium','swing');
+            }$('#force-support-units').append(newItem);
+        }
+        // Handle expanding/contracting of item information.
+        $(`#fl-${unit.f_id}-expand`).parent().on('click', () => {
+            $(`#fl-${unit.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+        if (unit.option.length > 0) {
+            // Handle expanding/contracting of item information.
+            $(`#fl-${unit.f_id}-options-expand`).parent().on('click', () => {
+                $(`#fl-${unit.f_id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            });            
+        }
+        if (unit.specialrule.length > 0) {
+            // Handle expanding/contracting of item information.
+            $(`#fl-${unit.f_id}-specialrules-expand`).parent().on('click', () => {
+                $(`#fl-${unit.f_id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            });
+        }
+        // Handle removal of unit from ForceList.
+        $(`#fl-${unit.f_id}-remove`).parent().on('click', () => {
+            const thisUnitClass = unit.class;
+            this.removeUnit(unit.f_id);
+            $(`#fl-${unit.f_id}`).hide('medium','swing');
+            setTimeout(() => {
+                $(`#fl-${unit.f_id}`).remove();
+                if (this[`${thisUnitClass}Count`] == 0) {
+                    $(`#force-${thisUnitClass}-units`).hide('medium','swing');
+                    setTimeout(() => {
+                        $(`#force-${thisUnitClass}-units`).empty();
+                    }, 500)
+                }
+            }, 500)
+        });
+        // Handle minus button to subtract model from unit.
+        $(`#fl-${unit.f_id}-subtract-model`).on('click', () => {
+            this.adjustUnitQty(unit.f_id,-1);
+        });
+        // Handle plus button to add model to unit.
+        $(`#fl-${unit.f_id}-add-model`).on('click', () => {
+            this.adjustUnitQty(unit.f_id,1);
         });
     }
 }
@@ -485,14 +1396,18 @@ class Artillery {
         const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
         const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
-            <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
-                <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
-            </button>
+            <a href='#artillery-${this.id}-details' role='button' data-bs-toggle='collapse'>
+                <i class='fa-solid fa-chevron-down' id='artillery-${this.id}-expand'></i>
+            </a>
             `);
             const addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus'></i>`)
+        addColumn.html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-plus text-primary'  id='artillery-${this.id}-add'></i>
+            </a>
+            `)
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `artillery-${this.id}-details`).html(`
             <hr class='border border-2 border-primary rounded-2'>
             <div class='row'>
                 <div class='col-7'>
@@ -524,8 +1439,14 @@ class Artillery {
         newItem.append(cardBody);
         $('#menu-item-container').append(newItem);
         // Handle expanding/contracting of item information.
-        $(`#misc-${this.id}-expand`).parent().on('click', () => {
-            $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        $(`#artillery-${this.id}-expand`).parent().on('click', () => {
+            $(`#artillery-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+        // Handle button for adding artillery to ForceList.
+        $(`#artillery-${this.id}-add`).parent().on('click', (e) => {
+            e.preventDefault();
+            const artilleryToAdd = new Artillery(this);
+            forceList.addArtillery(artilleryToAdd);
         });
     }
 }
@@ -634,15 +1555,18 @@ class Character {
         const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
         const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
-                <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
-                </button>
+                <a href='#character-${this.id}-details' role='button' data-bs-toggle='collapse'>
+                    <i class='fa-solid fa-chevron-down' id='character-${this.id}-expand'></i>
+                </a>
                 `);
-        const addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
+        const addColumn = $('<div>').addClass(['col-1']).html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-plus' id='character-${this.id}-add'></i>
+            </a>
+            `);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
         // Beginning of Card Details.
-        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `character-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
         // Beginning of Nationality/Faction restrictions for Character.
         const forceRestrictions = $('<div>').addClass('mt-1');
         if (this.nonatives) {
@@ -735,7 +1659,7 @@ class Character {
             specialruleExpandColumn.html(`
                 <a href='#character-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='character-${this.id}-specialrules-expand'></i>
-                </button>
+                </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
             const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `character-${this.id}-specialrules-details`)
@@ -746,10 +1670,10 @@ class Character {
             specialruleCard.append(specialrulesHeader, specialrulessDetails);
             cardDetails.append(specialruleCard);
         }
-        // End of Chcracter information
+        // End of Character information
         cardBody.append(cardHeader, cardDetails);
         newItem.append(cardBody);
-        // Add Character to appropriate div.
+        // Add Character to appropriate div of menu display.
         if (this.charactertype == 1) {
             $('#fighting-man-characters').append(newItem);
         }
@@ -757,12 +1681,17 @@ class Character {
             $('#hostage-advisor-characters').append(newItem);
         }
         // Handle expanding/contracting of item information.
-        $(`#misc-${this.id}-expand`).parent().on('click', () => {
-            $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        $(`#character-${this.id}-expand`).parent().on('click', () => {
+            $(`#character-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        });
+        // Handle button for adding ship to ForceList.
+        $(`#character-${this.id}-add`).parent().on('click', (e) => {
+            e.preventDefault();
+            const characterToAdd = new Character(this);
+            forceList.addCharacter(characterToAdd);
         });
     }
 }
-
 
 class Ship {
     constructor(item) {
@@ -809,6 +1738,7 @@ class Ship {
         this.upgrade = shipUpgrades;
     }
 
+    // Display method for Ships on the menu side.
     display() {
         const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
         const cardBody = $('<div>').addClass(['card-body']);
@@ -821,10 +1751,13 @@ class Ship {
         expandColumn.html(`
             <a href='#ship-${this.id}-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='ship-${this.id}-expand'></i>
-            </button>
+            </a>
             `);
-        const addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
+        const addColumn = $('<div>').addClass(['col-1']).html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-plus' id='ship-${this.id}-add'></i>
+            </a>
+            `);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
         const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
         const leftBox = $('<div>').addClass('col-8').html(`
@@ -872,7 +1805,6 @@ class Ship {
                 }
                 dataColumn.append(swivelsData);
             }
-
             deckPlan.append(dpHeader);
             leftBox.append(deckPlan);
         }
@@ -905,7 +1837,6 @@ class Ship {
                 }
                 rigging.append(newDiv);
                 rightBox.append(rigging);
-
             }
         }
         const topBox = $('<div>').addClass('row');
@@ -919,7 +1850,7 @@ class Ship {
             specialruleExpandColumn.html(`
                 <a href='#ship-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='ship-${this.id}-specialrules-expand'></i>
-                </button>
+                </a>
             `);
             shipSpecialrulesHeader.append([descColumn, specialruleExpandColumn]);
             const shipSpecialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-specialrules-details`)
@@ -938,7 +1869,7 @@ class Ship {
             upgradeExpandColumn.html(`
                 <a href='#ship-${this.id}-upgrades-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='ship-${this.id}-upgrades-expand'></i>
-                </button>
+                </a>
             `);
             upgradeHeader.append([descColumn, upgradeExpandColumn]);
             const shipUpgradeDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `ship-${this.id}-upgrades-details`)
@@ -971,6 +1902,12 @@ class Ship {
                 $(`#ship-${this.id}-upgrades-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
+        // Handle button for adding ship to ForceList.
+        $(`#ship-${this.id}-add`).parent().on('click', (e) => {
+            e.preventDefault();
+            const shipToAdd = new Ship(this);
+            forceList.addShip(shipToAdd);
+        });
     }
 }
 
@@ -1020,6 +1957,7 @@ class Unit {
         this.option = unitOptions;
     }
 
+    // Display method for Unit objects.
     display() {
         const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
         const cardBody = $('<div>').addClass(['card-body']);
@@ -1030,14 +1968,18 @@ class Unit {
         const pointColumn = $('<div>').addClass(['col-2']).html(`${this.points} pts`);
         const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
-            <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
-                <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
-            </button>
+            <a href='#unit-${this.id}-details' role='button' data-bs-toggle='collapse'>
+                <i class='fa-solid fa-chevron-down' id='unit-${this.id}-expand'></i>
+            </a>
             `);
             const addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
+        addColumn.html(`
+            <a href='#/' role='button'>
+                <i class='fa-solid fa-plus text-primary'  id='unit-${this.id}-add'></i>
+            </a>
+            `);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
-        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`
+        const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-details`).html(`
             <hr class='border border-2 border-primary rounded-2'>
             <div class='row'>
                 <div class='col-4'>
@@ -1071,7 +2013,7 @@ class Unit {
             optionExpandColumn.html(`
                 <a href='#unit-${this.id}-options-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='unit-${this.id}-options-expand'></i>
-                </button>
+                </a>
             `);
             unitOptionsHeader.append([descColumn, optionExpandColumn]);
             const unitOptionsDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-options-details`)
@@ -1090,7 +2032,7 @@ class Unit {
             specialruleExpandColumn.html(`
                 <a href='#unit-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='unit-${this.id}-specialrules-expand'></i>
-                </button>
+                </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
             const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-specialrules-details`)
@@ -1113,8 +2055,8 @@ class Unit {
             $('#support-units').append(newItem);
         }
         // Handle expanding/contracting of item information.
-        $(`#misc-${this.id}-expand`).parent().on('click', () => {
-            $(`#misc-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+        $(`#unit-${this.id}-expand`).parent().on('click', () => {
+            $(`#unit-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
         if (this.option.length > 0) {
             // Handle expanding/contracting of item information.
@@ -1128,7 +2070,13 @@ class Unit {
                 $(`#unit-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
-        }
+        // Handle button for adding unit to ForceList.
+        $(`#unit-${this.id}-add`).parent().on('click', (e) => {
+            e.preventDefault();
+            const unitToAdd = new Unit(this);
+            forceList.addUnit(unitToAdd);
+        });
+    }
 }
 
 
@@ -1150,11 +2098,11 @@ class Misc {
             expandColumn.html(`
                 <a href='#misc-${this.id}-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='misc-${this.id}-expand'></i>
-                </button>
+                </a>
                 `);
         }
         const addColumn = $('<div>').addClass(['col-1']);
-        addColumn.html(`<i class='fa-solid fa-plus' ></i>`);
+        addColumn.html(``);
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
         const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `misc-${this.id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
         if (this.details) {
@@ -1269,7 +2217,6 @@ $(window).ready(async function() {
             $selectNationality.append($('<option></option>').val(nation.id).text(nation.name)); 
         }
     });
-    $('#force-name').text(forceList.name);
     $('#main-area').show('slow','swing');
 });
 
@@ -1284,7 +2231,7 @@ $forceName.on('keyup', () => {
 })
 
 $pointMax.on('keyup', () => {
-    forceList.updateUnitSize();
+    forceList.updateMaxPoints();
 });
 
 // Handle Nationality selector dropdown.
@@ -1351,7 +2298,6 @@ $selectFaction.on('change', async function() {
 
 // Handle menu component (artillery, characters, units, etc) dropdown.
 $componentSelector.on('change', async function() {
-    console.log($componentSelector.val());
     // Get string identifier for component type.
     const selected = $componentSelector.val();
     if (sessionStorage.getItem(`${selected}`) == null) {

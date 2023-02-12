@@ -104,43 +104,62 @@
                         <hr class='border border-secondary border-3 rounded-2 opacity-100'>
                         <div class='row'>
                             <div class='col-6'>
-                                <ul class='fell text-info fs-5'><span class='type-shadow'>DO NEXT / TODAY</span>
-                                    <li>Clean up special rules table and relations.</li>
-                                    <li>Check data packing function string things.</li>
-                                </ul>
-                                <ul class='fell text-info fs-5'><span class='type-shadow'>DONE SINCE SUNDAY</span>
-                                    <li>Added User functionality.</li>
-                                    <li class='text-primary'>Finished change/removal effects for Nation/Faction/Commander/ComponentSelector.</li>
-                                    <li class='text-primary'>Fixed bug where clicking near expander icon would sometimes work without changing the icon.</li>
-                                    <li class='text-primary'>Organized models.py</li>
-                                    <li class='text-primary'>Updated front end Character display so only viable choices are visible. Major update to Character menu display.</li>
-                                    <li class='text-primary'>Fixed commander lists so that full lists are available for each nation (required multi to multi data).</li>
-                                    <li class='text-primary'>Split up character.details disordered information into 10 new columns.</li>
-                                    <li class='text-primary'>Data entry for new connecting tables.</li>
-                                    <li class='text-primary'>Added multi-multi db structure for commandernationality, characternationality, characterfaction, and characterspecialrule.</li>
-                                    <li class='text-primary'>Removed some unneeded records and table columns from db.</li>
-                                    <li class='text-primary'>Added functionality for updating and storing max points and unit size range.</li>
-                                    <li class='text-primary'>Refactored to add classes for Nationality, Faction, and Commander.</li>
-                                    <li class='text-primary'>Added basic navbar with styling.</li>
-                                </ul>
+                                <div class='container p-1 bg-info border border-5 border-secondary rounded-3'>
+                                    <div class='container text-primary fell fs-4'>DO NEXT / TODAY</div>
+                                    <ul class='fell text-secondary fs-5'>
+                                        <li>Figure out Unorthodox Force situation and add data/functionality in.</li>
+                                        <li>Add column to characters and use to filter for those that don't count towards limit/s. Then update addCharacter().</li>
+                                        <li>Clean up special rules table and relations.</li>
+                                        <li>Check data packing function string things.</li>
+                                    </ul>
+                                    <div class='container text-primary fell fs-4'>DESIRED FOR RELEASE</div>
+                                    <ul class='fell text-secondary fs-5'>
+                                        <li>Add point-cost support for unit options and ship upgrades.</li>
+                                        <li>Add assign functionality for force list items.</li>
+                                        <li>Add save functionality for force lists.</li>
+                                        <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
+                                        <li>Prevent Natives from seeing / selecting ships they shouldn't take.</li>
+                                    </ul>
+                                    <div class='container text-primary fell fs-4'>MORE PRIORITY TASKS</div>
+                                    <ul class='fell text-secondary fs-5'>
+                                        <li>Integrate misc items into db and ui.</li>
+                                        <li>Better sorting.</li>
+                                        <li>Add settings/details dropdown for forcelist name.</li>
+                                        <li>Add theme change functionality via dropdowns.</li>
+                                        <li>Make fully responsive and finish up styling.</li>
+                                        <li>Auto-save option.</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class='col-6'>
-                                <ul class='fell text-info fs-5'><span class='type-shadow'>REQUIRED FOR RELEASE</span>
-                                    <li>Get the +'s working.</li>
-                                    <li>Create build displays for all components. (Achieve by end of Fri)</li>
-                                    <li>Add remove functionality to build displays.</li>
-                                    <li>Add qty functionality to build displays.</li>
-                                    <li>Add assign functionality to build displays.</li>
-                                    <li>Add save functionality for force lists.</li>
-                                    <li>Polish welcome div.</li>
-                                </ul>
-                                <ul class='fell text-info fs-5'><span class='type-shadow'>MORE TO DO</span>
-                                    <li>Better sorting.</li>
-                                    <li>Add settings/details dropdown for forcelist name.</li>
-                                    <li>Add theme change functionality via dropdowns.</li>
-                                    <li>Make fully responsive and finish up styling.</li>
-                                    <li>Auto-save option.</li>
-                                </ul>
+                                <div class='container bg-info border border-5 border-secondary rounded-3'>
+                                    <div class='container text-primary fell fs-4'>COMPLETED THIS WEEK</div>
+                                    <div class='container text-secondary fell fs-5'>NOT PUSHED</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Characters can now be added to ForceLists with full functionality and integration. User is prevented from adding two of the same Character to a ForceList.</li>
+                                        <li>Ships can now be added to ForceLists with full functionality and integration other than upgrade boxes (same with unit option boxes).</li>
+                                        <li>Artillery can now be added to ForceLists with full functionality and integration.</li>
+                                        <li>Points/cost now updates in both object and display when Units are added or their Qty is changed.</li>
+                                        <li>Unit Qty is now restricted to the ForceList's unitMin and unitMax. When the point total field is changed by user, any ForceList Units with invalid Qty will automatically update to min/max.</li>
+                                        <li>Units can now be added to ForceLists with full functionality for qty changes, removal, and information expanders.</li>
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Added User functionality.</li>
+                                        <li>Finished change/removal effects for Nation/Faction/Commander/ComponentSelector.</li>
+                                        <li>Fixed bug where clicking near expander icon would sometimes work without changing the icon.</li>
+                                        <li>Organized models.py</li>
+                                        <li>Updated front end Character display so only viable choices are visible. Major update to Character menu display.</li>
+                                        <li>Fixed commander lists so that full lists are available for each nation (required multi to multi data).</li>
+                                        <li>Split up character.details disordered information into 10 new columns.</li>
+                                        <li>Data entry for new connecting tables.</li>
+                                        <li>Added multi-multi db structure for commandernationality, characternationality, characterfaction, and characterspecialrule.</li>
+                                        <li>Removed some unneeded records and table columns from db.</li>
+                                        <li>Added functionality for updating and storing max points and unit size range.</li>
+                                        <li>Refactored to add classes for Nationality, Faction, and Commander.</li>
+                                        <li>Added basic navbar with styling.</li>
+                                    </ul>
+                                </div>
                             </div>                            
                         </div>
                     </div>
@@ -166,36 +185,29 @@
                             
                             <div class='fill-screen-scrollable'>
                                 <div class='rounded-2 text-center force-selector-field border border-2 border-secondary'>
-                                    <i id='force-name' class='fs-5'></i>
+                                    <div class='row'>
+                                        <div class='col-8'>
+                                            <i id='force-name' class='fs-5'></i>
+                                        </div>
+                                        <div class='col-4'>
+                                             <span id='point-total-display'></span>&nbsp;/&nbsp;
+                                             <span id='point-max-display'></span>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div id='force-info'>
-                                    <div class='collapse card m-1 border border-2 border-secondary' id='force-faction'></div>
-                                    <div class='collapse card m-1 border border-2 border-secondary' id='force-commander'></div>
+                                    <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-faction'></div>
+                                    <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-commander'></div>
+                                    <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-core-units'></div>
+                                    <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-support-units'></div>
+                                    <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-fighting-characters'></div>
+                                    <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-civilian-characters'></div>
+                                    <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-ships'></div>
+                                    <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-artillery'></div>
+                                    <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-misc'></div>
                                 </div>
-    
-                                <div class='collapse card m-1 border border-2 border-secondary' id='force-characters'>
-            
-                                </div>
-    
-                                <div class='collapse card m-1 border border-2 border-secondary' id='force-units'>
-            
-                                </div>
-                                
-                                <div class='collapse card m-1 border border-2 border-secondary' id='force-artillery'>
-            
-                                </div>
-
-                                <div class='collapse card m-1 border border-2 border-secondary' id='force-ships'>
-            
-                                </div>
-
-                                <div class='collapse card m-1 border border-2 border-secondary' id='force-misc'>
-            
-                                </div>
-                            
                             </div>
-
                         </div>
                     </div>
                 </div>
