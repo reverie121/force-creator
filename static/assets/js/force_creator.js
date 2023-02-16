@@ -479,9 +479,7 @@ class ForceList {
         const charactersArray = Object.values(this.characters);
         // If this character is already present in the ForceList, return false to prevent adding a second.
         for (const character of charactersArray) {
-            // DO A COUNT IN HERE AND EXCLUDE CHARACTERS THAT CAN BE FIELDED WITH OTHER CHARACTERS
-            // THEN AT THE END RETURN false IF (count >= Object.keys(this.units))
-            if (id == character.id) {
+            if (id == character.id && id != 39) { // Disclude Praying Indian
                 return false
             }
         }
@@ -686,6 +684,7 @@ class ForceList {
 
     addShip(newShip) {
         newShip['f_id'] = this.generateId()
+        newShip['upgradeCost'] = 0;
         newShip['totalCost'] = newShip.points;
         this.ships[`${newShip.f_id}`] = newShip
         this.updateTotalForcePoints();
@@ -698,7 +697,7 @@ class ForceList {
     }
 
     updateShipCost(f_id) {
-        this.ships[`${f_id}`].totalCost = this.ships[`${f_id}`].points;
+        this.ships[`${f_id}`].totalCost = this.ships[`${f_id}`].points + this.ships[`${f_id}`].upgradeCost;
         this.updateTotalForcePoints();
         $(`#fl-${f_id}-total-cost`).html(this.ships[`${f_id}`].totalCost);
     }
@@ -712,14 +711,46 @@ class ForceList {
         this.allShipsCost = allShipsCost;
     }
 
+    handleShipUpgrade(f_id, u) {
+        if ($(`#fl-${f_id}-upgrade-${u.id}`).prop('checked')) {
+            u.selected = 1;
+            this.ships[`${f_id}`].upgradeCost += u.pointcost;
+            this.updateShipCost(f_id);
+            $(`#fl-${f_id}-cost`).html(`${this.ships[`${f_id}`].totalCost} pts`);
+            if (u.name.startsWith('Streamlined Hull')) {
+                this.ships[`${f_id}`].draft += 1;
+                $(`#fl-${f_id}-draft`).html(`${this.ships[`${f_id}`].draft}`)
+            }
+            else if (u.name.startsWith('Improved Rig')) {
+                this.ships[`${f_id}`].topspeed += 1;
+                $(`#fl-${f_id}-speed`).html(`${this.ships[`${f_id}`].topspeed}`)
+            }
+        }
+        else {
+            u.selected = 0;
+            this.ships[`${f_id}`].upgradeCost -= u.pointcost;
+            this.updateShipCost(f_id);
+            $(`#fl-${f_id}-cost`).html(`${this.ships[`${f_id}`].totalCost} pts`);
+            if (u.name.startsWith('Streamlined Hull')) {
+                this.ships[`${f_id}`].draft -= 1;
+                $(`#fl-${f_id}-draft`).html(`${this.ships[`${f_id}`].draft}`)
+            }                        
+            else if (u.name.startsWith('Improved Rig')) {
+                this.ships[`${f_id}`].topspeed -= 1;
+                $(`#fl-${f_id}-speed`).html(`${this.ships[`${f_id}`].topspeed}`)
+            }
+        }
+    }
+
     displayShip(ship) {
         const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']).attr('id',`fl-${ship.f_id}`);
         const cardBody = $('<div>').addClass(['card-body']);
         const cardHeader = $('<div>').addClass(['row']);
         const nameColumn = $('<div>').addClass(['col-8']);
-        const itemName = $('<h5>').addClass(['card-title']).text(ship.name);    
+        const itemName = $('<input>').addClass(['h5 card-title border-0 bg-info text-primary']).attr({'type':'text','id':`fl-${ship.f_id}-nickname`,'value':`${ship.nickname}`});    
+        // const itemName = $('<h5>').addClass(['card-title']).text(ship.name);    
         nameColumn.append(itemName);
-        const pointColumn = $('<div>').addClass(['col-2']).html(`${ship.points} pts`);
+        const pointColumn = $('<div>').addClass(['col-2']).html(`${ship.points} pts`).attr('id',`fl-${ship.f_id}-cost`);
         const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
             <a href='#fl-${ship.f_id}-details' role='button' data-bs-toggle='collapse'>
@@ -734,9 +765,10 @@ class ForceList {
         cardHeader.append([nameColumn,pointColumn, expandColumn, removeColumn]);
         const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${ship.f_id}-details`).html(`<hr class='border border-2 border-primary rounded-2'>`);
         const leftBox = $('<div>').addClass('col-8').html(`
+            <div>${ship.name}</div>
             <div><b>Size:</b> ${ship.size}</div>
-            <div><b>Draft:</b> ${ship.draft}</div>
-            <div><b>Speed:</b> ${ship.topspeed}</div>
+            <div><b>Draft:</b> <span id='fl-${ship.f_id}-draft'>${ship.draft}</span></div>
+            <div><b>Speed:</b> <span id='fl-${ship.f_id}-speed'>${ship.topspeed}</span>"</div>
             <div><b>Windward:</b> ${ship.windward}</div>
             <div><b>Turn:</b> ${ship.turn}</div>
             <div><b>Sail Settings:</b> ${ship.sailssettings}</div>
@@ -848,6 +880,7 @@ class ForceList {
             upgradeHeader.append([descColumn, upgradeExpandColumn]);
             const shipUpgradeDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${ship.f_id}-upgrades-details`)
             for (const u of ship.upgrade) {
+                u['selected'] = 0;
                 const newUpgrade = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${ship.f_id}-upgrade-${u.id}'> <b>${u.name}</b> (${u.pointcost} pts)`);
                 const upgradeDetails = $('<div>').html(`${u.details}`);
                 newUpgrade.append(upgradeDetails);
@@ -868,6 +901,10 @@ class ForceList {
         $(`#fl-${ship.f_id}-expand`).parent().on('click', () => {
             $(`#fl-${ship.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
+        // Handle updates to nickname.
+        $(`#fl-${ship.f_id}-nickname`).on('keyup', () => {
+            this.ships[`${ship.f_id}`]['nickname'] = $(`#fl-${ship.f_id}-nickname`).val();
+        });
         if (ship.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#fl-${ship.f_id}-specialrules-expand`).parent().on('click', () => {
@@ -879,6 +916,12 @@ class ForceList {
             $(`#fl-${ship.f_id}-upgrades-expand`).parent().on('click', () => {
                 $(`#fl-${ship.f_id}-upgrades-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
+            // Handle checking/unchecking upgrades.
+            for (const u of ship.upgrade) {
+                $(`#fl-${ship.f_id}-upgrade-${u.id}`).on('click',() => {
+                    this.handleShipUpgrade(ship.f_id, u);
+                })
+            }
         }
         // Handle removal of Ship from ForceList.
         $(`#fl-${ship.f_id}-remove`).parent().on('click', () => {
@@ -962,7 +1005,9 @@ class ForceList {
         this.units[`${f_id}`].modelsCost = this.units[`${f_id}`].points * this.units[`${f_id}`].qty;
         this.units[`${f_id}`].totalUnitCost = this.units[`${f_id}`].modelsCost + this.units[`${f_id}`].perUnitCost;
         this.updateTotalForcePoints();
+        $(`#fl-${f_id}-points`).html(this.units[`${f_id}`].points);
         $(`#fl-${f_id}-qty`).html(this.units[`${f_id}`].qty);
+        $(`#fl-${f_id}-per-cost`).html(this.units[`${f_id}`].perUnitCost);
         $(`#fl-${f_id}-total-cost`).html(this.units[`${f_id}`].totalUnitCost);
     }
 
@@ -1004,7 +1049,94 @@ class ForceList {
         }
         else {
             this.units[`${f_id}`].qty = this.units[`${f_id}`].qty + adj;
+            this.units[`${f_id}`].perxmodels = 0;
+            for (const o in this.units[`${f_id}`].option) {
+                if (o.perxmodels && o.selected) {
+                    this.units[`${f_id}`].perUnitCost += Math.floor(this.units[`${f_id}`].qty / o.perxmodels) * o.pointcost;
+                }
+                else if (o.pointsperunit && o.selected) {
+                    this.units[`${f_id}`].perUnitCost += o.pointsperunit;
+                }
+            }
             this.updateUnitCost(f_id);
+        }
+    }
+
+    adjustUnitCost(f_id, o, addsubtract) {
+        if ((o.pointcost) && (!o.perxmodels)) {
+            this.units[`${f_id}`].points += o.pointcost * addsubtract;
+        }
+        if (o.perxmodels) {
+            this.units[`${f_id}`].perUnitCost += Math.floor(this.units[`${f_id}`].qty / o.perxmodels) * o.pointcost * addsubtract;
+        }
+        if (o.pointsperunit) {
+            this.units[`${f_id}`].perUnitCost += o.pointsperunit * addsubtract
+        }
+        this.updateUnitCost(f_id);
+    }
+
+    handleUnitOption(f_id, o) {
+        // If Upgrade is selected...
+        if ($(`#fl-${f_id}-option-${o.id}`).prop('checked')) {
+            o.selected = 1;
+            this.adjustUnitCost(f_id, o, 1);
+            if (o.experienceupg) {
+                this.units[f_id].experience_id += o.experienceupg;
+                this.units[f_id].setUnitExperienceName();
+                $(`#fl-${f_id}-exp-name`).html(this.units[`${f_id}`].experience_name);
+            }
+            // Apply this upgrade change to all like units if appropriate.
+            if (o.applyall && Object.keys(forceList.units).length > 1) {
+                for (const unit in this.units) {
+                    if (this.units[`${unit}`].id == this.units[`${f_id}`].id && unit != f_id) {
+                        let option;
+                        for (const opt of this.units[`${unit}`].option) {
+                            if (opt.id == o.id) {
+                                option = opt;
+                            }
+                        }
+                        option.selected = 1;
+                        $(`#fl-${unit}-option-${o.id}`).prop('checked', true);
+                        this.adjustUnitCost(unit, option, 1);
+                        if (o.experienceupg) {
+                            this.units[`${unit}`].experience_id += o.experienceupg;
+                            this.units[`${unit}`].setUnitExperienceName();
+                            $(`#fl-${unit}-exp-name`).html(this.units[`${unit}`].experience_name);
+                        }
+                    }
+                }
+            }
+        }
+        // If Upgrade is deselected...
+        else {
+            o.selected = 0;
+            this.adjustUnitCost(f_id, o, -1);
+            if (o.experienceupg) {
+                this.units[f_id].experience_id -= o.experienceupg;
+                this.units[f_id].setUnitExperienceName();
+                $(`#fl-${f_id}-exp-name`).html(this.units[`${f_id}`].experience_name);
+            }
+            // Apply this upgrade change to all like units if appropriate.
+            if (o.applyall && Object.keys(forceList.units).length > 1) {
+                for (const unit in this.units) {
+                    if (this.units[`${unit}`].id == this.units[`${f_id}`].id && unit != f_id) {
+                        let option;
+                        for (const opt of this.units[`${unit}`].option) {
+                            if (opt.id == o.id) {
+                                option = opt;
+                            }
+                        }
+                        option.selected = 0;
+                        $(`#fl-${unit}-option-${o.id}`).prop('checked', false);
+                        this.adjustUnitCost(unit, option, -1);
+                        if (o.experienceupg) {
+                            this.units[`${unit}`].experience_id -= o.experienceupg;
+                            this.units[`${unit}`].setUnitExperienceName();
+                            $(`#fl-${unit}-exp-name`).html(this.units[`${unit}`].experience_name);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1014,7 +1146,7 @@ class ForceList {
         const cardHeader = $('<div>').addClass(['container-fluid']);
         const topRow = $('<div>').addClass(['row mb-0 gy-0'])
         const nameColumn = $('<div>').addClass(['col-10']);
-        const itemName = $('<h5>').addClass(['card-title']).text(unit.name);    
+        const itemName = $('<input>').addClass(['h5 card-title border-0 bg-info text-primary']).attr({'type':'text','id':`fl-${unit.f_id}-nickname`,'value':`${unit.nickname}`});    
         nameColumn.append(itemName);
         const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
@@ -1050,18 +1182,20 @@ class ForceList {
         cardHeader.append(topRow,secondRow);
         const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${unit.f_id}-details`).html(`
             <hr class='border border-2 border-primary rounded-2'>
+            <div class='container'>${unit.name}</div>
+            <div class='container'><i id='fl-${unit.f_id}-exp-name'>${unit.experience_name}</i></div>
             <div class='row'>
-                <div class='col-4'>
+                <div class='col-4 text-center'>
                     <b>Fight:</b> ${unit.fightskill} / ${unit.fightsave}
                 </div>
-                <div class='col-4'>
+                <div class='col-4 text-center'>
                     <b>Shoot:</b> ${unit.shootskill} / ${unit.shootsave}
                 </div>
-                <div class='col-4'>
+                <div class='col-4 text-center'>
                     <b>Resolve:</b> ${unit.resolve}
                 </div>
             </div>
-            <div class='mt-1'>
+            <div class='container mt-1'>
                 <b>Main Weapons</b>:
                 <div class='mt-0'>${unit.mainweapons}</div>
             </div>
@@ -1085,8 +1219,9 @@ class ForceList {
                 </a>
             `);
             unitOptionsHeader.append([descColumn, optionExpandColumn]);
-            const unitOptionsDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${unit.f_id}-options-details`)
+            const unitOptionsDetails = $('<div>').addClass(['collapse','card-text']).attr('id', `fl-${unit.f_id}-options-details`)
             for (const o of unit.option) {
+                o['selected'] = 0;
                 let newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${unit.f_id}-option-${o.id}'> ${o.details}`);
                 unitOptionsDetails.append(newOption);
             }
@@ -1104,7 +1239,7 @@ class ForceList {
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${unit.f_id}-specialrules-details`)
+            const specialrulessDetails = $('<ul>').addClass(['collapse','card-text']).attr('id', `fl-${unit.f_id}-specialrules-details`)
             for (const rule of unit.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
                 specialrulessDetails.append(newRule);
@@ -1129,6 +1264,10 @@ class ForceList {
                 $('#force-support-units').show('medium','swing');
             }$('#force-support-units').append(newItem);
         }
+        // Handle updates to nickname.
+        $(`#fl-${unit.f_id}-nickname`).on('keyup', () => {
+            this.units[`${unit.f_id}`]['nickname'] = $(`#fl-${unit.f_id}-nickname`).val();
+        });
         // Handle expanding/contracting of item information.
         $(`#fl-${unit.f_id}-expand`).parent().on('click', () => {
             $(`#fl-${unit.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
@@ -1137,7 +1276,13 @@ class ForceList {
             // Handle expanding/contracting of item information.
             $(`#fl-${unit.f_id}-options-expand`).parent().on('click', () => {
                 $(`#fl-${unit.f_id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
-            });            
+            });
+            // Handle checking/unchecking of options.
+            for (const o of unit.option) {
+                $(`#fl-${unit.f_id}-option-${o.id}`).on('click',() => {
+                    this.handleUnitOption(unit.f_id, o);
+                })
+            }
         }
         if (unit.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
@@ -1696,6 +1841,7 @@ class Character {
 class Ship {
     constructor(item) {
         Object.assign(this, item);
+        this.nickname = this.name;
         this.setShipSpecialruleIDs();
         this.setShipSpecialrules();
         this.setShipUpgrades();
@@ -1915,9 +2061,11 @@ class Ship {
 class Unit {
     constructor(item) {
         Object.assign(this, item);
+        this.nickname = this.name
         this.setUnitSpecialruleIDs();
         this.setUnitSpecialrules();
         this.setUnitOptions();
+        this.setUnitExperienceName();
     }
 
     setUnitSpecialruleIDs() {
@@ -1942,6 +2090,16 @@ class Unit {
             }
         }
         this.specialrule = specialruleList;
+    }
+
+    setUnitExperienceName() {
+        if (this.experience_id == 1) {
+            this.experience_name ='Inexperienced';
+        } else if (this.experience_id == 2) {
+            this.experience_name ='Trained';
+        } else if (this.experience_id == 3) {
+            this.experience_name ='Veteran';
+        }
     }
 
     setUnitOptions() {
@@ -1981,14 +2139,15 @@ class Unit {
         cardHeader.append([nameColumn,pointColumn, expandColumn, addColumn]);
         const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-details`).html(`
             <hr class='border border-2 border-primary rounded-2'>
+            <div><i>${this.experience_name}</i></div>
             <div class='row'>
-                <div class='col-4'>
+                <div class='col-4 text-center'>
                     <b>Fight:</b> ${this.fightskill} / ${this.fightsave}
                 </div>
-                <div class='col-4'>
+                <div class='col-4 text-center'>
                     <b>Shoot:</b> ${this.shootskill} / ${this.shootsave}
                 </div>
-                <div class='col-4'>
+                <div class='col-4 text-center'>
                     <b>Resolve:</b> ${this.resolve}
                 </div>
             </div>

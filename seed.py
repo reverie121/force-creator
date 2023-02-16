@@ -32,6 +32,11 @@ tables.append({'table_name': 'characternationality', 'table_columns': ['id', 'ch
 tables.append({'table_name': 'characterfaction', 'table_columns': ['id', 'character_id', 'faction_id']})
 tables.append({'table_name': 'characterspecialrule', 'table_columns': ['id', 'character_id', 'specialrule_id']})
 
+
+# Instantiate lists for commandereffect and factioneffect
+commandereffects = []
+factioneffects = []
+
 # Repeat same process for every file in the specified directory.
 for filename in os.listdir(directory):
     f = os.path.join(directory, filename)
@@ -83,9 +88,9 @@ for filename in os.listdir(directory):
                 df['certainnations'] = 0
                 df['certainfactions'] = 0
                 df['certaincommanders'] = 0
-            
+                df['breaklimits'] = 0
+                df['onlywithcommander'] = 0
             # Move data around in character table.
-            if table_name == 'character':
                 with engine.connect() as con:
                     # Change character type to 2 for Hostages/Advisors.
                     df.loc[df['name'].str.contains('Hostage'), 'charactertype'] = 2
@@ -93,7 +98,7 @@ for filename in os.listdir(directory):
                     df.loc[df['details'].str.contains('Any but Native'), 'nonatives'] = 1
                     # Change certain_commanders to 1 for Characters that require a specific commander.
                     df.loc[df['details'].str.contains('May only be included in a Force commanded by'), 'certaincommanders'] = 1
-                    # Remove everything from the character name from character.name.
+                    # Remove everything but the character name from character.name.
                     # Must happen after character type data applied to new column.
                     df['name'].replace(to_replace = ['Character - ','\(Fighting Man\)','\(Fighting Man','\(Fighting Ma','\(Hostage/Advisor\)'],value = ['','','','',''], inplace=True, regex=True)
                     for i_y in df.index:
@@ -152,12 +157,15 @@ for filename in os.listdir(directory):
                                     else:                                    
                                         abilities = current + '<p class="mt-0 mb-0">' + line + '</p>'
                                     df.iat[i_y,i_x] = abilities
+                    # Musician, Standard Bearer, and Drummer Boy do not count towards normal Character limits.
+                    df.loc[df['id'].isin([11,17,66]), 'breaklimits'] = 1
+                    # Change to 1 for characters that must share a unit with the Force Commander.                    
+                    df.loc[df['id'].isin([11,17,61]), 'onlywithcommander'] = 1
+                    df.loc[df['charactertype'] == 2, 'onlywithcommander'] = 1                    
+                    # Drop unused columns
                     df.drop(columns = ['details', 'model', 'uifolder', 'sort'], inplace=True)
 
-            column_names = [] # To be used later for FK assignments.
-            df_schema = {} # To be used later when df is converted to a table in the db.
-            
-            if table_name == 'commander':
+            elif table_name == 'commander':
                 with engine.connect() as con:
                     for row in df.iterrows():
                         nationality_id = df.columns.get_loc('nationality_id')
@@ -165,53 +173,136 @@ for filename in os.listdir(directory):
                             con.execute(f'INSERT INTO commandernationality(commander_id,nationality_id, primary_nationality) VALUES({row[1][0]}, {int(row[1][nationality_id])}, true);')
                     df.drop(columns = ['nationality_id'], inplace = True)
 
-            # Iterate through table columns.
-            for col in df.columns:
-                column_names.append(col)
+            elif table_name == 'faction':
+                df['attacker_roll_bonus'] = 0
+                # Change character type to 2 for Hostages/Advisors.
+                df.loc[df['id'].isin([2,5,7,9,12,13,14,21,24,27,41,45,57,62,69,70,79,82,83,89,91,94,103,108]), 'attacker_roll_bonus'] = 2
+                df.loc[df['id'].isin([3,6,8,43,44,53,81,87,92]), 'attacker_roll_bonus'] = 3
+                df.loc[df['id'].isin([22,25,39,74,76,85]), 'attacker_roll_bonus'] = 4
+
+            # Add columns to forceoption table to account for minimum unit requirements and mounted commander requirement.
+            elif table_name == 'forceoption':
+                df['unit_qty_req'] = 0
+                df['unit_id'] = 0
+                df['req_mounted_commander'] = 0
+                df.loc[df['details'].str.contains('at least'), 'unit_qty_req'] = 2
+                df.loc[df['id'].isin([20,24]), 'unit_id'] = 16
+                df.loc[df['id'].isin([1,51]), 'unit_id'] = 43
+                df.loc[df['id'].isin([14,61]), 'unit_id'] = 26
+                df.loc[df['id'].isin([23]), 'unit_id'] = 18
+                df.loc[df['id'].isin([10,39,59]), 'unit_id'] = 32
+                df.loc[df['id'].isin([1,10,14,23,39,51,59,61]), 'req_mounted_commander'] = 1
+
+            elif table_name == 'forcespecialrule':
+                with open(f, 'r') as file:
+                    # Add faction special rules from FotF and RtB to forcespecialrule df from faction df.
+                    df2 = pd.read_csv('bp_data/faction.csv')
+                    newId = 119
+                    for row in df2.itertuples():
+                        faction_id = row[1]
+                        if faction_id >= 54:
+                            specialrules = row[4]
+                            specialrulesList = specialrules.strip().splitlines()
+                            for line in specialrulesList:
+                                if not 'Force Special Rules' in line:
+                                    factionRule = line[2:].strip()
+                                    df.loc[len(df.index)] = [newId, faction_id, factionRule, 0]
+                                    newId += 1
+                    # Standardize text for bonuses for roll to determine attacker.
+                    df.loc[df['id'].isin([7,16,29,33,41,55,65,68,206,231,232,255,257]), 'details'] = 'This Force adds +2 when determining the attacker in a scenario.'
+                    df.loc[df['id'].isin([19,22,63,73]), 'details'] = 'This Force adds +3 when determining the attacker in a scenario.'
+
+            elif table_name == 'ship':
+                df['topspeed'] = df['topspeed'].str[:-1].astype(int)
+
+            # These tables to be restructured and renamed.
+            if table_name == 'unorthodoxforce' or table_name == 'unorthodoxoption':
+                commander_portion = df.loc[df['commander_id'] > 0].copy()
+                faction_portion = df.loc[df['forceoption_id'] > 0].copy()
+                if table_name == 'unorthodoxoption':
+                    commander_portion.loc[commander_portion['unitoption_id'] == 0, 'unitoption_id'] = np.NaN
+                    faction_portion.loc[faction_portion['unitoption_id'] == 0, 'unitoption_id'] = np.NaN
+                commandereffects.append(commander_portion)
+                factioneffects.append(faction_portion)
+
+            else:
+                column_names = [] # To be used later for FK assignments.
+                df_schema = {} # To be used later when df is converted to a table in the db.
+
+                # Iterate through table columns.
+                for col in df.columns:
+                    column_names.append(col)
+                    
+                    # Add columns to schema to define their data types.
+                    if col == 'name':
+                        df_schema['name'] = String(80)
+                    elif col == 'details':
+                        df_schema['details'] = Text
+                    elif df[f'{col}'].dtype == 'int64':
+                        df_schema[f'{col}'] = Integer
+                    else:
+                        df_schema[f'{col}'] = VARCHAR
+                    
+                    # In rows to be used for FK constraints replace value 0 with NaN (will be null in db).
+                    if '_id' in col:
+                        for ind in df.index:
+                            if df[col][ind] == 0:
+                                df[col].replace(0, np.NaN, inplace=True)
+
+                # Add table name to list for foreign key assignment later.
+                tables.append({'table_name': table_name, 'table_columns': column_names})
+
+                # In rows to be used for FK constraints replace value 0 with NaN (will be null in db). NO LONGER NEEDED
+                # for col in df.columns:
+                #     if '_id' in col:
+                #         for ind in df.index:
+                #             if df[col][ind] == 0:
+                #                 df[col].replace(0, np.NaN, inplace=True)
+
+                ### End Data Cleanup ###
+
+                # Add dataframe to db as table.
+                # If table already present, replaces previous data.
+                df.to_sql(table_name, engine, if_exists='replace', index= False, dtype= df_schema)
                 
-                # Add columns to schema to define their data types.
-                if col == 'name':
-                    df_schema['name'] = String(80)
-                elif col == 'details':
-                    df_schema['details'] = Text
-                elif df[f'{col}'].dtype == 'int64':
-                    df_schema[f'{col}'] = Integer
-                else:
-                    df_schema[f'{col}'] = VARCHAR
-                
-                # In rows to be used for FK constraints replace value 0 with NaN (will be null in db).
-                if '_id' in col:
-                    for ind in df.index:
-                        if df[col][ind] == 0:
-                            df[col].replace(0, np.NaN, inplace=True)
+                # Set 'id' column as table's Primary Key.
+                with engine.connect() as con:
+                    con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')
 
-            # Add table name to list for foreign key assignment later.
-            tables.append({'table_name': table_name, 'table_columns': column_names})
+                # if table_name == 'commander':
+                #     with engine.connect() as con:
+                #         for row in df.iterrows():
+                #             if row[1][7] > 0: # Add data from commander table to commandernationality table.
+                #                 con.execute(f'INSERT INTO commandernationality(commander_id,nationality_id, primary_nationality) VALUES({row[1][0]}, {int(row[1][7])}, true);')
 
-            # In rows to be used for FK constraints replace value 0 with NaN (will be null in db). NO LONGER NEEDED
-            # for col in df.columns:
-            #     if '_id' in col:
-            #         for ind in df.index:
-            #             if df[col][ind] == 0:
-            #                 df[col].replace(0, np.NaN, inplace=True)
+        except Exception as e: print(f'* * * * * * * * * * {e} * * * * * * * * * *')
 
-            ### End Data Cleanup ###
+commandereffect = pd.concat(commandereffects)
+factioneffect = pd.concat(factioneffects)
+# commandereffect.reset_index(drop=True).to_sql('commandereffect', engine, if_exists='replace', index=False, dtype= df_schema)
+# factioneffect.reset_index(drop=True).to_sql('factioneffect', engine, if_exists='replace', index=False, dtype= df_schema)
 
-            # Add dataframe to db as table.
-            # If table already present, replaces previous data.
-            df.to_sql(table_name, engine, if_exists='replace', index= False, dtype= df_schema)
-            
-            # Set 'id' column as table's Primary Key.
-            with engine.connect() as con:
-                con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')
+table_name = ''
+for df in [commandereffect,factioneffect]:
+    df.reset_index(drop=True)
+    for col in df.columns:
+        if '_id' in col:
+            df[col].replace(0, np.NaN, inplace=True)
+    if not table_name:
+        df.drop(columns = 'forceoption_id', inplace=True)
+        column_names=['id','commander_id','name','details','addsubtract','unit_id','unitclass_id','unitoption_id']    
+        df_schema = {'id': Integer, 'commander_id': Integer, 'name': String(80), 'details': Text, 'addsubtract': Integer, 'unit_id': Integer, 'unitclass_id': Integer, 'unitoption_id': Integer}
+        table_name = 'commandereffect'
+    else:
+        df.drop(columns = 'commander_id', inplace=True)
+        column_names=['id','forceoption_id','name','details','addsubtract','unit_id','unitclass_id','unitoption_id']    
+        df_schema = {'id': Integer, 'forceoption_id': Integer, 'name': String(80), 'details': Text, 'addsubtract': Integer, 'unit_id': Integer, 'unitclass_id': Integer, 'unitoption_id': Integer}
+        table_name = 'factioneffect'
+    tables.append({'table_name': table_name, 'table_columns': column_names})
+    df.to_sql(table_name, engine, if_exists='replace', index= False, dtype= df_schema)
+    # with engine.connect() as con:
+    #                     con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')    
 
-            # if table_name == 'commander':
-            #     with engine.connect() as con:
-            #         for row in df.iterrows():
-            #             if row[1][7] > 0: # Add data from commander table to commandernationality table.
-            #                 con.execute(f'INSERT INTO commandernationality(commander_id,nationality_id, primary_nationality) VALUES({row[1][0]}, {int(row[1][7])}, true);')
-                
-        except Exception as e: print(e)
 
 # ******************** END DATA CLEANUP AND DB POPULATION ********************
 
@@ -247,8 +338,7 @@ with engine.connect() as con:
     con.execute('DELETE FROM faction WHERE id = 17 OR id = 30;')
     con.execute('DELETE FROM commander WHERE id = 56 OR id = 128;')
     con.execute('DELETE FROM unit WHERE id = 21 OR id = 50 OR id = 58 OR id = 65 OR id = 83 OR id = 96;')
-    # Remove Unorthdox Force records from Specialrules
-    con.execute('DELETE FROM specialrule WHERE id = 128 OR id = 49 OR id = 127 OR id = 62 OR id = 82 OR id = 64 OR id = 81 OR id = 48 OR id = 63')
+    # con.execute('DELETE FROM unorthodoxoption WHERE id = 25 OR id = 33 OR id = 34')
     # Set certainnations and certainfactions to 1 (true) for character records, as appropriate.
     con.execute('UPDATE character SET certainnations = 1 WHERE id IN (37,39,40,41,42,53,54,55,56,57,58,59,61,63,68,69);')
     con.execute('UPDATE character SET certainfactions = 1 WHERE (id IN (38,40,41,55,56,61,63,67,70) OR id BETWEEN 43 AND 52);')
