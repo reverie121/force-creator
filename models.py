@@ -480,6 +480,44 @@ class Misc(db.Model):
 
 #################### FC Supplemental Table Models ####################
 
+class CommanderClass(db.Model):
+    """ CommanderClass Model.
+        Provides id names (Standard/Historic/Legendary) """
+
+    __tablename__ = "commanderclass"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    name = db.Column(db.VARCHAR)
+
+    def __repr__(self):
+        return f'<CommanderClass {self.id} {self.name}>'
+
+class CommanderEffect(db.Model):
+    """ CommanderEffect Model.
+        Effects changes to ForceList based on Commander selection."""
+
+    __tablename__ = "commandereffect"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    commander_id = db.Column(db.Integer, db.ForeignKey(
+        'commander.id', ondelete='SET NULL'))
+    name = db.Column(db.VARCHAR)
+    details = db.Column(db.Text)
+    addsubtract = db.Column(db.Integer)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id'))
+    unitclass_id = db.Column(db.Integer, db.ForeignKey(
+        'unitclass.id'))
+    unitoption_id = db.Column(db.Integer, db.ForeignKey(
+        'unitoption.id'))
+
+    def __repr__(self):
+        return f'<CommanderEffect {self.id}>'
+
 class Experience(db.Model):
     """ Experience Model. """
 
@@ -493,6 +531,31 @@ class Experience(db.Model):
 
     def __repr__(self):
         return f'<Experience {self.id} {self.name}>'
+
+class FactionEffect(db.Model):
+    """ FactionEffect Model.
+        Effects changes to ForceList based on Faction option selection."""
+
+    __tablename__ = "factioneffect"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    forceoption_id = db.Column(db.Integer, db.ForeignKey(
+        'forceoption.id', ondelete='SET NULL'))
+    name = db.Column(db.VARCHAR)
+    details = db.Column(db.Text)
+    addsubtract = db.Column(db.Integer)
+    applyall = db.Column(db.Integer)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id'))
+    unitclass_id = db.Column(db.Integer, db.ForeignKey(
+        'unitclass.id'))
+    unitoption_id = db.Column(db.Integer, db.ForeignKey(
+        'unitoption.id'))
+
+    def __repr__(self):
+        return f'<CommanderEffect {self.id}>'
 
 class FactionUnitclass(db.Model):
     """ FactionUnitClass Model.
@@ -531,61 +594,6 @@ class Specialrule(db.Model):
 
     def __repr__(self):
         return f'<Specialrule {self.id} {self.name}>'
-
-class UnorthodoxForce(db.Model):
-    """ UnorthodoxForce Model. """
-
-    __tablename__ = "unorthodoxforce"
-
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    commander_id = db.Column(db.Integer, db.ForeignKey(
-        'commander.id', ondelete='SET NULL'))
-    forceoption_id = db.Column(db.Integer, db.ForeignKey(
-        'forceoption.id', ondelete='SET NULL'))
-    name = db.Column(db.VARCHAR)
-    details = db.Column(db.Text)
-    addsubtract = db.Column(db.Integer)
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id', ondelete='SET NULL'))
-    unitclass_id = db.Column(db.Integer)
-
-    commander = db.relationship('Commander', backref='unorthodoxforce')
-    forceoption = db.relationship('ForceOption', backref='unorthodoxforce')
-    unit = db.relationship('Unit', backref='unorthodoxforce')
-
-    def __repr__(self):
-        return f'<UnorthodoxForce {self.id} {self.name}>'
-
-class UnorthodoxOption(db.Model):
-    """ UnorthodoxOption Model. """
-
-    __tablename__ = "unorthodoxoption"
-
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    commander_id = db.Column(db.Integer, db.ForeignKey(
-        'commander.id', ondelete='SET NULL'))
-    forceoption_id = db.Column(db.Integer, db.ForeignKey(
-        'forceoption.id', ondelete='SET NULL'))
-    name = db.Column(db.VARCHAR)
-    details = db.Column(db.Text)
-    addsubtract = db.Column(db.Integer)
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id', ondelete='SET NULL'))
-    unitclass_id = db.Column(db.Integer)
-    unitoption_id = db.Column(db.Integer, db.ForeignKey(
-        'unitoption.id', ondelete='SET NULL'))
-
-    commander = db.relationship('Commander', backref='unorthodoxoption')
-    forceoption = db.relationship('ForceOption', backref='unorthodoxoption')
-    unit = db.relationship('Unit', backref='unorthodoxoption')
-    unitoption = db.relationship('UnitOption', backref='unorthodoxoption')
-
-    def __repr__(self):
-        return f'<UnorthodoxOption {self.id} {self.name}>'
 
 class Upgrade(db.Model):
     """ Upgrade Model. """
@@ -660,20 +668,6 @@ class CharacterSpecialrule(db.Model):
     def __repr__(self):
         return f'<CharacterSpecialrule {self.id}>'
 
-class CommanderClass(db.Model):
-    """ CommanderClass Model.
-        Provides id names (Standard/Historic/Legendary) """
-
-    __tablename__ = "commanderclass"
-
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    name = db.Column(db.VARCHAR)
-
-    def __repr__(self):
-        return f'<CommanderClass {self.id} {self.name}>'
-
 class CommanderFaction(db.Model):
     """ CommanderFaction Model.
         Connects Commander and Faction Models."""
@@ -722,6 +716,7 @@ class CommanderSpecialrule(db.Model):
         'commander.id', ondelete='CASCADE'))
     specialrule_id = db.Column(db.Integer, db.ForeignKey(
         'specialrule.id', ondelete='CASCADE'))
+    isoption = db.Column(db.Integer, default=0)
 
     def __repr__(self):
         return f'<CommanderSpecialrule {self.id}>'

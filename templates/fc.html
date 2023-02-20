@@ -107,28 +107,35 @@
                                 <div class='container p-1 bg-info border border-5 border-secondary rounded-3'>
                                     <div class='container text-primary fell fs-4'>DO NEXT / TODAY</div>
                                     <ul class='fell text-secondary fs-5'>
-                                        <li>Integrate commandereffect and factioneffect functionality.</li>
-                                        <li>Prevent Natives from seeing / selecting ships they shouldn't take.</li>
+                                        <li>Add save functionality for force lists.</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>TASKS FOR RELEASE</div>
                                     <ul class='fell text-secondary fs-5'>
-                                        <li>Add save functionality for force lists.</li>
                                         <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
-                                        <li>Add assign functionality for force list items.</li>
+                                        <li>Add assign functionality for force list items. (add Great Warrior functionality here from commandereffect)</li>
+                                    </ul>
+                                    <div class='container text-primary fell fs-4'>FAST PRIORITY TASKS</div>
+                                    <ul class='fell text-secondary fs-5'>
+                                        <li>Add ship restrictions for relevant factions.</li>
+                                        <li>Clean up and display data from commander.details.</li>
+                                        <li>Find stuff like this and add it to attackrollbonus column: This Force subtracts 2 from its roll to determine attacker in a scenario.</li>
+                                        <li>Check data packing docstrings.</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>MORE PRIORITY TASKS</div>
                                     <ul class='fell text-secondary fs-5'>
+                                        <li>Better sorting.</li>
+                                        <li>Add other Native restrictions.</li>
+                                        <li>Add restrictions or warnings for the Support: X special rules.</li>
                                         <li>Add warnings for permitted rule breaking.</li>
-                                        <li>Check data packing docstrings.</li>
                                         <li>Clean up special rules table and relations.</li>
                                         <li>Integrate misc items into db and ui.</li>
-                                        <li>Better sorting.</li>
                                         <li>Add settings/details dropdown for forcelist name.</li>
                                         <li>Add theme change functionality via dropdowns.</li>
                                         <li>Make fully responsive and finish up styling.</li>
                                         <li>Auto-save option.</li>
                                         <li>Add structure and functionality for characters for commander-requried and commander-conflict-with.</li>
                                         <li>Fix too-fast-expander-click bug</li>
+                                        <li>Make build-side interior expanders default to open.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -137,15 +144,21 @@
                                     <div class='container text-primary fell fs-4'>COMPLETED THIS WEEK</div>
                                     <div class='container text-secondary fell fs-5'>NOT PUSHED</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Added Standard Commander functionality for choosing Special Rules and added supporting data to db.</li>
+                                        <li>Save functionality concept implemented on front end.</li>
+                                        <li>factioneffect table now functional for unit option changes. This should now be fully functional.</li>
+                                        <li>Improved reseting of display and ForceList object in response to commander and faction changes.</li>
+                                        <li>factioneffect table now functional for unit class changes.</li>
+                                        <li>commandereffect table now fully functional (not including Great Warrior, t0 be implemented with assignments).</li>
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
                                         <li>Unit Options are now fully functional.</li>
                                         <li>Ship Upgrades are now fully functional.</li>
                                         <li>Seed file adapted to restructure unorthodoxforce and unorthodoxoption into commandereffect and factioneffect.</li>
                                         <li>Additional work to seed file to standardize attack roll bonus language, add a column to Faction table for storing this bonus, and add a column to characters to distinguish those that do not count towards normal limits. Added three columns to forceoption to account for minimum unit and mounted commander requirements.</li>
                                         <li>Updated seed file to add Faction special rules to db for Factions from FotF and RtB (addsubtract column may still need data modified manually).</li>
                                         <li>Added Nickname functionality for Units and Ships in ForceList and Unit experience now shows in displays.</li>
-                                    </ul>
-                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
                                     </ul>
                                 </div>
                             </div>                            
@@ -163,7 +176,9 @@
                             <form>
                                 {{add_to_list.component_selector(class_='form-control rounded-2 text-center force-selector-field pt-0 pb-0 border border-2 border-secondary')}}
                             </form>
-
+                            <div class='container rounded-2 text-center text-info fs-4 fell' id='component-instructions'>
+                                Please selection a Faction and Commander.
+                            </div>
                             <div class='fill-screen-scrollable' id='menu'>
                             </div>
                         </div>
@@ -172,9 +187,16 @@
                         <div class='col mt-1 mb-0 ms-0 me-0 pt-2 overflow-y-scroll rounded-3 bg-warning'>
                             
                             <div class='fill-screen-scrollable'>
-                                <div class='rounded-2 text-center force-selector-field border border-2 border-secondary'>
-                                    <div class='row'>
-                                        <div class='col-8'>
+                                <div class='rounded-2 force-selector-field border border-2 border-secondary'>
+                                    <div class='row text-center'>
+                                        <div class='col-1'>
+                                            <div class='container-fluid d-flex justify-content-center'>
+                                                <a href='#fl-options' role='button' data-bs-toggle='collapse'>
+                                                    <i class='fa-solid fa-chevron-down' id='fl-options-expand'></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div class='col-7'>
                                             <i id='force-name' class='fs-5'></i>
                                         </div>
                                         <div class='col-4'>
@@ -182,8 +204,12 @@
                                              <span id='point-max-display'></span>
                                         </div>
                                     </div>
+                                    <div class='collapse text-primry rounded-2 mt-0 px-1 text-primary' id='fl-options'>
+                                        <a href='#/' role='button'><i class="fa-solid fa-floppy-disk mx-2" id='force-save'></i></a>
+                                        <i class="fa-solid fa-file-arrow-down mx-2" id='force-download'></i>
+                                    </div>
                                 </div>
-                                
+
                                 <div id='force-info'>
                                     <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-faction'></div>
                                     <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-commander'></div>

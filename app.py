@@ -131,16 +131,18 @@ def edit_user(username):
         
 ############### ***** ########## FC API ROUTES ########## ***** ###############
 
-def pack_universal_data():    
+def pack_universal_data():   
     universal_data = {
         'nationality': models.serialize(list(models.Nationality.query.all())),
         'commanderclass': models.serialize(list(models.CommanderClass.query.all())),
         'experience': models.serialize(list(models.Experience.query.all())),
         'factionunitclass': models.serialize(list(models.FactionUnitclass.query.all())),
         # The following data is sent selectively with Character, Commander, Unit, and Faction queries
+        'commandereffect': models.serialize(list(models.CommanderEffect.query.all())),
         'commanderfaction': models.serialize(list(models.CommanderFaction.query.all())),
         'commandernationality': models.serialize(list(models.CommanderNationality.query.all())),
         'commanderspecialrule': models.serialize(list(models.CommanderSpecialrule.query.all())),
+        'factioneffect': models.serialize(list(models.FactionEffect.query.all())),
         'factionupgrade': models.serialize(list(models.FactionUpgrade.query.all())),
         'factionunit': models.serialize(list(models.FactionUnit.query.all())),
         'forceoption': models.serialize(list(models.ForceOption.query.all())),
@@ -149,7 +151,7 @@ def pack_universal_data():
         'unitoption': models.serialize(list(models.UnitOption.query.all())),
         'unitspecialrule': models.serialize(list(models.UnitSpecialrule.query.all())),
         'upgrade': models.serialize(list(models.Upgrade.query.all()))
-    }  
+    }
     return universal_data
 
 @app.route('/universal')

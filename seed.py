@@ -2,7 +2,7 @@ import os, re
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-from sqlalchemy.types import Integer, String, Text, VARCHAR, Boolean
+from sqlalchemy.types import Integer, String, Text, VARCHAR
 
 import innocuous
 
@@ -173,6 +173,9 @@ for filename in os.listdir(directory):
                             con.execute(f'INSERT INTO commandernationality(commander_id,nationality_id, primary_nationality) VALUES({row[1][0]}, {int(row[1][nationality_id])}, true);')
                     df.drop(columns = ['nationality_id'], inplace = True)
 
+            elif table_name == 'commanderspecialrule':
+                df['isoption'] = 0
+
             elif table_name == 'faction':
                 df['attacker_roll_bonus'] = 0
                 # Change character type to 2 for Hostages/Advisors.
@@ -267,6 +270,8 @@ for filename in os.listdir(directory):
                 
                 # Set 'id' column as table's Primary Key.
                 with engine.connect() as con:
+                    con.execute(f"CREATE SEQUENCE {table_name}_serial AS integer START {(df['id'].max()) + 1} OWNED BY {table_name}.id;")
+                    con.execute(f"ALTER TABLE {table_name} ALTER COLUMN id SET DEFAULT nextval('{table_name}_serial');")
                     con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')
 
                 # if table_name == 'commander':
@@ -279,8 +284,14 @@ for filename in os.listdir(directory):
 
 commandereffect = pd.concat(commandereffects)
 factioneffect = pd.concat(factioneffects)
-# commandereffect.reset_index(drop=True).to_sql('commandereffect', engine, if_exists='replace', index=False, dtype= df_schema)
-# factioneffect.reset_index(drop=True).to_sql('factioneffect', engine, if_exists='replace', index=False, dtype= df_schema)
+commandereffect.drop(commandereffect['commander_id'].loc[commandereffect['commander_id'] == 82].index, inplace=True)
+factioneffect.drop(factioneffect['forceoption_id'].loc[factioneffect['forceoption_id'] == 41].index, inplace=True)
+commandereffect.reset_index(drop=True, inplace=True)
+factioneffect.reset_index(drop=True, inplace=True)
+commandereffect['id'] = commandereffect.index +1
+factioneffect['id'] = factioneffect.index +1
+factioneffect.insert(6,'applyall', 0)
+factioneffect.loc[factioneffect['id'].isin([3,4,5]), 'applyall'] = 1
 
 table_name = ''
 for df in [commandereffect,factioneffect]:
@@ -300,8 +311,10 @@ for df in [commandereffect,factioneffect]:
         table_name = 'factioneffect'
     tables.append({'table_name': table_name, 'table_columns': column_names})
     df.to_sql(table_name, engine, if_exists='replace', index= False, dtype= df_schema)
-    # with engine.connect() as con:
-    #                     con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')    
+    with engine.connect() as con:
+                    con.execute(f"CREATE SEQUENCE {table_name}_serial AS integer START {(df['id'].max()) + 1} OWNED BY {table_name}.id;")
+                    con.execute(f"ALTER TABLE {table_name} ALTER COLUMN id SET DEFAULT nextval('{table_name}_serial');")
+                    con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')    
 
 
 # ******************** END DATA CLEANUP AND DB POPULATION ********************
@@ -342,7 +355,12 @@ with engine.connect() as con:
     # Set certainnations and certainfactions to 1 (true) for character records, as appropriate.
     con.execute('UPDATE character SET certainnations = 1 WHERE id IN (37,39,40,41,42,53,54,55,56,57,58,59,61,63,68,69);')
     con.execute('UPDATE character SET certainfactions = 1 WHERE (id IN (38,40,41,55,56,61,63,67,70) OR id BETWEEN 43 AND 52);')
-    #Add date to commandernationality
+    #Add data to factioneffect
+    con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (50,'Spanish Corsairs',1,0,101,0)")
+    con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (50,'Spanish Corsairs',1,0,11,0)")
+    con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (50,'Spanish Corsairs',1,0,92,0)")
+    con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (68,'West India Company',-1,0,109,0)")
+    #Add data to commandernationality
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (106,5,false)')
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (64,3,false)')
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (159,8,false)')
@@ -402,6 +420,135 @@ with engine.connect() as con:
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (179,4,false)')
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (180,4,false)')
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (209,4,false)')
+    # Add data to commanderspecialrule
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 78,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 22,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 79,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 35,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 83,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 88,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 78,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 22,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 79,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 35,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 83,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (186, 88,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 78,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 66,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 18,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 93,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 65,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 47,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 157,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (195, 103,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 78,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 66,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 18,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 93,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 65,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 47,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 157,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (196, 103,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 70,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 125,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 95,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 92,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (197, 31,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 70,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 125,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 95,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 92,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (198, 31,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 95,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 70,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 66,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 54,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (200, 65,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 95,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 70,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 66,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 54,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (201, 65,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 65,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 26,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 54,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 91,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (203, 93,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 65,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 30,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 26,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 54,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 91,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (204, 93,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (182, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (182, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (182, 78,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (182, 14,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (182, 32,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (182, 31,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (182, 61,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (183, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (183, 23,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (183, 78,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (183, 14,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (183, 32,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (183, 31,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (183, 61,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 92,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 38,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 86,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 7,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 35,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 91,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 47,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 157,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (225, 103,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 24,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 92,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 38,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 86,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 7,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 35,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 91,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 47,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 157,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 103,1)')
     # Add data to characternationality
     con.execute('INSERT INTO characternationality(character_id, nationality_id) VALUES (37,8)')
     con.execute('INSERT INTO characternationality(character_id, nationality_id) VALUES (39,2)')

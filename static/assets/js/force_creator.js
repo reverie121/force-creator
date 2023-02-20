@@ -55,20 +55,29 @@ class ForceList {
     resetForceList() {
         delete this.faction;
         delete this.commander;
-        delete this.units;
+        this.resetForceComponents();
+    }
+
+    resetForceComponents() {
         delete this.characters;
         delete this.artillery;
         delete this.ships;
         delete this.misc;
-        this.units = {};
         this.characters = {};
         this.ships = {};
         this.artillery = {};
         this.misc = {};
-        this.idCounter = 0
-        this.updateUnitClassCount();
+        this.idCounter = 0    
+        this.resetForceUnits();
         this.updateCharacterTypeCount();
         this.updateTotalForcePoints();
+    }
+
+    resetForceUnits() {
+        delete this.units;
+        this.emptyUnits();
+        this.units = {};
+        this.updateUnitClassCount();
     }
 
     // Empty build area completely.
@@ -84,6 +93,75 @@ class ForceList {
         $('#force-misc').empty().hide();
     }
 
+    getSelectedOptions(property) {
+        const idList = [];
+        for (const k of property) {
+            if (k.selected == 1) {
+                idList.push(k.id);
+            }
+        }
+        return idList;
+    }
+
+    saveList() {
+        const newSave = {};
+        newSave['maxpoints'] = this.maxPoints;
+        newSave['nationality_id'] = this.nationality.id;
+        newSave['faction_id'] = this.faction.id;
+        newSave['commander_id'] = this.commander.id;
+        if (this.faction.option != []) {
+            const selectedOptions = this.getSelectedOptions(this.faction.option);
+            newSave['faction_option'] = selectedOptions[0] || 0;
+        }
+        if (this.commander.specialruleChoice != []) {
+            const selectedRules = []
+            for (const sr of this.commander.specialrule) {
+                if (sr['selected'] == 1) {
+                    selectedRules.push(sr.id);
+                }
+            }
+            newSave['commanderSpecialruleChoices'] = selectedRules;
+        }
+        if (Object.keys(this.artillery).length > 0) {
+            let count = 0;
+            for (const f_id in this.artillery) {
+                count ++;
+                newSave[`artillery_${count}_id`] = this.artillery[`${f_id}`].id;
+                newSave[`artillery_${count}_qty`] = this.artillery[`${f_id}`].qty;
+            }
+            newSave[`artillerycount`] = count;
+        }
+        if (Object.keys(this.characters).length > 0) {
+            let count = 0;
+            for (const f_id in this.characters) {
+                count ++;
+                newSave[`character_${count}_id`] = this.characters[`${f_id}`].id;
+            }
+            newSave[`charactercount`] = count;
+        }
+        if (Object.keys(this.ships).length > 0) {
+            let count = 0;
+            for (const f_id in this.ships) {
+                count ++;
+                newSave[`ship_${count}_id`] = this.ships[`${f_id}`].id;
+                const selectedOptions = this.getSelectedOptions(this.ships[`${f_id}`]['upgrade']);
+                newSave[`ship_${count}_options`] = selectedOptions;
+            }
+            newSave[`shipcount`] = count;
+        }
+        if (Object.keys(this.units).length > 0) {
+            let count = 0;
+            for (const f_id in this.units) {
+                count ++;
+                newSave[`unit_${count}_id`] = this.units[`${f_id}`].id;
+                newSave[`unit_${count}_qty`] = this.units[`${f_id}`].qty;
+                const selectedOptions = this.getSelectedOptions(this.units[`${f_id}`]['option']);
+                newSave[`unit_${count}_options`] = selectedOptions;            }
+            newSave[`unitcount`] = count;
+        }
+        this.save = newSave;
+    }
+
     // Assign a nationality object to the force list.
     setNationality(nationality) {
         this.nationality = nationality;
@@ -93,15 +171,66 @@ class ForceList {
 
     // Assign a commander object to the force list.
     setCommander(commander) {
+        this.handleCommanderUnitClassChanges(-1);
         this.commander = commander;
         this.updateTotalForcePoints();
         if (!this.faction || !this.faction.commanderIDs.includes(commander.id)) {
             delete this.faction;
-            this.emptyUnits();
+            this.resetForceUnits();
+            this.updateTotalForcePoints();
             $('#force-faction').hide('medium', 'swing');
             populateFactionDropdown(this.commander.factionList);
         }
+        this.handleCommanderUnitClassChanges(1);
         $('#force-commander').show('medium', 'swing');
+        this.resetForceComponents();
+        resetComponentSelector();
+    }
+
+    handleCommanderUnitClassChanges(plusOrMinusOne) {
+        if (this.commander && this.faction) {
+            // if ((this.commander.commandereffects).length > 0) {
+            if (this.commander.commandereffects != []) {
+                    if (plusOrMinusOne == 1) {
+                    console.debug('Adding Commander unitclass changes.')
+                } else if (plusOrMinusOne == -1) {
+                    console.debug('Removing Commander unitclass changes.')
+                }
+                for (const effect of this.commander.commandereffects) {
+                    if (effect.addsubtract == plusOrMinusOne && !effect.unitoption_id) {
+                        this.faction.unitClass[`${effect.unit_id}`] = effect.unitclass_id
+                    }
+                }
+            }
+        }
+    }
+
+    handleCommanderSpecialruleChoice(plusOrMinusOne, specialrule_id) {
+        // When checking/selecting a Special Rule...
+        if (plusOrMinusOne == 1) {
+            console.debug('Adding Special Rule to Commander.');
+            for (const sr of this.commander.specialruleChoice) {
+                if (sr.id == specialrule_id) {
+                    sr['selected'] = 1;
+                    const newRule = $('<li>').addClass('mt-1').attr('id',`fl-commander-sr-${sr.id}`).html(`<b>${sr.name}:</b> ${sr.details}`);
+                    newRule.hide();
+                    $('#fl-commander-specialrules').append(newRule);
+                    newRule.show('medium','swing');
+                }
+            }
+        // When unchecking/unselecting an option...
+        } else if (plusOrMinusOne == -1) {
+            console.debug('Removing Special Rule from Commander.');
+            for (const sr of this.commander.specialruleChoice) {
+                if (sr.id == specialrule_id) {
+                    sr['selected'] = 0;
+                    $(`#fl-commander-sr-${sr.id}`).hide('medium','swing')
+                    setTimeout(() => {
+                        $(`#fl-commander-sr-${sr.id}`).remove();
+                    }, 500)
+                }
+            }
+        }
     }
 
     // Assign a faction object to the force list.
@@ -109,64 +238,126 @@ class ForceList {
         this.faction = faction;
         if (!this.commander || !this.commander.factionIDs.includes(faction.id)) {
             delete this.commander;
-            this.emptyUnits();
+            this.resetForceUnits();
+            this.updateTotalForcePoints();
             $('#force-commander').hide('medium', 'swing');
             populateCommanderDropdown(this.faction.commanderList);
         }
+        this.handleCommanderUnitClassChanges(1);
         $('#force-faction').show('medium', 'swing');
+        this.resetForceComponents();
+        resetComponentSelector();
     }
 
-
+    // For when Faction/Force Option boxes are clicked.
+    handleFactionOption(plusOrMinusOne, forceoption_id) {
+        // When checking/selecting an option...
+        if (plusOrMinusOne == 1) {
+            // Unselect other options if any are selected. There should only ever be one selected.
+            for (const o of this.faction.option) {
+                if ($(`#faction-${this.faction.id}-option-${o.id}`).prop('checked') && o.id != forceoption_id) {
+                    console.debug(`Removing Faction option changes for ${o.name}.`);
+                    $(`#faction-${this.faction.id}-option-${o.id}`).prop('checked', false);
+                    // Change unit classes where needed for faction option.
+                    for (const effect of this.faction.factioneffects) {
+                        if (effect.addsubtract == -1 && !effect.unitoption_id && effect.forceoption_id == forceoption_id) {
+                            this.faction.unitClass[`${effect.unit_id}`] = effect.unitclass_id;
+                        }       
+                    }
+                    // Change unit classes where needed for previously checked faction option.
+                    for (const effect of this.faction.factioneffects) {
+                        if (effect.addsubtract == -1 && !effect.unitoption_id && effect.forceoption_id == o.id) {
+                            this.faction.unitClass[`${effect.unit_id}`] = effect.unitclass_id;
+                        }
+                    }
+                }
+            }
+        }
+        // Change unit classes where needed for faction option.
+        for (const effect of this.faction.factioneffects) {
+            if (effect.addsubtract == plusOrMinusOne && !effect.unitoption_id && effect.forceoption_id == forceoption_id) {
+                this.faction.unitClass[`${effect.unit_id}`] = effect.unitclass_id;
+            }
+        }
+        // Set Faction/Force Option['selected'] for each Option based on which boxes are now checked.
+        for (const o of this.faction.option) {
+            if ($(`#faction-${this.faction.id}-option-${o.id}`).prop('checked')) {
+                o.selected = 1;
+            }
+            else {
+                o.selected = 0;
+            }
+        }
+        this.resetForceComponents();
+        resetComponentSelector();
+    }
 
     // Show force commander in build area.
     displayCommander() {
         // Empty and show force's commander display.
         $('#force-commander').empty();
         // Create new commander display and add to page.
-        let commanderDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-1', 'fell']);
-        let cardHeader = $('<div>').addClass(['row']);
-        let nameColumn = $('<div>').addClass(['col-10']);
-        let commanderName = $('<h5>').addClass(['card-title']).text(this.commander.name);     
+        const commanderDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-1', 'fell']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-10']);
+        const commanderName = $('<h5>').addClass(['card-title']).text(this.commander.name);     
         nameColumn.append(commanderName);
-        let expandColumn = $('<div>').addClass(['col-1']);
+        const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
             <a href='#commander-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='commander-expand' ></i>
             </a>
         `);
-        let removeColumn = $('<div>').addClass(['col-1']);
+        const removeColumn = $('<div>').addClass(['col-1']);
         removeColumn.html(`
             <a href='#/' role='button'>
                 <i class='fa-solid fa-xmark text-primary' id='commander-remove'></i>
             </a>
         `);
         cardHeader.append([nameColumn,expandColumn,removeColumn]);
-        let cardDetails = $('<div>').addClass(['collapse']).attr('id','commander-details').html(`<hr class='border border-2 border-primary rounded-2'>`);
-        let commandRow = $('<div>').addClass('row');
-        let commandRange = $('<div>').addClass(['card-text', 'col-6']).html(`<b>Command Range:</b> ${this.commander.commandrange}"`);
-        let commandPoints = $('<div>').addClass(['card-text', 'col-6']).html(`<b>Command Points:</b> ${this.commander.commandpoints}`);
+        const cardDetails = $('<div>').addClass(['collapse']).attr('id','commander-details').html(`<hr class='border border-2 border-primary rounded-2'>`);
+        const commandRow = $('<div>').addClass('row');
+        const commandRange = $('<div>').addClass(['card-text', 'col-6']).html(`<b>Command Range:</b> ${this.commander.commandrange}"`);
+        const commandPoints = $('<div>').addClass(['card-text', 'col-6']).html(`<b>Command Points:</b> ${this.commander.commandpoints}`);
         commandRow.append(commandRange, commandPoints);
-        let mainWeapons = $('<div>').addClass(['card-text']).html('<b>Main Weapons:</b>');
-        let weaponText = $('<div>').html(`${this.commander.mainweapons}`);
+        const mainWeapons = $('<div>').addClass(['card-text']).html('<b>Main Weapons:</b>');
+        const weaponText = $('<div>').html(`${this.commander.mainweapons}`);
         mainWeapons.append(weaponText);
         cardDetails.append([commandRow, mainWeapons]);
-        if (this.commander.specialrule.length > 0) {
-            let specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
-            let specialrulesHeader = $('<div>').addClass(['row']);
-            let descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
-            let specialruleExpandColumn = $('<div>').addClass(['col-1']);
+        // Display Commander Special Rules
+        if (this.commander.specialrule.length > 0 || this.commander.specialruleChoice.length > 0) {
+            const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const specialrulesHeader = $('<div>').addClass(['row']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#commander-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='commander-${this.id}-specialrules-expand'></i>
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            let specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `commander-${this.id}-specialrules-details`)
+            const specialrulesDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `commander-${this.id}-specialrules-details`)
+            const specialrules = $('<ul>').addClass('mb-1').attr('id',`fl-commander-specialrules`);
             for (const rule of this.commander.specialrule) {
-                let newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
-                specialrulessDetails.append(newRule);
+                const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
+                specialrules.append(newRule);
             }
-            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            specialrulesDetails.append(specialrules);
+            // Display Special Rule choices for Standard type Commanders.
+            if (this.commander.specialruleChoice.length > 0) {
+                let num = 1
+                if (this.commander.name.startsWith('Seasoned')) {
+                    num = 2
+                }
+                const choices = $('<div>').html(`<span class='text-secondary mt-0'>May choose ${num} Special Rules from this list:</span>`);
+                for (const rule of this.commander.specialruleChoice) {
+                    rule['selected'] = 0;
+                    const newRule = $('<div>').addClass('container mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-commander-sr-choice-${rule.id}'> <b>${rule.name}:</b> ${rule.details}`);
+                    choices.append(newRule);
+                }
+                specialrulesDetails.append(choices);
+            }
+            specialruleCard.append(specialrulesHeader, specialrulesDetails);
             cardDetails.append(specialruleCard);
         }
         commanderDisplay.append([cardHeader, cardDetails]);
@@ -175,11 +366,23 @@ class ForceList {
         $('#commander-expand').parent().on('click', () => {
             $('#commander-expand').toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
-        if (this.commander.specialrule.length > 0) {
+        if (this.commander.specialrule.length > 0 || this.commander.specialruleChoice.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#commander-${this.id}-specialrules-expand`).parent().on('click', () => {
                 $(`#commander-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
+        }
+        if (this.commander.specialruleChoice.length > 0) {
+            // Handle expanding/contracting of item information.
+            for (const sr of this.commander.specialruleChoice) {
+                $(`#fl-commander-sr-choice-${sr.id}`).on('click',(e) => {
+                    if ($(`#fl-commander-sr-choice-${sr.id}`).prop('checked')) {
+                        this.handleCommanderSpecialruleChoice(1,sr.id);
+                    } else {
+                        this.handleCommanderSpecialruleChoice(-1,sr.id);
+                    }
+                });
+            }
         }
         // Handle removal of force's commander.
         $('#commander-remove').parent().on('click', () => {
@@ -187,16 +390,20 @@ class ForceList {
             setTimeout(() => {
                 $('#force-commander').empty()
             }, 500)
+            this.handleCommanderUnitClassChanges(-1);
             delete this.commander;
-            this.emptyUnits();
+            this.resetForceUnits();
+            this.updateTotalForcePoints();
             // If this force has a faction, re-populate commander dropdown with valid commanders.
             // Otherwise re-populate faction and commander dropdowns using the Nation's lists.
             if (this.faction) {
-                populateCommanderDropdown(this.faction.commanderList)            }
+                populateCommanderDropdown(this.faction.commanderList)
+            }
             else {
                 populateFactionDropdown(this.nationality.factionList);
                 populateCommanderDropdown(this.nationality.commanderList);
             }
+            resetComponentSelector();
         });
     }
 
@@ -205,67 +412,69 @@ class ForceList {
         // Empty force's faction display.
         $('#force-faction').empty();
         // Create new commander display and add to page.
-        let factionDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-1', 'fell']);
-        let cardHeader = $('<div>').addClass(['row']);
-        let nameColumn = $('<div>').addClass(['col-10']);
-        let factionName = $('<h5>').addClass(['card-title']).text(this.faction.name);    
+        const factionDisplay = $('<div>').addClass(['card-body', 'bg-info', 'text-primary', 'rounded-1', 'fell']);
+        const cardHeader = $('<div>').addClass(['row']);
+        const nameColumn = $('<div>').addClass(['col-10']);
+        const factionName = $('<h5>').addClass(['card-title']).text(this.faction.name);    
         nameColumn.append(factionName);
-        let expandColumn = $('<div>').addClass(['col-1']);
+        const expandColumn = $('<div>').addClass(['col-1']);
         expandColumn.html(`
             <a href='#faction-details' role='button' data-bs-toggle='collapse'>
                 <i class='fa-solid fa-chevron-down' id='faction-expand' ></i>
             </a>
         `);
-        let removeColumn = $('<div>').addClass(['col-1']);
+        const removeColumn = $('<div>').addClass(['col-1']);
         removeColumn.html(`
             <a href='#/' role='button'>
                 <i class='fa-solid fa-xmark text-primary' id='faction-remove'> </i>
             </a>
         `);
         cardHeader.append([nameColumn,expandColumn,removeColumn]);
-        let cardDetails = $('<div>').addClass(['collapse']).attr('id','faction-details').html(`<hr class='border border-2 border-primary rounded-2'>`);
-        let details = $('<div>').addClass(['card-text']);
+        const cardDetails = $('<div>').addClass(['collapse']).attr('id','faction-details').html(`<hr class='border border-2 border-primary rounded-2'>`);
+        const details = $('<div>').addClass(['card-text']);
         if (this.faction.details) {
             details.html(`${this.faction.details}`);
         }        
-        let commandOptions = $('<div>').addClass(['card-text']).html(`<b>Commander Options:</b> ${this.faction.commandoptions}`);
+        const commandOptions = $('<div>').addClass(['card-text']).html(`<b>Commander Options:</b> ${this.faction.commandoptions}`);
         cardDetails.append([details, commandOptions]);
         // If selected faction has special rules, display with a dropdown.
         if (this.faction.specialrule.length > 0) {
-            let specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
-            let specialrulesHeader = $('<div>').addClass(['row', 'mt-2']);
-            let descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
-            let specialruleExpandColumn = $('<div>').addClass(['col-1']);
+            const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const specialrulesHeader = $('<div>').addClass(['row', 'mt-2']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Special Rules</h5>`);
+            const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#faction-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='faction-${this.id}-specialrules-expand'></i>
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            let specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-specialrules-details`)
             for (const rule of this.faction.specialrule) {
-                let newRule = $('<li>').addClass('mt-1').html(`${rule.details}`);
-                specialrulessDetails.append(newRule);
+                const newRule = $('<li>').addClass('mt-1').html(`${rule.details}`);
+                specialrulesDetails.append(newRule);
             }
-            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            specialruleCard.append(specialrulesHeader, specialrulesDetails);
             cardDetails.append(specialruleCard);
         }
         // If selected faction has options, display with a dropdown.
         if (this.faction.option.length > 0) {
-            let optionsCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
-            let factionOptionsHeader = $('<div>').addClass(['row', 'mt-2']);
-            let descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Faction Options</h5>`);
-            let optionExpandColumn = $('<div>').addClass(['col-1']);
+            const optionsCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
+            const factionOptionsHeader = $('<div>').addClass(['row', 'mt-2']);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Faction Options</h5>`);
+            const optionExpandColumn = $('<div>').addClass(['col-1']);
             optionExpandColumn.html(`
                 <a href='#faction-${this.id}-options-details' role='button' data-bs-toggle='collapse'>
                     <i class='fa-solid fa-chevron-down' id='faction-${this.id}-options-expand'></i>
                 </a>
             `);
             factionOptionsHeader.append([descColumn, optionExpandColumn]);
-            let unitOptionsDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-options-details`)
+            const unitOptionsDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-options-details`)
             for (const o of this.faction.option) {
-                let newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='faction-${this.faction.id}-option-${o.id}'> <b>${o.name}</b>`);
-                let optionDetails = $('<div>').html(`${o.details}`);
+                // Set Faction/Force option['selected'] to 0 for 'unselected' when Faction is displayed.
+                o['selected'] = 0;
+                const newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='faction-${this.faction.id}-option-${o.id}'> <b>${o.name}</b>`);
+                const optionDetails = $('<div>').html(`${o.details}`);
                 newOption.append(optionDetails);
                 unitOptionsDetails.append(newOption);
             }
@@ -282,7 +491,17 @@ class ForceList {
             // Handle expanding/contracting of item information.
             $(`#faction-${this.id}-options-expand`).parent().on('click', () => {
                 $(`#faction-${this.id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
-            });            
+            });
+            for (const o of this.faction.option) {
+                $(`#faction-${this.faction.id}-option-${o.id}`).on('click',() => {
+                    // Handle method for Faction/Force Option wants the Option id and 1/-1 for checked/unchecked.
+                    if ($(`#faction-${this.faction.id}-option-${o.id}`).prop('checked')) {
+                        this.handleFactionOption(1,o.id);
+                    } else {
+                        this.handleFactionOption(-1,o.id);
+                    }
+                });
+            }
         }
         if (this.faction.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
@@ -297,7 +516,8 @@ class ForceList {
                 $('#force-faction').empty()
             }, 500)
             delete this.faction;
-            this.emptyUnits();
+            this.resetForceUnits();
+            this.updateTotalForcePoints();
             // If this force has a commander, re-populate faction dropdown with valid factions.
             // Otherwise re-populate faction and commander dropdowns using the Nation's lists.
             if (this.commander) {
@@ -306,6 +526,7 @@ class ForceList {
                 populateFactionDropdown(this.nationality.factionList);
                 populateCommanderDropdown(this.nationality.commanderList);
             }
+            resetComponentSelector();
         });
     }
 
@@ -430,7 +651,9 @@ class ForceList {
             $('#force-artillery').prepend(componentName);
             $('#force-artillery').show('medium','swing');
         }
+        newItem.hide();
         $('#force-artillery').append(newItem);
+        newItem.show('medium','swing');
         // Handle expanding/contracting of item information.
         $(`#fl-${artillery.f_id}-expand`).parent().on('click', () => {
             $(`#fl-${artillery.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
@@ -628,18 +851,19 @@ class ForceList {
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${character.f_id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${character.f_id}-specialrules-details`)
             for (const rule of character.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
-                specialrulessDetails.append(newRule);
+                specialrulesDetails.append(newRule);
             }
-            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            specialruleCard.append(specialrulesHeader, specialrulesDetails);
             cardDetails.append(specialruleCard);
         }
         // End of Character information
         cardBody.append(cardHeader, cardDetails);
         newItem.append(cardBody);
         // Add Character to appropriate display.
+        newItem.hide()
         if (character.charactertype == 1) {
             if (this.fightingCount == 1) {
                 const containerName = $('<div>').addClass('fell text-primary fs-5').text('Fighting Men & Women');
@@ -655,6 +879,7 @@ class ForceList {
                 $('#force-civilian-characters').show('medium','swing');
             }$('#force-civilian-characters').append(newItem);
         }
+        newItem.show('medium','swing')
         // Handle expanding/contracting of item information.
         $(`#fl-${character.f_id}-expand`).parent().on('click', () => {
             $(`#fl-${character.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
@@ -896,7 +1121,9 @@ class ForceList {
             $('#force-ships').prepend(componentName);
             $('#force-ships').show('medium','swing');
         }
+        newItem.hide();
         $(`#force-ships`).append(newItem);
+        newItem.show('medium','swing');
         // Handle expanding/contracting of item information.
         $(`#fl-${ship.f_id}-expand`).parent().on('click', () => {
             $(`#fl-${ship.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
@@ -966,6 +1193,42 @@ class ForceList {
         }
         else if (this.faction.unitClass[`${newUnit.id}`] == 2) {
             newUnit['class'] = 'support';
+        }
+        // Apply faction options that affect unit options.
+        for (const o of this.faction.option) {
+            if (o.selected == 1) {
+                for (const fe of this.faction.factioneffects) {
+                    if (fe.unitoption_id && fe.forceoption_id == o.id) {
+                        // Add unit options to specific unit as appropriate based on faction option selected.
+                        if (fe.unit_id == newUnit.id) {
+                            const unitoptions = JSON.parse(sessionStorage.getItem('unitoption'));
+                            for (const unitoption of unitoptions) {
+                                if (unitoption.id == fe.unitoption_id) {
+                                    newUnit.option.push(unitoption);
+                                }
+                            }
+                        }
+                        // Add unit options to general unit as appropriate based on faction option selected.
+                        else if (!fe.unit_id) {
+                            const unitoptions = JSON.parse(sessionStorage.getItem('unitoption'));
+                            if (!fe.unitclass_id) {
+                                for (const unitoption of unitoptions) {
+                                    if (unitoption.id == fe.unitoption_id) {
+                                        newUnit.option.push(unitoption);
+                                    }
+                                }
+                            }
+                            else if (fe.unitclass_id == 1 && newUnit.class == 'Core') {
+                                for (const unitoption of unitoptions) {
+                                    if (unitoption.id == fe.unitoption_id) {
+                                        newUnit.option.push(unitoption);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         this.units[`${newUnit.f_id}`] = newUnit;
         this.updateUnitClassCount();
@@ -1222,7 +1485,7 @@ class ForceList {
             const unitOptionsDetails = $('<div>').addClass(['collapse','card-text']).attr('id', `fl-${unit.f_id}-options-details`)
             for (const o of unit.option) {
                 o['selected'] = 0;
-                let newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${unit.f_id}-option-${o.id}'> ${o.details}`);
+                const newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${unit.f_id}-option-${o.id}'> ${o.details}`);
                 unitOptionsDetails.append(newOption);
             }
             optionsCard.append(unitOptionsHeader, unitOptionsDetails);
@@ -1239,16 +1502,17 @@ class ForceList {
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulessDetails = $('<ul>').addClass(['collapse','card-text']).attr('id', `fl-${unit.f_id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse','card-text']).attr('id', `fl-${unit.f_id}-specialrules-details`)
             for (const rule of unit.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
-                specialrulessDetails.append(newRule);
+                specialrulesDetails.append(newRule);
             }
-            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            specialruleCard.append(specialrulesHeader, specialrulesDetails);
             cardDetails.append(specialruleCard);
         }
         cardBody.append(cardHeader, cardDetails);
         newItem.append(cardBody);
+        newItem.hide();
         if (unit.class == 'core') {
             if (this.coreCount == 1) {
                 const containerName = $('<div>').addClass('fell text-primary fs-5').text('Core Units');
@@ -1264,6 +1528,7 @@ class ForceList {
                 $('#force-support-units').show('medium','swing');
             }$('#force-support-units').append(newItem);
         }
+        newItem.show('medium','swing');
         // Handle updates to nickname.
         $(`#fl-${unit.f_id}-nickname`).on('keyup', () => {
             this.units[`${unit.f_id}`]['nickname'] = $(`#fl-${unit.f_id}-nickname`).val();
@@ -1357,8 +1622,9 @@ class Faction {
         Object.assign(this, faction_data);
         this.setFactionCommanderIDs();
         this.setFactionCommanderList(nationality_name);
-        this.setFactionSpecialrules();
         this.setFactionOptions();
+        this.setFactionEffects();
+        this.setFactionSpecialrules();
         this.setFactionUnitIDs();
     }
 
@@ -1397,10 +1663,18 @@ class Faction {
         const unitClasses = {};
         for (const fu of factionUnit) {
             if (fu.faction_id == this.id) {
-                let unitID = fu.unit_id;
-                let unitClass = fu.factionunitclass_id;
+                const unitID = fu.unit_id;
+                const unitClass = fu.factionunitclass_id;
                 factionUnitIDs.push(fu.unit_id);
                 unitClasses[`${unitID}`] = unitClass;
+            }
+        }
+        // Check in Faction/Force Options for additional Unit IDs.
+        if (this.factioneffects > []) {
+            for (const fe of this.factioneffects) {
+                if (!factionUnitIDs.includes(fe.unit_id)) {
+                    factionUnitIDs.push(fe.unit_id);
+                }
             }
         }
         this.unitIDs = factionUnitIDs;
@@ -1411,14 +1685,14 @@ class Faction {
     // and add to this object as a property.
     async setFactionUnits() {
         if (!sessionStorage.getItem('unit')) {
-            let response = await axios.get(`/units`);
+            const response = await axios.get(`/units`);
             sessionStorage.setItem('unit', JSON.stringify(response.data.unit));
         }
-        let units = JSON.parse(sessionStorage.getItem('unit'));
-        let factionUnits = [];
+        const units = JSON.parse(sessionStorage.getItem('unit'));
+        const factionUnits = [];
         for (const u of units) {
             if (this.unitIDs.includes(u.id)) {
-                let newUnit = new Unit();
+                const newUnit = new Unit();
                 Object.assign(newUnit, u);
                 factionUnits.push(newUnit);
             }
@@ -1427,11 +1701,11 @@ class Faction {
     }
 
     setFactionSpecialrules() {
-        let forceSpecialrule = JSON.parse(sessionStorage.getItem('forcespecialrule'));
-        let factionSpecialruleList = [];
+        const forceSpecialrule = JSON.parse(sessionStorage.getItem('forcespecialrule'));
+        const factionSpecialruleList = [];
         for (const fsr of forceSpecialrule) {
             if (fsr.faction_id == this.id) {
-                let newFactionSpecialrule = {};
+                const newFactionSpecialrule = {};
                 Object.assign(newFactionSpecialrule, fsr);
                 factionSpecialruleList.push(newFactionSpecialrule);
             }
@@ -1440,19 +1714,35 @@ class Faction {
     }
 
     setFactionOptions() {
-        let forceOption = JSON.parse(sessionStorage.getItem('forceoption'));
-        let factionOptionList = [];
+        const forceOption = JSON.parse(sessionStorage.getItem('forceoption'));
+        const factionOptionList = [];
         for (const fo of forceOption) {
             if (fo.faction_id == this.id) {
-                let newFactionOption = {};
+                const newFactionOption = {};
                 Object.assign(newFactionOption, fo);
                 factionOptionList.push(newFactionOption);
             }
         }
         this.option = factionOptionList;
     }
-}
 
+    setFactionEffects() {
+        if ((this.option).length > 0) {
+            const factioneffect = JSON.parse(sessionStorage.getItem('factioneffect'));
+            const factioneffects = [];
+            const optionIDs = []
+            for (const o of this.option) {
+                optionIDs.push(o.id);
+            }
+            for (const fe of factioneffect) {
+                if (optionIDs.includes(fe.forceoption_id)) {
+                    factioneffects.push(fe);
+                }
+            }
+            this.factioneffects = factioneffects;
+        }
+    }
+}
 
 class Commander {
 
@@ -1460,10 +1750,22 @@ class Commander {
     // at initialization so they cannot go in constructor.
     initialize(commander_data, nationality_name) {
         Object.assign(this, commander_data);
+        this.setCommanderEffects();
         this.setCommanderFactionIDs();
         this.setCommanderFactionList(nationality_name);
         this.setCommanderSpecialruleIDs();
         this.setCommanderSpecialruleList();
+    }
+
+    setCommanderEffects() {
+        const commanderEffect = JSON.parse(sessionStorage.getItem('commandereffect'));
+        const commandereffects = [];
+        for (const ce of commanderEffect) {
+            if (ce.commander_id == this.id) {
+                commandereffects.push(ce);
+            }
+        }
+        this.commandereffects = commandereffects;
     }
 
     // Get a list of the chosen commander's valid faction IDs
@@ -1498,12 +1800,18 @@ class Commander {
     setCommanderSpecialruleIDs() {
         const commanderSpecialrule = JSON.parse(sessionStorage.getItem('commanderspecialrule'));
         const commanderSpecialruleIDs = [];
+        const commanderSpecialruleChoiceIDs = [];
         for (const csr of commanderSpecialrule) {
             if (csr.commander_id == this.id) {
-                commanderSpecialruleIDs.push(csr.specialrule_id);
+                if (csr.isoption == 0) {
+                    commanderSpecialruleIDs.push(csr.specialrule_id);
+                } else if (csr.isoption == 1) {
+                    commanderSpecialruleChoiceIDs.push(csr.specialrule_id);
+                }
             }
         }
         this.specialruleIDs = commanderSpecialruleIDs;
+        this.specialruleChoiceIDs = commanderSpecialruleChoiceIDs;
     }
 
     // Get a list of the chosen commander's special rules as objects
@@ -1511,14 +1819,20 @@ class Commander {
     setCommanderSpecialruleList() {
         const specialRule = JSON.parse(sessionStorage.getItem('specialrule'));
         const commanderSpecialruleList = [];
+        const commanderSpecialruleChoiceList = [];
         for (const sr of specialRule) {
             if (this.specialruleIDs.includes(sr.id)) {
                 const newSpecialrule = {};
                 Object.assign(newSpecialrule, sr);
                 commanderSpecialruleList.push(newSpecialrule);
+            } else if (this.specialruleChoiceIDs.includes(sr.id)) {
+                const newSpecialrule = {};
+                Object.assign(newSpecialrule, sr);
+                commanderSpecialruleChoiceList.push(newSpecialrule);
             }
         }
         this.specialrule = commanderSpecialruleList;
+        this.specialruleChoice = commanderSpecialruleChoiceList;
     }
 }
 
@@ -1807,18 +2121,19 @@ class Character {
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `character-${this.id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `character-${this.id}-specialrules-details`)
             for (const rule of this.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
-                specialrulessDetails.append(newRule);
+                specialrulesDetails.append(newRule);
             }
-            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            specialruleCard.append(specialrulesHeader, specialrulesDetails);
             cardDetails.append(specialruleCard);
         }
         // End of Character information
         cardBody.append(cardHeader, cardDetails);
         newItem.append(cardBody);
         // Add Character to appropriate div of menu display.
+
         if (this.charactertype == 1) {
             $('#fighting-man-characters').append(newItem);
         }
@@ -2177,7 +2492,7 @@ class Unit {
             unitOptionsHeader.append([descColumn, optionExpandColumn]);
             const unitOptionsDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-options-details`)
             for (const o of this.option) {
-                let newOption = $('<li>').addClass('mt-1').html(`${o.details}`);
+                const newOption = $('<li>').addClass('mt-1').html(`${o.details}`);
                 unitOptionsDetails.append(newOption);
             }
             optionsCard.append(unitOptionsHeader, unitOptionsDetails);
@@ -2194,12 +2509,12 @@ class Unit {
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulessDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `unit-${this.id}-specialrules-details`)
             for (const rule of this.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
-                specialrulessDetails.append(newRule);
+                specialrulesDetails.append(newRule);
             }
-            specialruleCard.append(specialrulesHeader, specialrulessDetails);
+            specialruleCard.append(specialrulesHeader, specialrulesDetails);
             cardDetails.append(specialruleCard);
         }
         cardBody.append(cardHeader, cardDetails);
@@ -2268,7 +2583,6 @@ class Misc {
             const itemDetails = $('<div>').addClass(['card-text']).html(`<b>Details:</b> ${this.details}`);
             cardDetails.append(itemDetails);
         }
-
         cardBody.append(cardHeader, cardDetails);
         newItem.append(cardBody);
         $('#menu-item-container').append(newItem);
@@ -2297,9 +2611,11 @@ async function requestUniversalData() {
     sessionStorage.setItem('experience', JSON.stringify(response.data.experience));
     sessionStorage.setItem('factionunit', JSON.stringify(response.data.factionunit));
     sessionStorage.setItem('factionunitclass', JSON.stringify(response.data.factionunitclass));
+    sessionStorage.setItem('commandereffect', JSON.stringify(response.data.commandereffect));
     sessionStorage.setItem('commandernationality', JSON.stringify(response.data.commandernationality));
     sessionStorage.setItem('commanderfaction', JSON.stringify(response.data.commanderfaction));
     sessionStorage.setItem('commanderspecialrule', JSON.stringify(response.data.commanderspecialrule));
+    sessionStorage.setItem('factioneffect', JSON.stringify(response.data.factioneffect));
     sessionStorage.setItem('factionupgrade', JSON.stringify(response.data.factionupgrade));
     sessionStorage.setItem('forceoption', JSON.stringify(response.data.forceoption));
     sessionStorage.setItem('forcespecialrule', JSON.stringify(response.data.forcespecialrule));
@@ -2341,7 +2657,21 @@ function resetComponentSelector() {
     $('#menu').hide('medium', 'swing');
     setTimeout(() => {
         $('#menu').empty();
-    }, 500)
+    }, 500)    
+    // Hides and shows save/download options for build side.
+    if (!forceList.faction || !forceList.commander) {
+        $('#component-instructions').show('slow', 'swing');
+        $('#component_selector').hide('medium', 'swing');
+        $('#fl-options-expand').hide('fast', 'swing');
+        $('#force-save').hide('fast', 'swing');
+        $('#force-download').hide('fast', 'swing');
+    } else {
+        $('#component-instructions').hide('fast', 'swing');
+        $('#component_selector').show('medium', 'swing');
+        $('#fl-options-expand').show('fast', 'swing');
+        $('#force-save').show('fast', 'swing');
+        $('#force-download').show('fast', 'swing');
+    }
 }
 
 // Empty Faction dropdown and refill with options from input variable.
@@ -2376,6 +2706,13 @@ $(window).ready(async function() {
             $selectNationality.append($('<option></option>').val(nation.id).text(nation.name)); 
         }
     });
+    $(`#fl-options-expand`).parent().on('click', () => {
+        $(`#fl-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+    });
+    $('#force-save').on('click', () => {
+        forceList.saveList();
+        alert('saved!');
+    })
     $('#main-area').show('slow','swing');
 });
 
@@ -2389,7 +2726,7 @@ $forceName.on('keyup', () => {
     forceList.name = $forceName.val();
 })
 
-$pointMax.on('keyup', () => {
+$pointMax.on('change', () => {
     forceList.updateMaxPoints();
 });
 
@@ -2432,7 +2769,7 @@ $selectCommander.on('change', function() {
     }
     const nationalCommanderList = JSON.parse(sessionStorage.getItem(`${forceList.nationality.name}_commanders`));
     const selectedCommander = nationalCommanderList.find(commander => commander.id == $selectCommander.val());
-    let forceCommander = new Commander();
+    const forceCommander = new Commander();
     forceCommander.initialize(selectedCommander, forceList.nationality.name);
     forceList.setCommander(forceCommander);
     forceList.displayCommander();
@@ -2447,7 +2784,7 @@ $selectFaction.on('change', async function() {
     }
     const nationalFactionList = JSON.parse(sessionStorage.getItem(`${forceList.nationality.name}_factions`));
     const selectedFaction = nationalFactionList.find(faction => faction.id == $selectFaction.val());
-    let forceFaction = new Faction(forceList.nationality.name);
+    const forceFaction = new Faction(forceList.nationality.name);
     forceFaction.initialize(selectedFaction, forceList.nationality.name);
     forceList.setFaction(forceFaction);
     await forceList.faction.setFactionUnits();
@@ -2457,6 +2794,10 @@ $selectFaction.on('change', async function() {
 
 // Handle menu component (artillery, characters, units, etc) dropdown.
 $componentSelector.on('change', async function() {
+    // Remove the placeholder option as needed.
+    if ($selectFaction[0][0].text == 'Please Select From Menu') {
+        $selectFaction[0][0].remove();
+    }
     // Get string identifier for component type.
     const selected = $componentSelector.val();
     if (sessionStorage.getItem(`${selected}`) == null) {
