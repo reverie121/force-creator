@@ -76,6 +76,9 @@ for filename in os.listdir(directory):
             if 'experience' in df.columns: # unit.experience should be unit.experience_id
                 df.rename(columns = {'experience': 'experience_id'}, inplace = True)
 
+            # Replace card suit names with symbols where needed:
+            df.replace(to_replace = ['SPADE','HEART','DIAMOND','CLUB'],value = ['♠︎','♥︎','♦︎','♣︎'], inplace=True, regex=True)
+
             # Create new columns for character table.
             if table_name == 'character':
                 df['charactertype'] = 1 # (1 = Fighting Man).
@@ -166,28 +169,70 @@ for filename in os.listdir(directory):
                     df.drop(columns = ['details', 'model', 'uifolder', 'sort'], inplace=True)
 
             elif table_name == 'commander':
+                df.drop(df['id'].loc[df['id'].isin([130,131,132])].index, inplace=True)                
                 with engine.connect() as con:
                     for row in df.iterrows():
                         nationality_id = df.columns.get_loc('nationality_id')
                         if row[1][nationality_id] > 0 and row[1][nationality_id] != 7: # Add data from commander table to commandernationality table.
                             con.execute(f'INSERT INTO commandernationality(commander_id,nationality_id, primary_nationality) VALUES({row[1][0]}, {int(row[1][nationality_id])}, true);')
-                    df.drop(columns = ['nationality_id'], inplace = True)
+                df.drop(columns = ['nationality_id','nickname','extrainfo'], inplace = True)
+                df.loc[~df['id'].isin([39,68,120,133,136,139,140,143,157,159,212,227,233,240,241]), 'details'] = np.NaN
+                df.loc[df['id'] == 16, 'unorthodoxforce'] = 'A Force led by this commander may take Sea Dogs, (Native American) Warriors, (Native American) Warrior Musketeers, and (Spanish) Milicianos Indios as Core units.'
+                df.loc[df['id'] == 17, 'unorthodoxforce'] = 'A force lead by this commander may take Milicianos Indios (Spanish) and Warrior Musketeers (Native Americans) as Core Units.'
+                df.loc[df['id'] == 38, 'unorthodoxforce'] = 'A Force lead by this commander may take Flibustiers as Core units.'
+                df.loc[df['id'] == 65, 'unorthodoxforce'] = '(English) Freebooters and (Dutch) Kapers may be taken as Core units in this Force.'
+                df.loc[df['id'] == 69, 'unorthodoxforce'] = 'This Force may take (Unaligned) Jewish Militia as a Core unit.'
+                df.loc[df['id'] == 72, 'unorthodoxforce'] = 'If leading a Militia force, (Dutch) Kapers are Core units and Freebooters are Support units.'
+                df.loc[df['id'] == 89, 'unorthodoxforce'] = 'This force may take Warrior Musketeers as Core units.'
+                df.loc[df['id'] == 92, 'unorthodoxforce'] = 'This force may take Warrior Musketeers as Core units.'
+                df.loc[df['id'] == 96, 'unorthodoxforce'] = 'Flibustier units in this Force may add Horses for 4 points (not per model). While mounted, these units apply a +1 penalty to all Fight and Shoot saves.'
+                df.loc[df['id'] == 99, 'unorthodoxforce'] = 'This Force treats all Support units as Core units but may not include Milice Canadienne, Milices à Cheval, or Coureur de Bois.'
+                df.loc[df['id'] == 108, 'unorthodoxforce'] = 'This Force may take Warriors (Native American) and Warrior Musketeers (Native American) as Core units.'
+                df.loc[df['id'] == 117, 'unorthodoxforce'] = 'This Force may include Indian Fighters, (Native American) Warriors, and (Native American) Warrior Musketeers as Core Units.'
+                df.loc[df['id'] == 135, 'unorthodoxforce'] = 'Milice Canadienne may be included as Support units.'
+                df.loc[df['id'] == 142, 'unorthodoxforce'] = 'This Force may take Braves as Core units'
+                df.loc[df['id'] == 149, 'unorthodoxforce'] = 'Kapers (Core), Freebooters (Support)'
+                df.loc[df['id'] == 150, 'unorthodoxforce'] = 'Braves (Core), Boslopers (Core)'
+                df.loc[df['id'] == 152, 'unorthodoxforce'] = 'This Force may include Indian Fighters, Warriors, and Braves as Core Units.'
+                df.loc[df['id'] == 159, 'unorthodoxforce'] = 'Braves (Core)'
+                df.loc[df['id'] == 160, 'unorthodoxforce'] = 'Braves (Core)'
+                df.loc[df['id'] == 171, 'unorthodoxforce'] = 'A Force led by this Commander may include Marins and Late Flibustiers as Core units.'
+                df.loc[df['id'] == 208, 'unorthodoxforce'] = 'A Force led by this Commander may include Braves (Native American) as Core units.'
+                df['horseoption'] = 0
+                df.loc[df['id'].isin([2,3,4,7,8,9,10,11,12,26,27,28,71,73,74,75,93,94,95,96,99,100,101,102,118,121,126,127,129]), 'horseoption'] = 1
+
+            elif table_name == 'commanderfaction':
+                df.drop(df['faction_id'].loc[df['faction_id'].isin([54])].index, inplace=True)                               
 
             elif table_name == 'commanderspecialrule':
                 df['isoption'] = 0
+                df.loc[df['id'].isin([6,349,350]), 'specialrule_id'] = 54
+                df.drop(df['commander_id'].loc[df['commander_id'].isin([130,131,132])].index, inplace=True)                
 
             elif table_name == 'faction':
-                df['attacker_roll_bonus'] = 0
-                # Change character type to 2 for Hostages/Advisors.
-                df.loc[df['id'].isin([2,5,7,9,12,13,14,21,24,27,41,45,57,62,69,70,79,82,83,89,91,94,103,108]), 'attacker_roll_bonus'] = 2
-                df.loc[df['id'].isin([3,6,8,43,44,53,81,87,92]), 'attacker_roll_bonus'] = 3
-                df.loc[df['id'].isin([22,25,39,74,76,85]), 'attacker_roll_bonus'] = 4
+                df['maxshipdecks'] = 10
+                df['attackerrollbonus'] = 0
+                df.drop(df['id'].loc[df['id'].isin([54])].index, inplace=True)
+                # Add values for maxshipdecks where needed.
+                df.loc[df['nationality_id'].isin([8]), 'maxshipdecks'] = 1
+                df.loc[df['id'].isin([46,27,41,108,109,23]), 'maxshipdecks'] = 1
+                df.loc[df['id'].isin([61,72,74,104]), 'maxshipdecks'] = 2
+                df.loc[df['id'].isin([110]), 'maxshipdecks'] = 3
+                # Add values for attackerrollbonus where needed.
+                df.loc[df['id'].isin([2,5,7,9,12,13,14,21,24,27,41,45,57,62,69,70,79,82,83,89,91,94,102,103,108]), 'attackerrollbonus'] = 2
+                df.loc[df['id'].isin([3,6,8,43,44,53,81,87,92]), 'attackerrollbonus'] = 3
+                df.loc[df['id'].isin([22,25,39,74,76,85]), 'attackerrollbonus'] = 4
+                df.loc[df['id'].isin([15]), 'attackerrollbonus'] = -2
+
+            elif table_name == 'factionunit':
+                df.drop(df['faction_id'].loc[df['faction_id'].isin([54])].index, inplace=True)   
 
             # Add columns to forceoption table to account for minimum unit requirements and mounted commander requirement.
             elif table_name == 'forceoption':
                 df['unit_qty_req'] = 0
                 df['unit_id'] = 0
                 df['req_mounted_commander'] = 0
+                df.drop(df['faction_id'].loc[df['faction_id'].isin([54])].index, inplace=True)
                 df.loc[df['details'].str.contains('at least'), 'unit_qty_req'] = 2
                 df.loc[df['id'].isin([20,24]), 'unit_id'] = 16
                 df.loc[df['id'].isin([1,51]), 'unit_id'] = 43
@@ -203,7 +248,7 @@ for filename in os.listdir(directory):
                     newId = 119
                     for row in df2.itertuples():
                         faction_id = row[1]
-                        if faction_id >= 54:
+                        if faction_id >= 55:
                             specialrules = row[4]
                             specialrulesList = specialrules.strip().splitlines()
                             for line in specialrulesList:
@@ -217,6 +262,22 @@ for filename in os.listdir(directory):
 
             elif table_name == 'ship':
                 df['topspeed'] = df['topspeed'].str[:-1].astype(int)
+
+            elif table_name == 'specialrule':
+                df.drop(columns = ['onunit', 'oncommander', 'onship', 'onfactionopt'], inplace=True)
+                df.drop(df['id'].loc[df['id'].isin([20,41,46,99])].index, inplace=True)
+                df['name'].replace(to_replace = [' \(cdr\)',' \(shp\)'], value = ['',''], inplace=True, regex=True)
+
+            elif table_name == 'unit':
+                df.drop(df['id'].loc[df['id'].isin([46])].index, inplace=True)
+
+            elif table_name == 'unitoption':
+                df['limited'] = 0
+                df['addsubtractweaponequipment'] = 0
+                df['weaponequipment_id'] = 1
+                df.loc[df['id'] == 295, 'unit_id'] = 8
+                df.loc[df['id'] == 296, 'unit_id'] = 10
+                df.loc[df['id'].isin([295,296]), 'limited'] = 1
 
             # These tables to be restructured and renamed.
             if table_name == 'unorthodoxforce' or table_name == 'unorthodoxoption':
@@ -245,6 +306,10 @@ for filename in os.listdir(directory):
                         df_schema[f'{col}'] = Integer
                     else:
                         df_schema[f'{col}'] = VARCHAR
+
+                    if table_name == 'weaponequipment':
+                        df_schema['pointcost'] = Integer
+                        df_schema['pointsperunit'] = Integer
                     
                     # In rows to be used for FK constraints replace value 0 with NaN (will be null in db).
                     if '_id' in col:
@@ -274,6 +339,22 @@ for filename in os.listdir(directory):
                     con.execute(f"ALTER TABLE {table_name} ALTER COLUMN id SET DEFAULT nextval('{table_name}_serial');")
                     con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')
 
+                if (table_name == 'unitoption'):
+                    with engine.connect() as con:
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointcost, perxmodels, pointsperunit, experienceupg, applyall) VALUES (33, 'Unorthodox Force: Le Sieur de Grammont', 'Flibustier units in this Force may add Horses for 4 points (not per model). While mounted, these units apply a +1 penalty to all Fight and Shoot saves.', 7, 0, 0, 4, 0, 0)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited) VALUES (333, 'Expert Artillery Crew', 'This unit may replace the <i>Artillery Crew</i> Special Rule with <I>Expert Artillery Crew</i> for +4pts per unit.', 66, 4, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited) VALUES (334, 'Expert Artillery Crew', 'This unit may replace the <i>Artillery Crew</i> Special Rule with <I>Expert Artillery Crew</i> for +4pts per unit.', 89, 4, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited) VALUES (335, 'Expert Artillery Crew', 'This unit may replace the <i>Artillery Crew</i> Special Rule with <I>Expert Artillery Crew</i> for +4pts per unit.', 102, 4, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointcost, experienceupg, applyall, limited) VALUES (336, 'European Pikemen Exp Upgrade', 'Upgrade from <i>Trained</i> to <i>Veteran</i> for 1 point per model.', 69, 1, 1, 1, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (337, 'Churchs Raiders Militia Rule Swap', 'This unit may exchange the <i>Drilled</i> Special Rule for the <i>Elusive</i> Special Rule', 54, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (338, 'Tercios Milicianos Weapon Swap', 'This unit may exchange their Matchlock Muskets for Carbines at no cost.', 1, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (339, 'Tercios Hostigadores Weapon Swap', 'This unit may exchange their Matchlock Muskets for Heavy Matchlock Muskets at no cost.', 77, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (340, 'Milicianos Indios Bows for Muskets', 'Exchange Bows for Firelock Muskets as Main Weapons at no cost.', 11, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (341, 'European Militia Matchlock for Firelock', 'Exchange Matchlock Muskets for Firelock Muskets as Main Weapons at no cost.', 67, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (342, 'European Militia Musket for Carbines and Scouts', 'Exchange Muskets for Firelock Carbines and the <i>Scout</i> Special Rule at no cost.', 67, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (343, 'Marineros Musket for Carbines and Scouts', 'If this unit has Muskets as a Main Weapon it may exchange its Muskets for Firelock Carbines and the <i>Scout</i> Special Rule at no cost.', 10, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (344, 'European Sailors Musket for Carbines and Scouts', 'If this unit has Muskets as a Main Weapon it may exchange its Muskets for Firelock Carbines and the <i>Scout</i> Special Rule at no cost.', 66, 1)")
+
                 # if table_name == 'commander':
                 #     with engine.connect() as con:
                 #         for row in df.iterrows():
@@ -283,15 +364,33 @@ for filename in os.listdir(directory):
         except Exception as e: print(f'* * * * * * * * * * {e} * * * * * * * * * *')
 
 commandereffect = pd.concat(commandereffects)
-factioneffect = pd.concat(factioneffects)
 commandereffect.drop(commandereffect['commander_id'].loc[commandereffect['commander_id'] == 82].index, inplace=True)
-factioneffect.drop(factioneffect['forceoption_id'].loc[factioneffect['forceoption_id'] == 41].index, inplace=True)
 commandereffect.reset_index(drop=True, inplace=True)
-factioneffect.reset_index(drop=True, inplace=True)
 commandereffect['id'] = commandereffect.index +1
+commandereffect.loc[commandereffect['id'] == 73, 'unitclass_id'] = 0
+
+factioneffect = pd.concat(factioneffects)
+factioneffect.drop(factioneffect['forceoption_id'].loc[factioneffect['forceoption_id'] == 41].index, inplace=True)
+factioneffect.reset_index(drop=True, inplace=True)
 factioneffect['id'] = factioneffect.index +1
 factioneffect.insert(6,'applyall', 0)
+factioneffect['faction_id'] = np.NaN
+factioneffect.drop(factioneffect['id'].loc[factioneffect['id'].isin([36,37,38,39,40,41,42,43])].index, inplace=True)
 factioneffect.loc[factioneffect['id'].isin([3,4,5]), 'applyall'] = 1
+factioneffect.loc[factioneffect['unitoption_id'] == 322, 'name'] = 'Baymen Elusive Scouts'
+factioneffect.loc[factioneffect['unitoption_id'] == 322, 'details'] = 'Add Unit Option for all units to add Elusive and Scout Special Rules for 4 pts.'
+factioneffect.loc[factioneffect['unitoption_id'] == 322, 'faction_id'] = 110
+factioneffect.loc[factioneffect['unitoption_id'] == 322, ['forceoption_id', 'addsubtract', 'unit_id']] = np.NaN
+factioneffect.loc[factioneffect['forceoption_id'].isin([65,66,85]), 'forceoption_id'] = np.NaN
+factioneffect.loc[factioneffect['id'] == 25, 'unitoption_id'] = 334
+factioneffect.loc[factioneffect['id'] == 26, 'unitoption_id'] = 333
+factioneffect.loc[factioneffect['id'] == 27, 'unitoption_id'] = 335
+factioneffect.loc[factioneffect['id'].isin([16,17,24,25,26,27]), ['addsubtract','applyall','unit_id']] = np.NaN
+factioneffect.loc[factioneffect['id'] == 16, 'faction_id'] = 92
+factioneffect.loc[factioneffect['id'] == 17, 'faction_id'] = 76
+factioneffect.loc[factioneffect['id'].isin([24,25,26,27]), 'faction_id'] = 107
+
+
 
 table_name = ''
 for df in [commandereffect,factioneffect]:
@@ -307,7 +406,7 @@ for df in [commandereffect,factioneffect]:
     else:
         df.drop(columns = 'commander_id', inplace=True)
         column_names=['id','forceoption_id','name','details','addsubtract','unit_id','unitclass_id','unitoption_id']    
-        df_schema = {'id': Integer, 'forceoption_id': Integer, 'name': String(80), 'details': Text, 'addsubtract': Integer, 'unit_id': Integer, 'unitclass_id': Integer, 'unitoption_id': Integer}
+        df_schema = {'id': Integer, 'forceoption_id': Integer, 'name': String(80), 'details': Text, 'addsubtract': Integer, 'unit_id': Integer, 'unitclass_id': Integer, 'unitoption_id': Integer, 'faction_id': Integer}
         table_name = 'factioneffect'
     tables.append({'table_name': table_name, 'table_columns': column_names})
     df.to_sql(table_name, engine, if_exists='replace', index= False, dtype= df_schema)
@@ -315,13 +414,12 @@ for df in [commandereffect,factioneffect]:
                     con.execute(f"CREATE SEQUENCE {table_name}_serial AS integer START {(df['id'].max()) + 1} OWNED BY {table_name}.id;")
                     con.execute(f"ALTER TABLE {table_name} ALTER COLUMN id SET DEFAULT nextval('{table_name}_serial');")
                     con.execute(f'ALTER TABLE {table_name} ADD PRIMARY KEY (id);')    
-
+                    
 
 # ******************** END DATA CLEANUP AND DB POPULATION ********************
 
 # Additional database construction and structuring.
 with engine.connect() as con:
-    
     # # Create nationality table. ** NO LONGER NEEDED NOW THAT Force Builder SCRAPES ARE SCRIPTED. **
     # nationalities = ['Spanish', 'English', 'French', 'Unaligned', 'Dutch', 'Golden Age Pirates', 'placeholder', 'Natives']
     # con.execute('CREATE TABLE IF NOT EXISTS nationality(id serial PRIMARY KEY, name VARCHAR UNIQUE);')
@@ -347,19 +445,72 @@ with engine.connect() as con:
                     ERROR for table {table["table_name"]} {col} referencing table {keyed_table}:
                     {e}''')
 
+    con.execute('UPDATE unitoption SET weaponequipment_id = null WHERE weaponequipment_id = 1;')
+
     con.execute("UPDATE ship SET cannonsdecks = '6/0', swivelsdecks = '2/4' WHERE id = 1;")
     con.execute('DELETE FROM faction WHERE id = 17 OR id = 30;')
+    con.execute('DELETE FROM forceoption WHERE id = 90 OR id = 71 OR id = 65 OR id = 66 OR id = 85;')
+    con.execute('DELETE FROM unitoption WHERE id = 312;')
     con.execute('DELETE FROM commander WHERE id = 56 OR id = 128;')
     con.execute('DELETE FROM unit WHERE id = 21 OR id = 50 OR id = 58 OR id = 65 OR id = 83 OR id = 96;')
     # con.execute('DELETE FROM unorthodoxoption WHERE id = 25 OR id = 33 OR id = 34')
     # Set certainnations and certainfactions to 1 (true) for character records, as appropriate.
     con.execute('UPDATE character SET certainnations = 1 WHERE id IN (37,39,40,41,42,53,54,55,56,57,58,59,61,63,68,69);')
     con.execute('UPDATE character SET certainfactions = 1 WHERE (id IN (38,40,41,55,56,61,63,67,70) OR id BETWEEN 43 AND 52);')
-    #Add data to factioneffect
+    # Remove 0's from weaponequipment
+    con.execute('UPDATE weaponequipment SET pointcost = null WHERE pointcost = 0;')
+    con.execute('UPDATE weaponequipment SET pointsperunit = null WHERE pointsperunit = 0;')
+    # Add data to unitoption
+    con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited, addsubtractweaponequipment, weaponequipment_id) VALUES (325, 'Poisoned Arrows','Units with Bows may add Poisoned Arrows to the entire unit for 3 points.',45,3,1,1,3)")
+    con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited, addsubtractweaponequipment, weaponequipment_id) VALUES (326, 'Poisoned Arrows','Units with Bows may add Poisoned Arrows to the entire unit for 3 points.',47,3,1,1,3)")
+    con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited, addsubtractweaponequipment, weaponequipment_id) VALUES (327, 'Poisoned Arrows','Units with Bows may add Poisoned Arrows to the entire unit for 3 points.',48,3,1,1,3)")
+    con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited, addsubtractweaponequipment, weaponequipment_id) VALUES (328, 'Poisoned Arrows','Units with Bows may add Poisoned Arrows to the entire unit for 3 points.',64,3,1,1,3)")
+    con.execute("INSERT INTO unitoption(id, name, details, pointsperunit, addsubtractweaponequipment, weaponequipment_id) VALUES (329, 'Torches','Any unit that is not Mounted may take Torches for 3 points.',3,1,4)")
+    con.execute("INSERT INTO unitoption(id, name, details, pointsperunit, addsubtractweaponequipment, weaponequipment_id) VALUES (345, 'Climbing Gear','Any unit that is not Mounted may take Climbing Gear for 2 points. If a unit has models with Explosives (not just the option to purchase them) that unit may take Climbing Gear for free.',2,1,5)")
+    con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited) VALUES (330, 'Musket Downgrade','Unit may downgrade their Muskets to a Sidearm for -4 points (not per model).',53,-4,1)")
+    con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited) VALUES (331, 'Musket Downgrade','If armed with Muskets as a primary weapon, unit may downgrade it to a Sidearm for -4 points (not per model).',81,-4,1)")
+    con.execute("INSERT INTO unitoption(id, name, details, unit_id, pointsperunit, limited) VALUES (332, 'Musket Downgrade','If armed with Muskets as a primary weapon, unit may downgrade it to a Sidearm for -4 points (not per model).',113,-4,1)")
+    # Add data to commandereffect
+    con.execute("INSERT INTO commandereffect(commander_id, addsubtract, unit_id, unitoption_id) VALUES (96,1,7,33)")
+    con.execute("INSERT INTO commandereffect(commander_id, addsubtract, unit_id, unitclass_id) VALUES (99,1,25,0)")
+    con.execute("INSERT INTO commandereffect(commander_id, addsubtract, unit_id, unitclass_id) VALUES (99,1,26,0)")
+    con.execute("INSERT INTO commandereffect(commander_id, addsubtract, unit_id, unitclass_id) VALUES (99,1,73,0)")
+    # Add data to factioneffect
     con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (50,'Spanish Corsairs',1,0,101,0)")
     con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (50,'Spanish Corsairs',1,0,11,0)")
     con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (50,'Spanish Corsairs',1,0,92,0)")
     con.execute("INSERT INTO factioneffect(forceoption_id, name, addsubtract, applyall, unit_id, unitclass_id) VALUES (68,'West India Company',-1,0,109,0)")
+
+    con.execute("INSERT INTO factioneffect(forceoption_id, name, details, addsubtract, unit_id, unitoption_id) VALUES (89,'Baymen Out of Practice', 'Out of Practice Option for Later Flibustiers.',1,99,323)")
+
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (31, 'Caribbean Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Warriors', 325)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (32, 'South American Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Warriors', 325)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (16, 'Caribs (Kalinago) Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Warriors', 325)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (31, 'Caribbean Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Young Warriors', 326)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (32, 'South American Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Young Warriors', 326)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (16, 'Caribs (Kalinago) Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Young Warriors', 326)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (31, 'Caribbean Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to African Warriors', 327)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (32, 'South American Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to African Warriors', 327)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (16, 'Caribs (Kalinago)Poisoned Arrows', 'Add Poisoned Arrows Unit Option to African Warriors', 327)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (31, 'Caribbean Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Warrior Archers', 328)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (32, 'South American Tribes Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Warrior Archers', 328)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (16, 'Caribs (Kalinago) Poisoned Arrows', 'Add Poisoned Arrows Unit Option to Warrior Archers', 328)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (98, 'Choctaw Musket Downgrade', 'Add Unit Option for Warrior Musketeers.', 330)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (98, 'Choctaw Musket Downgrade', 'Add Unit Option for Braves.', 331)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (98, 'Choctaw Musket Downgrade', 'Add Unit Option for Renegadoes.', 332)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (48, 'Swedish Militia Pikemen Exp Upgrade', 'Add Unit Option for Pikemen.', 336)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (55, 'Churchs Raiders English Militia SR Swap', 'Add Unit Option for English Militia.', 337)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (23, 'Tercio Weapon Swap', 'Add Unit Option for Milicianos.', 338)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (23, 'Tercio Weapon Swap', 'Add Unit Option for Hostigadores.', 339)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (38, 'Portuguese-Brazilian Tercios & Militia Weapon Swap', 'Add Unit Option for Milicanos Indios.', 340)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (106, 'Brazilian Portuguese Garrison Weapon Swap', 'Add Unit Option for Milicanos Indios.', 340)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for Milicanos Indios.', 340)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for European Militia.', 341)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for European Militia.', 342)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for Marineros.', 343)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for European Sailors.', 344)")
+
+
     #Add data to commandernationality
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (106,5,false)')
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (64,3,false)')
@@ -420,7 +571,7 @@ with engine.connect() as con:
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (179,4,false)')
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (180,4,false)')
     con.execute('INSERT INTO commandernationality(commander_id, nationality_id, primary_nationality) VALUES (209,4,false)')
-    # Add data to commanderspecialrule
+    # Add data to commanderspecialrule (for Standard Commanders)
     con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 24,1)')
     con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 23,1)')
     con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (185, 30,1)')
@@ -549,6 +700,22 @@ with engine.connect() as con:
     con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 47,1)')
     con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 157,1)')
     con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (226, 103,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 2,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 85,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 5,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 100,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 37,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 18,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (243, 92,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 2,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 85,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 5,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 55,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 100,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 37,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 18,1)')
+    con.execute('INSERT INTO commanderspecialrule(commander_id, specialrule_id, isoption) VALUES (244, 92,1)')
     # Add data to characternationality
     con.execute('INSERT INTO characternationality(character_id, nationality_id) VALUES (37,8)')
     con.execute('INSERT INTO characternationality(character_id, nationality_id) VALUES (39,2)')

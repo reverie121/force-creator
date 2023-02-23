@@ -316,14 +316,27 @@ class ForceList {
         `);
         cardHeader.append([nameColumn,expandColumn,removeColumn]);
         const cardDetails = $('<div>').addClass(['collapse']).attr('id','commander-details').html(`<hr class='border border-2 border-primary rounded-2'>`);
+        if (this.commander.details) {
+            const details = $('<div>').addClass(['card-text text-secondary']).html(`${this.commander.details}`);
+            const horizontalrule = $('<hr>').addClass(['border', 'border-2', 'border-primary', 'rounded-2']);
+            cardDetails.append(details, horizontalrule);
+        }
+        if (this.commander.unorthodoxforce) {
+            const unorthodoxforce = $('<div>').addClass(['card-text text-secondary']).html(`<b>Unorthodox Force:</b> ${this.commander.unorthodoxforce}`);
+            const horizontalrule = $('<hr>').addClass(['border', 'border-2', 'border-primary', 'rounded-2']);
+            cardDetails.append(unorthodoxforce, horizontalrule);
+        }
         const commandRow = $('<div>').addClass('row');
         const commandRange = $('<div>').addClass(['card-text', 'col-6']).html(`<b>Command Range:</b> ${this.commander.commandrange}"`);
         const commandPoints = $('<div>').addClass(['card-text', 'col-6']).html(`<b>Command Points:</b> ${this.commander.commandpoints}`);
         commandRow.append(commandRange, commandPoints);
-        const mainWeapons = $('<div>').addClass(['card-text']).html('<b>Main Weapons:</b>');
-        const weaponText = $('<div>').html(`${this.commander.mainweapons}`);
-        mainWeapons.append(weaponText);
+        const mainWeapons = $('<div>').addClass(['card-text']).html(`<b>Main Weapons:</b> ${this.commander.mainweapons}`);
         cardDetails.append([commandRow, mainWeapons]);
+        // Horse Option checkbox for Commanders that have this option.
+        if (this.commander.horseoption == 1) {
+            const horseopt = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-commander-horseoption'> This commander may add a Horse for 1 pt.`);
+            cardDetails.append(horseopt);
+        }
         // Display Commander Special Rules
         if (this.commander.specialrule.length > 0 || this.commander.specialruleChoice.length > 0) {
             const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
@@ -383,6 +396,17 @@ class ForceList {
                     }
                 });
             }
+        }
+        // Handle Horse Option click.
+        if (this.commander.horseoption == 1) {
+            $(`#fl-commander-horseoption`).on('click', () => {
+                if ($(`#fl-commander-horseoption`).prop('checked')) {
+                    this.commander.points ++;
+                } else {
+                    this.commander.points --;
+                }
+                this.updateTotalForcePoints();
+            });
         }
         // Handle removal of force's commander.
         $('#commander-remove').parent().on('click', () => {
@@ -636,7 +660,7 @@ class ForceList {
             </div>
             <div class='row'>
                 <div class='col-7'>
-                <b>Movement Penalty</b>: ${artillery.movepenalty}
+                <b>Movement Penalty</b>: ${artillery.movepenalty}"
                 </div>
                 <div class='col-5'>
                 <b>Reload Markers</b>: ${artillery.reloadmarkers}
@@ -1188,6 +1212,18 @@ class ForceList {
         newUnit['modelsCost'] = newUnit.points * newUnit.qty;
         newUnit['perUnitCost'] = 0;
         newUnit['totalUnitCost'] = newUnit.modelsCost + newUnit.perUnitCost;
+        const unitoptions = JSON.parse(sessionStorage.getItem('unitoption'));
+        if (this.faction.factioneffects != []) {
+            for (const effect of this.faction.factioneffects) {
+                if (effect.unitoption_id && !effect.forceoption_id) {
+                    for (const unitoption of unitoptions) {
+                        if (unitoption.id == effect.unitoption_id && (unitoption.unit_id == newUnit.id || !unitoption.unit_id)) {
+                            newUnit.option.push(unitoption);
+                        }
+                    }
+                }
+            }
+        }
         if (this.faction.unitClass[`${newUnit.id}`] == 1) {
             newUnit['class'] = 'core';
         }
@@ -1199,18 +1235,7 @@ class ForceList {
             if (o.selected == 1) {
                 for (const fe of this.faction.factioneffects) {
                     if (fe.unitoption_id && fe.forceoption_id == o.id) {
-                        // Add unit options to specific unit as appropriate based on faction option selected.
-                        if (fe.unit_id == newUnit.id) {
-                            const unitoptions = JSON.parse(sessionStorage.getItem('unitoption'));
-                            for (const unitoption of unitoptions) {
-                                if (unitoption.id == fe.unitoption_id) {
-                                    newUnit.option.push(unitoption);
-                                }
-                            }
-                        }
-                        // Add unit options to general unit as appropriate based on faction option selected.
-                        else if (!fe.unit_id) {
-                            const unitoptions = JSON.parse(sessionStorage.getItem('unitoption'));
+                        if (!fe.unit_id || fe.unit_id == newUnit.id) {
                             if (!fe.unitclass_id) {
                                 for (const unitoption of unitoptions) {
                                     if (unitoption.id == fe.unitoption_id) {
@@ -1677,6 +1702,16 @@ class Faction {
                 }
             }
         }
+        // Check in Commander effects for additional Unit IDs.
+        if (forceList.commander) {
+            if (forceList.commander.commandereffects > []) {
+                for (const ce of forceList.commander.commandereffects) {
+                    if (!factionUnitIDs.includes(ce.unit_id)) {
+                        factionUnitIDs.push(ce.unit_id);
+                    }
+                }
+            }
+        }
         this.unitIDs = factionUnitIDs;
         this.unitClass = unitClasses;
     }
@@ -1727,20 +1762,27 @@ class Faction {
     }
 
     setFactionEffects() {
+        const factioneffect = JSON.parse(sessionStorage.getItem('factioneffect'));
+        const factioneffects = [];
         if ((this.option).length > 0) {
-            const factioneffect = JSON.parse(sessionStorage.getItem('factioneffect'));
-            const factioneffects = [];
             const optionIDs = []
             for (const o of this.option) {
                 optionIDs.push(o.id);
             }
             for (const fe of factioneffect) {
-                if (optionIDs.includes(fe.forceoption_id)) {
+                if (optionIDs.includes(fe.forceoption_id) || this.id == fe.faction_id) {
                     factioneffects.push(fe);
                 }
             }
-            this.factioneffects = factioneffects;
         }
+        else {
+            for (const fe of factioneffect) {
+                if (this.id == fe.faction_id) {
+                    factioneffects.push(fe);
+                }
+            }
+        }
+        this.factioneffects = factioneffects;
     }
 }
 
@@ -1763,6 +1805,13 @@ class Commander {
         for (const ce of commanderEffect) {
             if (ce.commander_id == this.id) {
                 commandereffects.push(ce);
+                // If forceList has a Faction update faction.factionUnitIDs with any that need to be added.
+                if (forceList.faction > []) {
+                    if (!forceList.faction.unitIDs.includes(ce.unit_id)) {
+                        forceList.faction.unitIDs.push(ce.unit_id);
+                    }
+                    forceList.faction.setFactionUnits();
+                }
             }
         }
         this.commandereffects = commandereffects;
@@ -1886,7 +1935,7 @@ class Artillery {
             </div>
             <div class='row'>
                 <div class='col-7'>
-                <b>Movement Penalty</b>: ${this.movepenalty}
+                <b>Movement Penalty</b>: ${this.movepenalty}"
                 </div>
                 <div class='col-5'>
                 <b>Reload Markers</b>: ${this.reloadmarkers}
@@ -2421,7 +2470,7 @@ class Unit {
         const unitOption = JSON.parse(sessionStorage.getItem('unitoption'));
         const unitOptions = [];
         for (const uo of unitOption) {
-            if (uo.unit_id == this.id) {
+            if ((uo.unit_id == this.id && uo.limited == 0) || uo.id == 329 || uo.id == 345) {
                 const newOption = {};
                 Object.assign(newOption, uo);
                 unitOptions.push(newOption);
@@ -2851,16 +2900,20 @@ $componentSelector.on('change', async function() {
         canoa.show('medium', 'swing');
         longboat.show('medium', 'swing');
         piragua.show('medium', 'swing');
-        bark.show('medium', 'swing');
-        bermudaSloop.show('medium', 'swing');
-        tartana.show('medium', 'swing');
-        sloop.show('medium', 'swing');
-        corvette.show('medium', 'swing');
-        fluyt.show('medium', 'swing');
-        brigantine.show('medium', 'swing');
-        lightFrigate.show('medium', 'swing');
-        galleon.show('medium', 'swing');
-        sixthRateFrigate.show('medium', 'swing');
+        if (forceList.faction.maxshipdecks > 1) {
+            bark.show('medium', 'swing');
+            bermudaSloop.show('medium', 'swing');
+            tartana.show('medium', 'swing');
+            sloop.show('medium', 'swing');
+            corvette.show('medium', 'swing');
+            if (forceList.faction.maxshipdecks > 2) {
+                fluyt.show('medium', 'swing');
+                brigantine.show('medium', 'swing');
+                lightFrigate.show('medium', 'swing');
+                galleon.show('medium', 'swing');
+                sixthRateFrigate.show('medium', 'swing');
+            }
+        }
     }
     else if (selected == 'unit') {
         if (forceList.faction) {

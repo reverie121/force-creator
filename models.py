@@ -65,23 +65,18 @@ class User(db.Model):
 
     @classmethod
     def register(cls, username, pwd):
-        """Register user w/hashed password & return user."""
-
+        """ Register user w/hashed password & return user. """
         hashed = bcrypt.generate_password_hash(pwd)
         # turn bytestring into normal (unicode utf8) string
         hashed_utf8 = hashed.decode("utf8")
-
         # return instance of user w/username and hashed pwd
         return cls(username=username, password=hashed_utf8)
 
     @classmethod
     def authenticate(cls, username, pwd):
-        """Validate that user exists & password is correct.
-        Return user if valid; else return False.
-        """
-
+        """ Validate that user exists & password is correct.
+        Return user if valid; else return False. """
         u = User.query.filter_by(username=username).first()
-
         if u and bcrypt.check_password_hash(u.password, pwd):
             # return user instance
             return u
@@ -155,6 +150,8 @@ class Faction(db.Model):
     forceoptions = db.Column(db.VARCHAR)
     nationality_id = db.Column(db.Integer, db.ForeignKey(
         'nationality.id', ondelete='SET NULL'))
+    maxshipdecks = db.Column(db.Integer)
+    attackerrollbonus = db.Column(db.Integer)
 
     nationality = db.relationship('Nationality', backref='faction')
     characterfaction = db.relationship('CharacterFaction', backref='faction')
@@ -163,6 +160,7 @@ class Faction(db.Model):
     factionupgrade = db.relationship('FactionUpgrade', backref='faction')
     forceoption = db.relationship('ForceOption', backref='faction')
     forcespecialrule = db.relationship('ForceSpecialrule', backref='faction')
+    factioneffect = db.relationship('FactionEffect', backref='faction')
     commander = db.relationship(
         'Commander',
         secondary = 'commanderfaction',
@@ -180,9 +178,8 @@ class Faction(db.Model):
     )
 
     def pack_data(self):
-        """ Create a serialized data set for a specified Nationality's Factions.
-            Returns a dict containing lists of dicts of that
-            Nationality's Factions' data. """
+        """ Create a serialized data set for a specified Faction.
+            Returns a dict containing lists of dicts of that Factions' data. """
         
         faction_data = {
             'faction': serialize(self),            
@@ -211,7 +208,6 @@ class Commander(db.Model):
     commanderclass_id = db.Column(db.Integer, db.ForeignKey(
         'commanderclass.id', ondelete='SET NULL'))
     name = db.Column(db.VARCHAR)
-    nickname = db.Column(db.VARCHAR)
     points = db.Column(db.Integer)
     details = db.Column(db.Text)
     commandrange = db.Column(db.Integer)
@@ -219,8 +215,9 @@ class Commander(db.Model):
     mainweapons = db.Column(db.VARCHAR)
     sidearms = db.Column(db.VARCHAR)
     imgfile = db.Column(db.VARCHAR)
-    extrainfo = db.Column(db.VARCHAR)
     wcproduct_id = db.Column(db.Integer)
+    unorthodoxforce = db.Column(db.VARCHAR)
+    horseoption = db.Column(db.Integer)
 
     commanderclass = db.relationship('CommanderClass', backref='commander')
     commandernationality = db.relationship('CommanderNationality', backref='commander')
@@ -238,9 +235,8 @@ class Commander(db.Model):
     )
     
     def pack_data(self):
-        """ Create a serialized data set for a specified Nationality's Commanders.
-            Returns a dict containing lists of dicts of that
-            Nationality's Commanders' data. """
+        """ Create a serialized data set for a specified Commander.
+            Returns a dict containing lists of dicts of that Commander's data. """
         commander_data = {
             'commander': serialize(self),            
             'commanderspecialrule': serialize(list(self.commanderspecialrule)),
@@ -379,8 +375,7 @@ class Ship(db.Model):
 
     def pack_data(self):
         """ Create a serialized data set for a Ship.
-            Returns a dict containing lists of dicts of
-            the ship's related data. """
+            Returns a dict containing lists of dicts of the Ship's related data. """
 
         ship_data = {
             'ship': serialize(self),            
@@ -441,7 +436,8 @@ class Unit(db.Model):
     )
     
     def pack_data(self):
-        """ . """
+        """ Create a serialized data set for a Unit.
+            Returns a dict containing lists of dicts of the Unit's related data. """
 
         unit_data = {
             'unit': serialize(self),            
@@ -553,6 +549,7 @@ class FactionEffect(db.Model):
         'unitclass.id'))
     unitoption_id = db.Column(db.Integer, db.ForeignKey(
         'unitoption.id'))
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id'))
 
     def __repr__(self):
         return f'<CommanderEffect {self.id}>'
@@ -582,10 +579,6 @@ class Specialrule(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    onunit = db.Column(db.Integer)
-    oncommander = db.Column(db.Integer)
-    onship = db.Column(db.Integer)
-    onfactionopt = db.Column(db.Integer)
 
     characterspecialrule = db.relationship('CharacterSpecialrule', backref='specialrule')
     commanderspecialrule = db.relationship('CommanderSpecialrule', backref='specialrule')
@@ -851,6 +844,9 @@ class UnitOption(db.Model):
     pointsperunit = db.Column(db.Integer)
     experienceupg = db.Column(db.Integer)
     applyall = db.Column(db.Integer)
+    limited = db.Column(db.Integer)
+    addsubtractweaponequipment = db.Column(db.Integer)
+    weaponequipment_id = db.Column(db.Integer)
 
     def __repr__(self):
         return f'<UnitOption {self.id} {self.name}>'

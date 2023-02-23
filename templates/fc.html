@@ -107,19 +107,13 @@
                                 <div class='container p-1 bg-info border border-5 border-secondary rounded-3'>
                                     <div class='container text-primary fell fs-4'>DO NEXT / TODAY</div>
                                     <ul class='fell text-secondary fs-5'>
-                                        <li>Add save functionality for force lists.</li>
+                                        <li>Turn misc dropdown into customizable option..</li>
+                                        <li>Add assign functionality for force list items. (add Great Warrior functionality here from commandereffect)</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>TASKS FOR RELEASE</div>
                                     <ul class='fell text-secondary fs-5'>
                                         <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
-                                        <li>Add assign functionality for force list items. (add Great Warrior functionality here from commandereffect)</li>
-                                    </ul>
-                                    <div class='container text-primary fell fs-4'>FAST PRIORITY TASKS</div>
-                                    <ul class='fell text-secondary fs-5'>
-                                        <li>Add ship restrictions for relevant factions.</li>
-                                        <li>Clean up and display data from commander.details.</li>
-                                        <li>Find stuff like this and add it to attackrollbonus column: This Force subtracts 2 from its roll to determine attacker in a scenario.</li>
-                                        <li>Check data packing docstrings.</li>
+                                        <li>Add save functionality for force lists.</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>MORE PRIORITY TASKS</div>
                                     <ul class='fell text-secondary fs-5'>
@@ -127,15 +121,13 @@
                                         <li>Add other Native restrictions.</li>
                                         <li>Add restrictions or warnings for the Support: X special rules.</li>
                                         <li>Add warnings for permitted rule breaking.</li>
-                                        <li>Clean up special rules table and relations.</li>
-                                        <li>Integrate misc items into db and ui.</li>
-                                        <li>Add settings/details dropdown for forcelist name.</li>
                                         <li>Add theme change functionality via dropdowns.</li>
                                         <li>Make fully responsive and finish up styling.</li>
                                         <li>Auto-save option.</li>
                                         <li>Add structure and functionality for characters for commander-requried and commander-conflict-with.</li>
                                         <li>Fix too-fast-expander-click bug</li>
                                         <li>Make build-side interior expanders default to open.</li>
+                                        <li>Add casualty - strike point threshold functionality.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -144,21 +136,52 @@
                                     <div class='container text-primary fell fs-4'>COMPLETED THIS WEEK</div>
                                     <div class='container text-secondary fell fs-5'>NOT PUSHED</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Commander display now showing Details and Horse Option where appropriate. Commander.details cleaned out in database.</li>
+                                        <li>Added a weapons and equipment table to the db.</li>
+                                        <li>Added unit options from Faction Special Rules and for Torches, Climbing Gear, and Poisoned Arrows.</li>
+                                        <li>Clean up special rules table and relations.</li>
+                                        <li>Added ship restrictions for relevant factions in db and UI.</li>
+                                        <li>Standardized db to use card suit symbols instead of names.</li>
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>LAST WEEK</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
                                         <li>Added Standard Commander functionality for choosing Special Rules and added supporting data to db.</li>
                                         <li>Save functionality concept implemented on front end.</li>
                                         <li>factioneffect table now functional for unit option changes. This should now be fully functional.</li>
                                         <li>Improved reseting of display and ForceList object in response to commander and faction changes.</li>
                                         <li>factioneffect table now functional for unit class changes.</li>
                                         <li>commandereffect table now fully functional (not including Great Warrior, t0 be implemented with assignments).</li>
-                                    </ul>
-                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
                                         <li>Unit Options are now fully functional.</li>
                                         <li>Ship Upgrades are now fully functional.</li>
                                         <li>Seed file adapted to restructure unorthodoxforce and unorthodoxoption into commandereffect and factioneffect.</li>
                                         <li>Additional work to seed file to standardize attack roll bonus language, add a column to Faction table for storing this bonus, and add a column to characters to distinguish those that do not count towards normal limits. Added three columns to forceoption to account for minimum unit and mounted commander requirements.</li>
                                         <li>Updated seed file to add Faction special rules to db for Factions from FotF and RtB (addsubtract column may still need data modified manually).</li>
                                         <li>Added Nickname functionality for Units and Ships in ForceList and Unit experience now shows in displays.</li>
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>TWO WEEKS AGO</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Characters can now be added to ForceLists with full functionality and integration. User is prevented from adding two of the same Character to a ForceList.</li>
+                                        <li>Ships can now be added to ForceLists with full functionality and integration other than upgrade boxes (same with unit option boxes).</li>
+                                        <li>Artillery can now be added to ForceLists with full functionality and integration.</li>
+                                        <li>Points/cost now updates in both object and display when Units are added or their Qty is changed.</li>
+                                        <li>Unit Qty is now restricted to the ForceList's unitMin and unitMax. When the point total field is changed by user, any ForceList Units with invalid Qty will automatically update to min/max.</li>
+                                        <li>Units can now be added to ForceLists with full functionality for qty changes, removal, and information expanders.</li>
+                                        <li>Added User functionality.</li>
+                                        <li>Finished change/removal effects for Nation/Faction/Commander/ComponentSelector.</li>
+                                        <li>Fixed bug where clicking near expander icon would sometimes work without changing the icon.</li>
+                                        <li>Organized models.py</li>
+                                        <li>Updated front end Character display so only viable choices are visible. Major update to Character menu display.</li>
+                                        <li>Fixed commander lists so that full lists are available for each nation (required multi to multi data).</li>
+                                        <li>Split up character.details disordered information into 10 new columns.</li>
+                                        <li>Data entry for new connecting tables.</li>
+                                        <li>Added multi-multi db structure for commandernationality, characternationality, characterfaction, and characterspecialrule.</li>
+                                        <li>Removed some unneeded records and table columns from db.</li>
+                                        <li>Added functionality for updating and storing max points and unit size range.</li>
+                                        <li>Refactored to add classes for Nationality, Faction, and Commander.</li>
+                                        <li>Added basic navbar with styling.</li>
                                     </ul>
                                 </div>
                             </div>                            
