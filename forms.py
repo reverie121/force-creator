@@ -39,4 +39,4 @@ class ForceSelection(FlaskForm):
 
 class AddToList(FlaskForm):
     """ Form for use with Force Creator. """
-    component_selector = SelectField('', choices=[('artillery', 'Artillery'), ('character', 'Characters'), ('ship', 'Ships'), ('unit', 'Units'), ('misc', 'Terrain & Miscellaneous')])
+    component_selector = SelectField('', choices=[('artillery', 'Artillery'), ('character', 'Characters'), ('ship', 'Ships'), ('unit', 'Units')])

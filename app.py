@@ -150,7 +150,8 @@ def pack_universal_data():
         'specialrule': models.serialize(list(models.Specialrule.query.all())),
         'unitoption': models.serialize(list(models.UnitOption.query.all())),
         'unitspecialrule': models.serialize(list(models.UnitSpecialrule.query.all())),
-        'upgrade': models.serialize(list(models.Upgrade.query.all()))
+        'upgrade': models.serialize(list(models.Upgrade.query.all())), 
+        'weaponequipment': models.serialize(list(models.WeaponEquipment.query.all()))
     }
     return universal_data
 

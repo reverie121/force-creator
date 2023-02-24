@@ -79,8 +79,13 @@ for filename in os.listdir(directory):
             # Replace card suit names with symbols where needed:
             df.replace(to_replace = ['SPADE','HEART','DIAMOND','CLUB'],value = ['♠︎','♥︎','♦︎','♣︎'], inplace=True, regex=True)
 
+            if table_name == 'artillery':
+                df.drop(df['name'].loc[df['name'].isin(['Chainshot','Grapeshot'])].index, inplace=True)                
+                df['name'].replace(to_replace = ['Ship pair','on Ship/Structure',' Structure','Field'],value = ['(Pair on Naval Carriage)','(Ship / Structure)',' (Structure)','(Field Carriage)'], inplace=True, regex=True)
+                df.sort_values(by=['name'], inplace=True, ascending=False)
+
             # Create new columns for character table.
-            if table_name == 'character':
+            elif table_name == 'character':
                 df['charactertype'] = 1 # (1 = Fighting Man).
                 df['unitrestrictions'] = ''
                 df['extraabilities'] = ''
@@ -200,6 +205,7 @@ for filename in os.listdir(directory):
                 df.loc[df['id'] == 208, 'unorthodoxforce'] = 'A Force led by this Commander may include Braves (Native American) as Core units.'
                 df['horseoption'] = 0
                 df.loc[df['id'].isin([2,3,4,7,8,9,10,11,12,26,27,28,71,73,74,75,93,94,95,96,99,100,101,102,118,121,126,127,129]), 'horseoption'] = 1
+                df.sort_values(by=['name'], inplace=True)
 
             elif table_name == 'commanderfaction':
                 df.drop(df['faction_id'].loc[df['faction_id'].isin([54])].index, inplace=True)                               
@@ -270,6 +276,7 @@ for filename in os.listdir(directory):
 
             elif table_name == 'unit':
                 df.drop(df['id'].loc[df['id'].isin([46])].index, inplace=True)
+                df.sort_values(by=['name'], inplace=True)
 
             elif table_name == 'unitoption':
                 df['limited'] = 0

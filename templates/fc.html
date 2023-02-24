@@ -107,20 +107,18 @@
                                 <div class='container p-1 bg-info border border-5 border-secondary rounded-3'>
                                     <div class='container text-primary fell fs-4'>DO NEXT / TODAY</div>
                                     <ul class='fell text-secondary fs-5'>
-                                        <li>Turn misc dropdown into customizable option..</li>
                                         <li>Add assign functionality for force list items. (add Great Warrior functionality here from commandereffect)</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>TASKS FOR RELEASE</div>
                                     <ul class='fell text-secondary fs-5'>
-                                        <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
                                         <li>Add save functionality for force lists.</li>
+                                        <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>MORE PRIORITY TASKS</div>
                                     <ul class='fell text-secondary fs-5'>
                                         <li>Better sorting.</li>
                                         <li>Add other Native restrictions.</li>
-                                        <li>Add restrictions or warnings for the Support: X special rules.</li>
-                                        <li>Add warnings for permitted rule breaking.</li>
+                                        <li>Add warnings for permitted rule breaking (don't forget Support: X).</li>
                                         <li>Add theme change functionality via dropdowns.</li>
                                         <li>Make fully responsive and finish up styling.</li>
                                         <li>Auto-save option.</li>
@@ -136,16 +134,19 @@
                                     <div class='container text-primary fell fs-4'>COMPLETED THIS WEEK</div>
                                     <div class='container text-secondary fell fs-5'>NOT PUSHED</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Turned Misc dropdown into a button to add a custom item to list.</li>
+                                        <li>Fixed a couple unit cost calculation bugs in adjustUnitCost and adjustUnitQty.</li>
+                                        <li>Added nickname functionality for Characters and Commanders.</li>
+                                        <li>Added nickname and option functionality for Artillery. Cleaned up Artillery table in db and updated UI.</li>
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
                                         <li>Commander display now showing Details and Horse Option where appropriate. Commander.details cleaned out in database.</li>
                                         <li>Added a weapons and equipment table to the db.</li>
                                         <li>Added unit options from Faction Special Rules and for Torches, Climbing Gear, and Poisoned Arrows.</li>
                                         <li>Clean up special rules table and relations.</li>
                                         <li>Added ship restrictions for relevant factions in db and UI.</li>
-                                        <li>Standardized db to use card suit symbols instead of names.</li>
-                                    </ul>
-                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
-                                    </ul>
+                                        <li>Standardized db to use card suit symbols instead of names.</li>                                    </ul>
                                     <div class='container text-secondary fell fs-5'>LAST WEEK</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
                                         <li>Added Standard Commander functionality for choosing Special Rules and added supporting data to db.</li>
@@ -196,9 +197,17 @@
                         <!-- MENU SIDE -->
                         <div class='col mt-1 mb-0 me-2 ms-0 pt-2 pb-2 rounded-3 bg-warning'>
                             
-                            <form>
-                                {{add_to_list.component_selector(class_='form-control rounded-2 text-center force-selector-field pt-0 pb-0 border border-2 border-secondary')}}
-                            </form>
+                            <div class='row p-0'>
+                                <div class='col mx-0'>
+                                    <form>
+                                        {{add_to_list.component_selector(class_='form-control rounded-2 text-center force-selector-field pt-0 pb-0 border border-2 border-secondary')}}
+                                    </form>
+                                </div>
+                                <div class='col-sm-auto mx-0 ps-0 d-flex flex-row-reverse'>
+                                    <button class='btn btn-primary border border-info py-0 px-1 text-info fell' id='add-custom-button'>+ Custom</button>
+                                </div>
+                            </div>
+
                             <div class='container rounded-2 text-center text-info fs-4 fell' id='component-instructions'>
                                 Please selection a Faction and Commander.
                             </div>

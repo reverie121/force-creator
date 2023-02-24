@@ -608,6 +608,20 @@ class Upgrade(db.Model):
     def __repr__(self):
         return f'<Upgrade {self.id} {self.name}>'
 
+class WeaponEquipment(db.Model):
+    """ WeaponEquipment Model. """
+
+    __tablename__ = "weaponequipment"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    name = db.Column(db.VARCHAR)
+    details = db.Column(db.Text)
+    rules = db.Column(db.VARCHAR)
+    pointcost = db.Column(db.Integer)
+    pointsperunit = db.Column(db.Integer)
+
 #################### FC Connective Table Models ####################
 
 class CharacterFaction(db.Model):
