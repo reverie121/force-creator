@@ -49,19 +49,22 @@ def serialize(query_response):
 
 #################### ********** ########## MODELS ########## ********** ####################
 
-############################## User Models ##############################
+############################## ACCOUNT (User) Models ##############################
 
 
-class User(db.Model):
-    """ User model. """
+class Account(db.Model):
+    """ Account model. """
 
-    __tablename__ = "users"
+    __tablename__ = "account"
 
-    username = db.Column(db.String(20), primary_key=True)
+    username = db.Column(db.String(30),
+        primary_key=True)
+    created_at = db.Column(db.DateTime, 
+        default=db.func.now())
     password = db.Column(db.Text, nullable=False)
-    email = db.Column(db.String(50), nullable=False, unique=True)
-    first_name = db.Column(db.String(30), nullable=False)
-    last_name = db.Column(db.String(30), nullable=False)
+    email = db.Column(db.String(75), nullable=False, unique=True)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
 
     @classmethod
     def register(cls, username, pwd):
@@ -76,7 +79,7 @@ class User(db.Model):
     def authenticate(cls, username, pwd):
         """ Validate that user exists & password is correct.
         Return user if valid; else return False. """
-        u = User.query.filter_by(username=username).first()
+        u = Account.query.filter_by(username=username).first()
         if u and bcrypt.check_password_hash(u.password, pwd):
             # return user instance
             return u
@@ -84,10 +87,204 @@ class User(db.Model):
             return False
     
     def __repr__(self):
-        return f'<User u: {self.username} e: {self.email} fn: {self.first_name} ln: {self.last_name}>'
+        return f'<Account u: {self.username} e: {self.email} fn: {self.first_name} ln: {self.last_name}>'
 
 
 ############################## Force Creator Models ##############################
+
+#################### FC Save Models ####################
+
+class SavedList(db.Model):
+    """ SavedList Model. """
+
+    __tablename__ = "savedlist"
+
+    uuid = db.Column(db.VARCHAR, primary_key=True)
+    username = db.Column(db.VARCHAR, db.ForeignKey(
+        'account.username', ondelete='SET NULL'))
+    created_at = db.Column(db.DateTime, 
+        default=db.func.now())
+    last_modified = db.Column(db.DateTime, 
+        default=db.func.now())
+    username = db.Column(db.VARCHAR, db.ForeignKey(
+        'account.username', ondelete='CASCADE'))
+
+    name = db.Column(db.VARCHAR)
+    maxpoints = db.Column(db.Integer)
+    nationality_id = db.Column(db.Integer, db.ForeignKey(
+        'nationality.id', ondelete='SET NULL'))
+    faction_id = db.Column(db.Integer, db.ForeignKey(
+        'faction.id', ondelete='SET NULL'))
+    forceoption_id = db.Column(db.Integer, db.ForeignKey(
+        'forceoption.id', ondelete='SET NULL'))
+    commander_id = db.Column(db.Integer, db.ForeignKey(
+        'commander.id', ondelete='SET NULL'))
+    commandernickname = db.Column(db.VARCHAR)
+    commanderhorseoption = db.Column(db.Integer)
+    commandersr1_id = db.Column(db.Integer, db.ForeignKey(
+        'specialrule.id', ondelete='SET NULL'))
+    commandersr2_id = db.Column(db.Integer, db.ForeignKey(
+        'specialrule.id', ondelete='SET NULL'))
+    idcounter = db.Column(db.Integer)
+    artillerycount = db.Column(db.Integer)
+    charactercount = db.Column(db.Integer)
+    shipcount = db.Column(db.Integer)
+    unitcount = db.Column(db.Integer)
+    misccount = db.Column(db.Integer)
+
+    user = db.relationship('Account', backref='savedlist')
+
+    nationality = db.relationship('Nationality', backref='savedlist')
+    faction = db.relationship('Faction', backref='savedlist')
+    forceoption = db.relationship('ForceOption', backref='savedlist')
+    commander = db.relationship('Commander', backref='savedlist')
+
+    artillerycomponent = db.relationship('ArtilleryComponent', backref='savedlist')
+    charactercomponent = db.relationship('CharacterComponent', backref='savedlist')
+    shipcomponent = db.relationship('ShipComponent', backref='savedlist')
+    unitcomponent = db.relationship('UnitComponent', backref='savedlist')
+    customcomponent = db.relationship('CustomComponent', backref='savedlist')
+
+    def pack_data(self):
+        """ Create a serialized data set for a saved force list. """
+        
+        saved_list_data = serialize(self)
+
+        if saved_list_data['artillerycount'] > 0:
+            artillerycomponent = serialize(list(self.artillerycomponent))
+            for index, component in enumerate(artillerycomponent):
+                for k, v in component.items():
+                    saved_list_data[f'artillery_{index + 1}_{k}'] = v
+                saved_list_data[f'artillery_{index + 1}_id'] = saved_list_data[f'artillery_{index + 1}_artillery_id']
+                saved_list_data.pop(f'artillery_{index + 1}_list_uuid')
+                saved_list_data.pop(f'artillery_{index + 1}_artillery_id')        
+
+        if saved_list_data['charactercount'] > 0:
+            charactercomponent = serialize(list(self.charactercomponent))
+            for index, component in enumerate(charactercomponent):
+                for k, v in component.items():
+                    saved_list_data[f'character_{index + 1}_{k}'] = v
+                saved_list_data[f'character_{index + 1}_id'] = saved_list_data[f'character_{index + 1}_character_id']
+                saved_list_data.pop(f'character_{index + 1}_list_uuid')
+                saved_list_data.pop(f'character_{index + 1}_character_id')                
+
+        if saved_list_data['shipcount'] > 0:
+            shipcomponent = serialize(list(self.shipcomponent)) 
+            for index, component in enumerate(shipcomponent):
+                for k, v in component.items():
+                    saved_list_data[f'ship_{index + 1}_{k}'] = v
+                saved_list_data[f'ship_{index + 1}_id'] = saved_list_data[f'ship_{index + 1}_ship_id']
+                saved_list_data.pop(f'ship_{index + 1}_list_uuid')
+                saved_list_data.pop(f'ship_{index + 1}_ship_id')        
+
+        if saved_list_data['unitcount'] > 0:
+            unitcomponent = serialize(list(self.unitcomponent))
+            for index, component in enumerate(unitcomponent):
+                for k, v in component.items():
+                    saved_list_data[f'unit_{index + 1}_{k}'] = v
+                saved_list_data[f'unit_{index + 1}_id'] = saved_list_data[f'unit_{index + 1}_unit_id']
+                saved_list_data.pop(f'unit_{index + 1}_list_uuid')
+                saved_list_data.pop(f'unit_{index + 1}_unit_id')        
+
+        if saved_list_data['misccount'] > 0:
+            customcomponent = serialize(list(self.customcomponent))
+            for index, component in enumerate(customcomponent):
+                for k, v in component.items():
+                    saved_list_data[f'misc_{index + 1}_{k}'] = v
+
+        return saved_list_data
+
+    def __repr__(self):
+        return f'<SavedList {self.id} {self.name} {self.uuid}>'    
+
+class ArtilleryComponent(db.Model):
+    """ ArtilleryComponent Model """
+
+    __tablename__ = "artillerycomponent"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
+        'savedlist.uuid', ondelete='CASCADE'))    
+    nickname = db.Column(db.VARCHAR)
+    fid = db.Column(db.VARCHAR)
+    artillery_id = db.Column(db.Integer, db.ForeignKey(
+        'artillery.id', ondelete='SET NULL'))
+    options = db.Column(db.VARCHAR)
+    qty = db.Column(db.Integer)
+
+    artillery = db.relationship('Artillery', backref='artillerycomponent')
+
+class CharacterComponent(db.Model):
+    """ CharacterComponent Model """
+
+    __tablename__ = "charactercomponent"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
+        'savedlist.uuid', ondelete='CASCADE'))    
+    nickname = db.Column(db.VARCHAR)
+    fid = db.Column(db.VARCHAR)
+    character_id = db.Column(db.Integer, db.ForeignKey(
+        'character.id', ondelete='SET NULL'))
+
+    character = db.relationship('Character', backref='charactercomponent')
+
+class ShipComponent(db.Model):
+    """ ShipComponent Model """
+
+    __tablename__ = "shipcomponent"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
+        'savedlist.uuid', ondelete='CASCADE'))    
+    nickname = db.Column(db.VARCHAR)
+    fid = db.Column(db.VARCHAR)
+    ship_id = db.Column(db.Integer, db.ForeignKey(
+        'ship.id', ondelete='SET NULL'))
+    upgrades = db.Column(db.VARCHAR)
+
+    ship = db.relationship('Ship', backref='shipcomponent')
+
+class UnitComponent(db.Model):
+    """ UnitComponent Model """
+
+    __tablename__ = "unitcomponent"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
+        'savedlist.uuid', ondelete='CASCADE'))    
+    nickname = db.Column(db.VARCHAR)
+    fid = db.Column(db.VARCHAR)
+    unit_id = db.Column(db.Integer, db.ForeignKey(
+        'unit.id', ondelete='SET NULL'))
+    options = db.Column(db.VARCHAR)
+    qty = db.Column(db.Integer)
+
+    unit = db.relationship('Unit', backref='unitcomponent')
+
+class CustomComponent(db.Model):
+    """ CustomComponent Model """
+
+    __tablename__ = "customcomponent"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
+        'savedlist.uuid', ondelete='CASCADE'))
+    fid = db.Column(db.VARCHAR)
+    name = db.Column(db.VARCHAR)
+    details = db.Column(db.Text)
+    points = db.Column(db.Integer)
+    qty = db.Column(db.Integer)
 
 #################### FC Top Level Models ####################
 
@@ -745,8 +942,6 @@ class FactionUnit(db.Model):
     unit_id = db.Column(db.Integer, db.ForeignKey(
         'unit.id', ondelete='CASCADE'))
     details = db.Column(db.Text)
-
-    factionunitclass = db.relationship('FactionUnitclass', backref='factionunit')
 
     def __repr__(self):
         return f'<FactionUnit {self.id}>'

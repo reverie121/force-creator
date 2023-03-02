@@ -105,14 +105,19 @@
                         <div class='row'>
                             <div class='col-6'>
                                 <div class='container p-1 bg-info border border-5 border-secondary rounded-3'>
-                                    <div class='container text-primary fell fs-4'>DO NEXT / TODAY</div>
+                                    <div class='container text-primary fell fs-4'>TASKS FOR ALPHA RELEASE</div>
                                     <ul class='fell text-secondary fs-5'>
-                                        <li>Add assign functionality for force list items. (add Great Warrior functionality here from commandereffect)</li>
-                                    </ul>
-                                    <div class='container text-primary fell fs-4'>TASKS FOR RELEASE</div>
-                                    <ul class='fell text-secondary fs-5'>
-                                        <li>Add save functionality for force lists.</li>
+                                        <li>Integrate saved lists with users.</li>
                                         <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
+                                    </ul>
+                                    <div class='container text-primary fell fs-4'>TASKS FOR BETA RELEASE</div>
+                                    <ul class='fell text-secondary fs-5'>
+                                        <li>Add assign functionality for force list items. (add Great Warrior functionality here with commandereffect/unitoption)</li>
+                                        <li>Localize all possible dependencies.</li>
+                                        <li>Resets for non-Unit components. Add x's.</li>
+                                        <li>Ship upgrades for Piragua and Corvette.</li>
+                                        <li>Add PDF functionality.</li>
+                                        <li>Make fully responsive and finish up styling.</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>MORE PRIORITY TASKS</div>
                                     <ul class='fell text-secondary fs-5'>
@@ -120,7 +125,6 @@
                                         <li>Add other Native restrictions.</li>
                                         <li>Add warnings for permitted rule breaking (don't forget Support: X).</li>
                                         <li>Add theme change functionality via dropdowns.</li>
-                                        <li>Make fully responsive and finish up styling.</li>
                                         <li>Auto-save option.</li>
                                         <li>Add structure and functionality for characters for commander-requried and commander-conflict-with.</li>
                                         <li>Fix too-fast-expander-click bug</li>
@@ -134,20 +138,25 @@
                                     <div class='container text-primary fell fs-4'>COMPLETED THIS WEEK</div>
                                     <div class='container text-secondary fell fs-5'>NOT PUSHED</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
-                                        <li>Turned Misc dropdown into a button to add a custom item to list.</li>
-                                        <li>Fixed a couple unit cost calculation bugs in adjustUnitCost and adjustUnitQty.</li>
-                                        <li>Added nickname functionality for Characters and Commanders.</li>
-                                        <li>Added nickname and option functionality for Artillery. Cleaned up Artillery table in db and updated UI.</li>
+                                        <li>Added Save and Revert functionality for force lists.</li>
                                     </ul>
                                     <div class='container text-secondary fell fs-5'>PUSHED</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>LAST WEEK</div>
+                                    <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Turned Misc dropdown into a button to add a custom item to list.</li>
+                                        <li>Fixed a couple unit cost calculation bugs in adjustUnitCost and adjustUnitQty.</li>
+                                        <li>Added nickname functionality for Characters and Commanders.</li>
+                                        <li>Added nickname and option functionality for Artillery. Cleaned up Artillery table in db and updated UI.</li>                                        
                                         <li>Commander display now showing Details and Horse Option where appropriate. Commander.details cleaned out in database.</li>
                                         <li>Added a weapons and equipment table to the db.</li>
                                         <li>Added unit options from Faction Special Rules and for Torches, Climbing Gear, and Poisoned Arrows.</li>
                                         <li>Clean up special rules table and relations.</li>
                                         <li>Added ship restrictions for relevant factions in db and UI.</li>
-                                        <li>Standardized db to use card suit symbols instead of names.</li>                                    </ul>
-                                    <div class='container text-secondary fell fs-5'>LAST WEEK</div>
+                                        <li>Standardized db to use card suit symbols instead of names.</li>   
+                                    </ul>
+                                    <div class='container text-secondary fell fs-5'>TWO WEEKS AGO</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
                                         <li>Added Standard Commander functionality for choosing Special Rules and added supporting data to db.</li>
                                         <li>Save functionality concept implemented on front end.</li>
@@ -162,7 +171,7 @@
                                         <li>Updated seed file to add Faction special rules to db for Factions from FotF and RtB (addsubtract column may still need data modified manually).</li>
                                         <li>Added Nickname functionality for Units and Ships in ForceList and Unit experience now shows in displays.</li>
                                     </ul>
-                                    <div class='container text-secondary fell fs-5'>TWO WEEKS AGO</div>
+                                    <div class='container text-secondary fell fs-5'>THREE WEEKS AGO</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
                                         <li>Characters can now be added to ForceLists with full functionality and integration. User is prevented from adding two of the same Character to a ForceList.</li>
                                         <li>Ships can now be added to ForceLists with full functionality and integration other than upgrade boxes (same with unit option boxes).</li>
@@ -216,7 +225,7 @@
                         </div>
 
                         <!-- BUILD SIDE -->
-                        <div class='col mt-1 mb-0 ms-0 me-0 pt-2 overflow-y-scroll rounded-3 bg-warning'>
+                        <div class='col mt-1 mb-0 ms-0 me-0 pt-2 overflow-y-scroll rounded-3 bg-warning' id='build-side' data-list-save='{{ data }}'>
                             
                             <div class='fill-screen-scrollable'>
                                 <div class='rounded-2 force-selector-field border border-2 border-secondary'>
@@ -237,6 +246,7 @@
                                         </div>
                                     </div>
                                     <div class='collapse text-primry rounded-2 mt-0 px-1 text-primary' id='fl-options'>
+                                        <a href='#/' role='button'><i class="fa-solid fa-clock-rotate-left mx-2" id='force-revert'></i></a>
                                         <a href='#/' role='button'><i class="fa-solid fa-floppy-disk mx-2" id='force-save'></i></a>
                                         <i class="fa-solid fa-file-arrow-down mx-2" id='force-download'></i>
                                     </div>

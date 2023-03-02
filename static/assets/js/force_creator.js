@@ -101,66 +101,267 @@ class ForceList {
                 idList.push(k.id);
             }
         }
-        return idList;
+        return String(idList);
     }
 
-    saveList() {
+    async saveList() {
         const newSave = {};
+        newSave['name'] = this.name;
         newSave['maxpoints'] = this.maxPoints;
         newSave['nationality_id'] = this.nationality.id;
         newSave['faction_id'] = this.faction.id;
+        newSave['forceoption_id'] = this.faction.forceoption_id;
         newSave['commander_id'] = this.commander.id;
-        if (this.faction.option != []) {
-            const selectedOptions = this.getSelectedOptions(this.faction.option);
-            newSave['faction_option'] = selectedOptions[0] || 0;
-        }
-        if (this.commander.specialruleChoice != []) {
-            const selectedRules = []
-            for (const sr of this.commander.specialrule) {
-                if (sr['selected'] == 1) {
-                    selectedRules.push(sr.id);
-                }
-            }
-            newSave['commanderSpecialruleChoices'] = selectedRules;
-        }
+        newSave['commandernickname'] = this.commander.nickname;
+        newSave['commanderhorseoption'] = this.commander.horseoption;
+        newSave['commandersr1_id'] = this.commander.specialruleChosenIDs[0] || 0;           
+        newSave['commandersr2_id'] = this.commander.specialruleChosenIDs[1] || 0;
+        newSave['idcounter'] = this.idCounter;
         if (Object.keys(this.artillery).length > 0) {
             let count = 0;
             for (const f_id in this.artillery) {
                 count ++;
                 newSave[`artillery_${count}_id`] = this.artillery[`${f_id}`].id;
+                newSave[`artillery_${count}_fid`] = this.artillery[`${f_id}`].f_id;
+                newSave[`artillery_${count}_nickname`] = this.artillery[`${f_id}`].nickname;
                 newSave[`artillery_${count}_qty`] = this.artillery[`${f_id}`].qty;
-            }
+                const selectedOptions = this.getSelectedOptions(this.artillery[`${f_id}`]['option']);
+                newSave[`artillery_${count}_options`] = selectedOptions;
+               }
             newSave[`artillerycount`] = count;
+        } else {
+            newSave[`artillerycount`] = 0;
         }
         if (Object.keys(this.characters).length > 0) {
             let count = 0;
             for (const f_id in this.characters) {
                 count ++;
                 newSave[`character_${count}_id`] = this.characters[`${f_id}`].id;
+                newSave[`character_${count}_fid`] = this.characters[`${f_id}`].f_id;
+                newSave[`character_${count}_nickname`] = this.characters[`${f_id}`].nickname;
             }
             newSave[`charactercount`] = count;
+        } else {
+            newSave[`charactercount`] = 0;
         }
         if (Object.keys(this.ships).length > 0) {
             let count = 0;
             for (const f_id in this.ships) {
                 count ++;
                 newSave[`ship_${count}_id`] = this.ships[`${f_id}`].id;
+                newSave[`ship_${count}_fid`] = this.ships[`${f_id}`].f_id;
+                newSave[`ship_${count}_nickname`] = this.ships[`${f_id}`].nickname;
                 const selectedOptions = this.getSelectedOptions(this.ships[`${f_id}`]['upgrade']);
-                newSave[`ship_${count}_options`] = selectedOptions;
+                newSave[`ship_${count}_upgrades`] = selectedOptions;
             }
             newSave[`shipcount`] = count;
+        } else {
+            newSave[`shipcount`] = 0;
         }
         if (Object.keys(this.units).length > 0) {
             let count = 0;
             for (const f_id in this.units) {
                 count ++;
                 newSave[`unit_${count}_id`] = this.units[`${f_id}`].id;
+                newSave[`unit_${count}_fid`] = this.units[`${f_id}`].f_id;
+                newSave[`unit_${count}_nickname`] = this.units[`${f_id}`].nickname;
                 newSave[`unit_${count}_qty`] = this.units[`${f_id}`].qty;
                 const selectedOptions = this.getSelectedOptions(this.units[`${f_id}`]['option']);
                 newSave[`unit_${count}_options`] = selectedOptions;            }
             newSave[`unitcount`] = count;
+        } else {
+            newSave[`unitcount`] = 0;
         }
+        if (Object.keys(this.misc).length > 0) {
+            let count = 0;
+            for (const f_id in this.misc) {
+                count ++;
+                newSave[`misc_${count}_fid`] = this.misc[`${f_id}`].f_id;
+                newSave[`misc_${count}_name`] = this.misc[`${f_id}`].name;
+                newSave[`misc_${count}_details`] = this.misc[`${f_id}`].details;
+                newSave[`misc_${count}_points`] = this.misc[`${f_id}`].points;
+                newSave[`misc_${count}_qty`] = this.misc[`${f_id}`].qty;
+            newSave[`misccount`] = count;
+           }
+        } else {
+            newSave[`misccount`] = 0;
+        }
+        if (this.uuid) {
+            newSave['uuid'] = this.uuid;
+        }
+        // Send save data to back end.
+        const response = await axios.post('/lists/save', newSave);
+        // Take uuid response and add to ForceList and to save data.
+        this.uuid = response.data;
+        newSave.uuid = response.data;
+        // Add save data to ForceList. Save data is used for 'revert' feature and to update future saves.
         this.save = newSave;
+        this.resetBuildSideTools();
+    }
+
+    async loadSave(saveData) {
+        // newSave['commanderhorseoption'] = this.commander.horseoption;
+        $forceName.val(saveData.name).change();
+        $pointMax.val(saveData.maxpoints).change();
+        $selectNationality.val(saveData.nationality_id).change();
+        $selectFaction.val(saveData.faction_id).change();
+        if (saveData.forceoption_id != 0) {
+            setTimeout(() => {
+                $(`#faction-${saveData.faction_id}-option-${saveData.forceoption_id}`).prop( "checked", true );
+                setTimeout(() => { 
+                    this.handleFactionOption(1,saveData.forceoption_id)
+                },100)             
+            },100)             
+        }
+        $selectCommander.val(saveData.commander_id).change();
+        $('#fl-commander-nick-name').val(saveData.commandernickname).change();
+        if (saveData.commanderhorseoption == 1) {
+            setTimeout(() => {
+                $('#fl-commander-horseoption').prop( "checked", true );
+                this.commander.points ++;
+            }, 100)
+        }
+        if (saveData.commandersr1_id != 0) {
+            setTimeout(() => {
+                $(`#fl-commander-sr-choice-${saveData.commandersr1_id}`).prop( "checked", true );
+                setTimeout(() => { 
+                    this.handleCommanderSpecialruleChoice(1,saveData.commandersr1_id);
+                },100)             
+            },100)             
+        }
+        if (saveData.commandersr2_id != 0) {
+            setTimeout(() => {
+                $(`#fl-commander-sr-choice-${saveData.commandersr2_id}`).prop( "checked", true );
+                setTimeout(() => { 
+                    this.handleCommanderSpecialruleChoice(1,saveData.commandersr2_id);
+                },100)             
+            },100)            
+         }
+        this.uuid = saveData.uuid;
+        setTimeout(async () => {
+            if (saveData.artillerycount > 0) {
+                if (sessionStorage.getItem('artillery') == null) {
+                    const response = await axios.get('artillery');
+                    sessionStorage.setItem('artillery', JSON.stringify(response.data['artillery']));
+                }
+                const artilleryData = JSON.parse(sessionStorage.getItem('artillery'));
+                for (const artilleryItem of artilleryData) {
+                    for (let i = 1; i <= saveData.artillerycount; i++) {
+                        if (artilleryItem.id == saveData[`artillery_${i}_id`]) {
+                            const newArtillery = new Artillery(artilleryItem);
+                            newArtillery['nickname'] = saveData[`artillery_${i}_nickname`];
+                            newArtillery['f_id'] = saveData[`artillery_${i}_fid`];
+                            newArtillery['qty'] = saveData[`artillery_${i}_qty`];
+                            this.addArtillery(newArtillery);
+                            setTimeout(() => {
+                                for (const option of this.artillery[`${newArtillery['f_id']}`]['option']) {
+                                    if (saveData[`artillery_${i}_options`].includes(option.id)) {
+                                        $(`#fl-${newArtillery['f_id']}-option-${option.id}`).prop( "checked", true );
+                                        setTimeout(() => {
+                                            this.handleArtilleryOption(newArtillery['f_id'],option);
+                                        }, 100);
+                                    }
+                                }
+                            }, 100);
+                        }
+                    }
+                }
+            }
+            if (saveData.charactercount > 0) {
+                if (sessionStorage.getItem('character') == null) {
+                    const response = await axios.get('character');
+                    sessionStorage.setItem('character', JSON.stringify(response.data['character']));
+                }
+                const characterData = JSON.parse(sessionStorage.getItem('character'));
+                for (const characterItem of characterData) {
+                    for (let i = 1; i <= saveData.charactercount; i++) {
+                        if (characterItem.id == saveData[`character_${i}_id`]) {
+                            const newCharacter = new Character(characterItem);
+                            newCharacter['nickname'] = saveData[`character_${i}_nickname`];
+                            newCharacter['f_id'] = saveData[`character_${i}_fid`];
+                            this.addCharacter(newCharacter);
+                        }
+                    }
+                }
+            }
+            if (saveData.shipcount > 0) {
+                if (sessionStorage.getItem('ship') == null) {
+                    const response = await axios.get('ship');
+                    sessionStorage.setItem('ship', JSON.stringify(response.data['ship']));
+                }
+                const shipData = JSON.parse(sessionStorage.getItem('ship'));
+                for (const shipItem of shipData) {
+                    for (let i = 1; i <= saveData.shipcount; i++) {
+                        if (shipItem.id == saveData[`ship_${i}_id`]) {
+                            const newShip = new Ship(shipItem);
+                            newShip['nickname'] = saveData[`ship_${i}_nickname`];
+                            newShip['f_id'] = saveData[`ship_${i}_fid`];
+                            this.addShip(newShip);
+                            setTimeout(() => {
+                                for (const upgrade of this.ships[`${newShip['f_id']}`]['upgrade']) {
+                                    if (saveData[`ship_${i}_upgrades`].includes(upgrade.id)) {
+                                        $(`#fl-${newShip['f_id']}-upgrade-${upgrade.id}`).prop( "checked", true );
+                                        setTimeout(() => {
+                                            this.handleShipUpgrade(newShip['f_id'],upgrade);
+                                        }, 100);
+                                    }
+                                }
+                            }, 100);
+                        }
+                    }
+                }
+            } 
+            if (saveData.unitcount > 0) {
+                for (const unitItem of this.faction.unitList) {
+                    for (let i = 1; i <= saveData.unitcount; i++) {
+                        if (unitItem.id == saveData[`unit_${i}_id`]) {
+                            const newUnit = new Unit(unitItem);
+                            newUnit['nickname'] = saveData[`unit_${i}_nickname`];
+                            newUnit['f_id'] = saveData[`unit_${i}_fid`];
+                            newUnit['qty'] = saveData[`unit_${i}_qty`];
+                            this.addUnit(newUnit);
+                            setTimeout(() => {
+                                for (const option of this.units[`${newUnit['f_id']}`]['option']) {
+                                    if (saveData[`unit_${i}_options`].includes(option.id)) {
+                                        $(`#fl-${newUnit['f_id']}-option-${option.id}`).prop( "checked", true );
+                                        setTimeout(() => {
+                                            this.handleUnitOption(newUnit['f_id'],option);
+                                        }, 100);
+                                    }
+                                }
+                            }, 100);
+                        }
+                    }
+                }
+            }        
+            if (saveData.misccount > 0) {
+                for (let i = 1; i <= saveData.misccount; i++) {
+                    const newMisc = new Misc();
+                    newMisc['name'] = saveData[`misc_${i}_name`];
+                    newMisc['f_id'] = saveData[`misc_${i}_fid`];
+                    newMisc['qty'] = saveData[`misc_${i}_qty`];
+                    newMisc['points'] = saveData[`misc_${i}_points`];
+                    newMisc['details'] = saveData[`misc_${i}_details`];
+                    this.addMisc(newMisc);
+                }
+            }
+            this.updateTotalForcePoints();
+            this.idCounter = saveData.idcounter;
+            this.save = saveData;
+            this.resetBuildSideTools();
+        }, 1000)
+    }
+
+    resetBuildSideTools() {
+        // Hide and show forceList tool icons.
+        $('#force-revert').hide('medium', 'swing');
+        $('#force-save').hide('medium', 'swing');
+        $('#force-download').hide('medium', 'swing');
+        setTimeout(() => {
+            $('#force-revert').show('medium', 'swing');
+            $('#force-save').show('medium', 'swing');
+            $('#force-download').show('medium', 'swing');
+        },400)
     }
 
     // Assign a nationality object to the force list.
@@ -208,6 +409,7 @@ class ForceList {
     }
 
     handleCommanderSpecialruleChoice(plusOrMinusOne, specialrule_id) {
+        let chosenIDs = []
         // When checking/selecting a Special Rule...
         if (plusOrMinusOne == 1) {
             console.debug('Adding Special Rule to Commander.');
@@ -218,6 +420,9 @@ class ForceList {
                     newRule.hide();
                     $('#fl-commander-specialrules').append(newRule);
                     newRule.show('medium','swing');
+                }
+                if (sr.selected == 1) {
+                    chosenIDs.push(sr.id)
                 }
             }
         // When unchecking/unselecting an option...
@@ -231,8 +436,12 @@ class ForceList {
                         $(`#fl-commander-sr-${sr.id}`).remove();
                     }, 500)
                 }
+                if (sr.selected == 1) {
+                    chosenIDs.push(sr.id)
+                }
             }
         }
+        this.commander.specialruleChosenIDs = chosenIDs;
     }
 
     // Assign a faction object to the force list.
@@ -255,6 +464,7 @@ class ForceList {
     handleFactionOption(plusOrMinusOne, forceoption_id) {
         // When checking/selecting an option...
         if (plusOrMinusOne == 1) {
+            this.faction['forceoption_id'] = forceoption_id;
             // Unselect other options if any are selected. There should only ever be one selected.
             for (const o of this.faction.option) {
                 if ($(`#faction-${this.faction.id}-option-${o.id}`).prop('checked') && o.id != forceoption_id) {
@@ -274,6 +484,9 @@ class ForceList {
                     }
                 }
             }
+        }
+        else {
+            this.faction['forceoption_id'] = 0;
         }
         // Change unit classes where needed for faction option.
         for (const effect of this.faction.factioneffects) {
@@ -386,23 +599,23 @@ class ForceList {
         commanderDisplay.append([cardHeader, cardDetails]);
         $('#force-commander').append(commanderDisplay);
         // Handle updates to nickname.
-        $(`#fl-commander-nickname`).on('keyup', () => {
+        $(`#fl-commander-nickname`).on('keyup change', () => {
             this.commander['nickname'] = $(`#fl-commander-nickname`).val();
         });
         // Handle expanding/contracting of force's commander information.
         $('#commander-expand').parent().on('click', () => {
             $('#commander-expand').toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
+        // Handle expander for all Commander Special Rules content.
         if (this.commander.specialrule.length > 0 || this.commander.specialruleChoice.length > 0) {
-            // Handle expanding/contracting of item information.
             $(`#commander-${this.id}-specialrules-expand`).parent().on('click', () => {
                 $(`#commander-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
+        // Handle Special Rule checkboxes for Standard Commanders.
         if (this.commander.specialruleChoice.length > 0) {
-            // Handle expanding/contracting of item information.
             for (const sr of this.commander.specialruleChoice) {
-                $(`#fl-commander-sr-choice-${sr.id}`).on('click',(e) => {
+                $(`#fl-commander-sr-choice-${sr.id}`).on('change',(e) => {
                     if ($(`#fl-commander-sr-choice-${sr.id}`).prop('checked')) {
                         this.handleCommanderSpecialruleChoice(1,sr.id);
                     } else {
@@ -531,7 +744,7 @@ class ForceList {
                 $(`#faction-${this.id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
             for (const o of this.faction.option) {
-                $(`#faction-${this.faction.id}-option-${o.id}`).on('click',() => {
+                $(`#faction-${this.faction.id}-option-${o.id}`).on('click change',() => {
                     // Handle method for Faction/Force Option wants the Option id and 1/-1 for checked/unchecked.
                     if ($(`#faction-${this.faction.id}-option-${o.id}`).prop('checked')) {
                         this.handleFactionOption(1,o.id);
@@ -576,8 +789,12 @@ class ForceList {
     }
 
     addArtillery(newArtillery) {
-        newArtillery['f_id'] = this.generateId();
-        newArtillery['qty'] = 1;
+        if (!Object.keys(newArtillery).includes('f_id')) {
+            newArtillery['f_id'] = this.generateId();
+        }
+        if (!Object.keys(newArtillery).includes('qty')) {
+            newArtillery['qty'] = 1;
+        }
         newArtillery['totalCost'] = newArtillery.points * newArtillery.qty;
         this.artillery[`${newArtillery.f_id}`] = newArtillery;
         this.updateTotalForcePoints();
@@ -736,7 +953,7 @@ class ForceList {
         $('#force-artillery').append(newItem);
         newItem.show('medium','swing');
         // Handle updates to nickname.
-        $(`#fl-${artillery.f_id}-nickname`).on('keyup', () => {
+        $(`#fl-${artillery.f_id}-nickname`).on('keyup change', () => {
             this.artillery[`${artillery.f_id}`]['nickname'] = $(`#fl-${artillery.f_id}-nickname`).val();
         });
         // Handle expanding/contracting of item information.
@@ -808,7 +1025,9 @@ class ForceList {
 
     addCharacter(newCharacter) {
         if (this.checkForCharacter(newCharacter.id)) {
-            newCharacter['f_id'] = this.generateId()
+            if (!Object.keys(newCharacter).includes('f_id')) {
+                newCharacter['f_id'] = this.generateId();
+            }
             this.characters[`${newCharacter.f_id}`] = newCharacter
             this.updateCharacterTypeCount();
             this.updateTotalForcePoints();
@@ -980,7 +1199,7 @@ class ForceList {
         }
         newItem.show('medium','swing')
         // Handle updates to nickname.
-        $(`#fl-${character.f_id}-nickname`).on('keyup', () => {
+        $(`#fl-${character.f_id}-nickname`).on('keyup change', () => {
             this.character[`${character.f_id}`]['nickname'] = $(`#fl-${character.f_id}-nickname`).val();
         });
         // Handle expanding/contracting of item information.
@@ -1011,7 +1230,9 @@ class ForceList {
     }
 
     addShip(newShip) {
-        newShip['f_id'] = this.generateId()
+        if (!Object.keys(newShip).includes('f_id')) {
+            newShip['f_id'] = this.generateId();
+        }
         newShip['upgradeCost'] = 0;
         newShip['totalCost'] = newShip.points;
         this.ships[`${newShip.f_id}`] = newShip
@@ -1232,7 +1453,7 @@ class ForceList {
             $(`#fl-${ship.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
         // Handle updates to nickname.
-        $(`#fl-${ship.f_id}-nickname`).on('keyup', () => {
+        $(`#fl-${ship.f_id}-nickname`).on('keyup change', () => {
             this.ships[`${ship.f_id}`]['nickname'] = $(`#fl-${ship.f_id}-nickname`).val();
         });
         if (ship.specialrule.length > 0) {
@@ -1286,8 +1507,12 @@ class ForceList {
     }
 
     addUnit(newUnit) {
-        newUnit['f_id'] = this.generateId();
-        newUnit['qty'] = this.unitMin;
+        if (!Object.keys(newUnit).includes('f_id')) {
+            newUnit['f_id'] = this.generateId();
+        }
+        if (!Object.keys(newUnit).includes('qty')) {
+            newUnit['qty'] = this.unitMin;
+        }
         newUnit['modelsCost'] = newUnit.points * newUnit.qty;
         newUnit['perUnitCost'] = 0;
         newUnit['totalUnitCost'] = newUnit.modelsCost + newUnit.perUnitCost;
@@ -1634,7 +1859,7 @@ class ForceList {
         }
         newItem.show('medium','swing');
         // Handle updates to nickname.
-        $(`#fl-${unit.f_id}-nickname`).on('keyup', () => {
+        $(`#fl-${unit.f_id}-nickname`).on('keyup change', () => {
             this.units[`${unit.f_id}`]['nickname'] = $(`#fl-${unit.f_id}-nickname`).val();
         });
         // Handle expanding/contracting of item information.
@@ -1685,8 +1910,11 @@ class ForceList {
     }
 
     addMisc(newMisc) {
-        newMisc['f_id'] = this.generateId();
+        if (!Object.keys(newMisc).includes('f_id')) {
+            newMisc['f_id'] = this.generateId();
+        }
         this.misc[`${newMisc.f_id}`] = newMisc;
+        this.updateMiscCost(newMisc.f_id);
         this.displayMisc(this.misc[`${newMisc.f_id}`]);
     }
 
@@ -1788,7 +2016,7 @@ class ForceList {
         $('#force-misc').append(newItem);
         newItem.show('medium','swing');
         // Handle updates to name.
-        $(`#fl-${misc.f_id}-name`).on('keyup', () => {
+        $(`#fl-${misc.f_id}-name`).on('keyup change', () => {
             this.misc[`${misc.f_id}`]['name'] = $(`#fl-${misc.f_id}-name`).val();
         });
         // Handle updates to points.
@@ -1797,7 +2025,7 @@ class ForceList {
             this.updateMiscCost(`${misc.f_id}`);
         });
         // Handle updates to description/details.
-        $(`#fl-${misc.f_id}-details`).on('keyup', () => {
+        $(`#fl-${misc.f_id}-details`).on('keyup change', () => {
             this.misc[`${misc.f_id}`]['details'] = $(`#fl-${misc.f_id}-description`).val();
         });
         // Handle expanding/contracting of item information.
@@ -1875,6 +2103,7 @@ class Faction {
         this.setFactionEffects();
         this.setFactionSpecialrules();
         this.setFactionUnitIDs();
+        this['forceoption_id'] = 0;
     }
 
     // Get a list of the chosen factions's valid commander IDs
@@ -2021,6 +2250,7 @@ class Commander {
         this.setCommanderFactionList(nationality_name);
         this.setCommanderSpecialruleIDs();
         this.setCommanderSpecialruleList();
+        this['specialruleChosenIDs'] = [];
     }
 
     setCommanderEffects() {
@@ -2955,6 +3185,10 @@ function resetComponentSelector() {
         $('#component_selector').hide('medium', 'swing');
         $('#add-custom-button').hide('medium', 'swing');
         $('#fl-options-expand').hide('fast', 'swing');
+        if (!forceList.save) {
+            $('#force-revert').hide('fast', 'swing');            
+        }
+        $('#force-revert').hide('fast', 'swing');
         $('#force-save').hide('fast', 'swing');
         $('#force-download').hide('fast', 'swing');
     } else {
@@ -2962,6 +3196,9 @@ function resetComponentSelector() {
         $('#add-custom-button').show('medium', 'swing');
         $('#component_selector').show('medium', 'swing');
         $('#fl-options-expand').show('fast', 'swing');
+        if (forceList.save) {
+            $('#force-revert').show('fast', 'swing');            
+        }
         $('#force-save').show('fast', 'swing');
         $('#force-download').show('fast', 'swing');
     }
@@ -3002,6 +3239,10 @@ $(window).ready(async function() {
     $(`#fl-options-expand`).parent().on('click', () => {
         $(`#fl-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
     });
+    $('#force-revert').on('click', () => {
+        forceList.loadSave(forceList.save);
+        alert('reverted to save!');
+    })
     $('#force-save').on('click', () => {
         forceList.saveList();
         alert('saved!');
@@ -3012,10 +3253,14 @@ $(window).ready(async function() {
         forceList.addMisc(customToAdd);
     });
     $('#main-area').show('slow','swing');
+    if ($("#build-side").data("list-save") != '') {
+        const saveData = $("#build-side").data("list-save");
+        forceList.loadSave(saveData);
+    }
 });
 
 // Change the Force's Title in response to user input. *****
-$forceName.on('keyup', () => {
+$forceName.on('keyup change', () => {
     if (!$forceName.val()) {
         $('#force-name').text('A Force Without A Name');
     } else {
@@ -3196,10 +3441,9 @@ $componentSelector.on('change', async function() {
         else if (selected == 'unit') {
             var menuItem = new Unit(item);
         }
-        else if (selected == 'misc') {
-            return
-            // var menuItem = new Misc(item);
-        }
+        // else if (selected == 'misc') {
+        //     var menuItem = new Misc(item);
+        // }
         if (selected == 'character') {
             if (menuItem.certainnations == 1 && menuItem.certainfactions == 1 && forceList.faction) {
                 if (menuItem.nationalityIDs.includes(forceList.nationality.id) || menuItem.factionIDs.includes(forceList.faction.id)) {

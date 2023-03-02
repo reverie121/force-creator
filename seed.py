@@ -205,6 +205,7 @@ for filename in os.listdir(directory):
                 df.loc[df['id'] == 208, 'unorthodoxforce'] = 'A Force led by this Commander may include Braves (Native American) as Core units.'
                 df['horseoption'] = 0
                 df.loc[df['id'].isin([2,3,4,7,8,9,10,11,12,26,27,28,71,73,74,75,93,94,95,96,99,100,101,102,118,121,126,127,129]), 'horseoption'] = 1
+                df.loc[df['commanderclass_id'] == 1, 'horseoption'] = 1
                 df.sort_values(by=['name'], inplace=True)
 
             elif table_name == 'commanderfaction':
@@ -382,7 +383,7 @@ factioneffect.reset_index(drop=True, inplace=True)
 factioneffect['id'] = factioneffect.index +1
 factioneffect.insert(6,'applyall', 0)
 factioneffect['faction_id'] = np.NaN
-factioneffect.drop(factioneffect['id'].loc[factioneffect['id'].isin([36,37,38,39,40,41,42,43])].index, inplace=True)
+factioneffect.drop(factioneffect['id'].loc[factioneffect['id'].isin([30,31,32,33,34,35,36,37])].index, inplace=True) # Remove extra Baymen commandereffects
 factioneffect.loc[factioneffect['id'].isin([3,4,5]), 'applyall'] = 1
 factioneffect.loc[factioneffect['unitoption_id'] == 322, 'name'] = 'Baymen Elusive Scouts'
 factioneffect.loc[factioneffect['unitoption_id'] == 322, 'details'] = 'Add Unit Option for all units to add Elusive and Scout Special Rules for 4 pts.'

@@ -7,26 +7,34 @@
 {% block content %}
     <div class='container-fluid border border-5 border-start-0 border-end-0 border-secondary bg-warning'>
         <h1 class='main_header p-1 pb-2 text-center'>
-            <i>User Info for {{ user.username }}</i>
+            <i>User Info</i>
         </h1>
     </div>
     <div class='container-fluid'>
         <div class='container bg-warning mt-1 rounded-2'>
             <div class="row align-items-center p-3">
-                <div class="col-12 col-sm-10 offset-sm-1 col-md-8 offset-md-2 col-lg-6 offset-lg-3">
-                   
-                    <ul class='text-info'>
-                        <li>Username: {{ user.username }}</li>
-                        <li>Email: {{ user.email }} </li>
-                        <li>First Name: {{ user.first_name }} </li>
-                        <li>Last Name: {{ user.last_name }} </li>
-                    </ul>
+                <div class="col-auto rounded-2 bg-info text-primary fell">
                     
-                    {% if user.username == session['username'] %}
-                        <div class="container mb-2"><form method="GET" action="/users/{{ user.username }}/edit"><button class="btn btn-success">Edit Account</button></form></div>
-                        <div class="container mb-2"><form method="POST" action="/users/{{ user.username }}/delete"><button class="btn btn-danger">Delete Account</button></form></div>
-                    {% endif %}
+                    <div class='container p-2'>
+                        <h1 class='h1'>{{ user.username }}</h1>
+                    
+                        <div class='container-fluid d-flex flex-row justify-content-evenly border'>
+                            <div>
+                                <p>Name: {{ user.first_name }} {{ user.last_name }}</p>
+                                <p>Email: {{ user.email }}</p>
+                            </div>
+                            <div>
+                                {{ forcelists.data }}
+                            </div>
+                        </div>
 
+                        {% if user.username == session['username'] %}
+                            <div class='d-flex flex-row justify-content-evenly'>
+                                <div><form method="GET" action="/users/{{ user.username }}/edit"><button class="btn btn-success">Edit Account</button></form></div>
+                                <div><form method="POST" action="/users/{{ user.username }}/delete"><button class="btn btn-danger">Delete Account</button></form></div>                                
+                            </div>
+                        {% endif %}                        
+                    </div>
                 </div>
             </div>
         </div>
