@@ -107,11 +107,12 @@
                                 <div class='container p-1 bg-info border border-5 border-secondary rounded-3'>
                                     <div class='container text-primary fell fs-4'>TASKS FOR ALPHA RELEASE</div>
                                     <ul class='fell text-secondary fs-5'>
-                                        <li>Integrate saved lists with users.</li>
+                                        <li>Add functionality for user deleting a list from the user info page.</li>
                                         <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
                                     </ul>
                                     <div class='container text-primary fell fs-4'>TASKS FOR BETA RELEASE</div>
                                     <ul class='fell text-secondary fs-5'>
+                                        <li>Force List tool button for user to create new list from list (new save from current save).</li>
                                         <li>Add assign functionality for force list items. (add Great Warrior functionality here with commandereffect/unitoption)</li>
                                         <li>Localize all possible dependencies.</li>
                                         <li>Resets for non-Unit components. Add x's.</li>
@@ -138,6 +139,7 @@
                                     <div class='container text-primary fell fs-4'>COMPLETED THIS WEEK</div>
                                     <div class='container text-secondary fell fs-5'>NOT PUSHED</div>
                                     <ul class='fell text-primary fs-5 text-primary'>
+                                        <li>Integrated saved lists with users. Some UI polish and light re-structuring still required.</li>
                                         <li>Added Save and Revert functionality for force lists.</li>
                                     </ul>
                                     <div class='container text-secondary fell fs-5'>PUSHED</div>
@@ -203,27 +205,6 @@
                 <div class='collapse container-fluid m-0' id='build-area'>
                     <div class='row'>
 
-                        <!-- MENU SIDE -->
-                        <div class='col mt-1 mb-0 me-2 ms-0 pt-2 pb-2 rounded-3 bg-warning'>
-                            
-                            <div class='row p-0'>
-                                <div class='col mx-0'>
-                                    <form>
-                                        {{add_to_list.component_selector(class_='form-control rounded-2 text-center force-selector-field pt-0 pb-0 border border-2 border-secondary')}}
-                                    </form>
-                                </div>
-                                <div class='col-sm-auto mx-0 ps-0 d-flex flex-row-reverse'>
-                                    <button class='btn btn-primary border border-info py-0 px-1 text-info fell' id='add-custom-button'>+ Custom</button>
-                                </div>
-                            </div>
-
-                            <div class='container rounded-2 text-center text-info fs-4 fell' id='component-instructions'>
-                                Please selection a Faction and Commander.
-                            </div>
-                            <div class='fill-screen-scrollable' id='menu'>
-                            </div>
-                        </div>
-
                         <!-- BUILD SIDE -->
                         <div class='col mt-1 mb-0 ms-0 me-0 pt-2 overflow-y-scroll rounded-3 bg-warning' id='build-side' data-list-save='{{ data }}'>
                             
@@ -265,6 +246,28 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- MENU SIDE -->
+                        <div class='col-12-sm col-lg order-lg-first mt-1 mb-0 me-2 ms-0 pt-2 pb-2 rounded-3 bg-warning'>
+                            
+                            <div class='row p-0'>
+                                <div class='col mx-0'>
+                                    <form>
+                                        {{add_to_list.component_selector(class_='form-control rounded-2 text-center force-selector-field pt-0 pb-0 border border-2 border-secondary')}}
+                                    </form>
+                                </div>
+                                <div class='col-sm-auto mx-0 ps-0 d-flex flex-row-reverse'>
+                                    <button class='btn btn-primary border border-info py-0 px-1 text-info fell' id='add-custom-button'>+ Custom</button>
+                                </div>
+                            </div>
+
+                            <div class='container rounded-2 text-center text-info fs-4 fell' id='component-instructions'>
+                                Please selection a Faction and Commander.
+                            </div>
+                            <div class='fill-screen-scrollable' id='menu'>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -282,3 +285,7 @@
     </div> -->
 
 {% endblock content %}
+
+{% block scripts %}    
+<script src="{{url_for('static', filename='assets/js/force_creator.js')}}"></script>      
+{% endblock scripts %}

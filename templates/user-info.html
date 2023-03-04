@@ -10,28 +10,73 @@
             <i>User Info</i>
         </h1>
     </div>
-    <div class='container-fluid'>
+    <div class='container-fluid pb-2 vh-100'>
         <div class='container bg-warning mt-1 rounded-2'>
             <div class="row align-items-center p-3">
-                <div class="col-auto rounded-2 bg-info text-primary fell">
+                <div class="col-sm-12 col-md-10 offset-md-1 col-xl-8 offset-xl-2 rounded-2 bg-info text-primary fell">
                     
-                    <div class='container p-2'>
-                        <h1 class='h1'>{{ user.username }}</h1>
+                    <div class='container py-2 px-0'>
+                        <h1 class='h1 text-center'>{{ user.username }}</h1>
                     
-                        <div class='container-fluid d-flex flex-row justify-content-evenly border'>
+                        <hr class='border border-2 border-primary rounded-2'>
+
+                        <div class='container-fluid d-flex flex-row justify-content-start'>
                             <div>
                                 <p>Name: {{ user.first_name }} {{ user.last_name }}</p>
                                 <p>Email: {{ user.email }}</p>
                             </div>
-                            <div>
-                                {{ forcelists.data }}
+                        </div>
+
+                        <hr class='border border-2 border-primary rounded-2'>
+
+                        <div class='container-fluid'>
+                            <div class='row'>  
+                                <div class='col'>
+                                    List Name
+                                </div>
+                                <div class='col-3 col-md-2 col-l-1 d-none d-md-block'>
+                                    Points
+                                </div>
+                                <div class='col-2 d-none d-xl-block'>
+                                    Nationality
+                                </div>
+                                <div class='col d-none d-xl-block'>
+                                    Faction
+                                </div>
+                                <div class='col d-none d-md-block'>
+                                    Commander
+                                </div>
                             </div>
+                            {% for list in savedlists %}
+                            <div class='row'>             
+                                <div class='col d-flex align-items-center'>
+                                    {% if user.username == session['username'] %}
+                                        <i class='me-2 fa-solid fa-xmark text-primary' id='{{ list.uuid }}-remove'></i>
+                                    {% endif %}    
+                                    <a href='/lists/{{list.uuid}}'>{{ list.name }}</a>
+                                </div>
+                                <div class='col-3 col-md-2 col-l-1 d-flex align-items-center d-none d-md-block'>
+                                    {{ list.maxpoints }}
+                                </div>
+                                <div class='col-2 d-flex align-items-center d-none d-xl-block'>
+                                    {{ list.nationality_id }}
+                                </div>
+                                <div class='col d-flex align-items-center d-none d-xl-block'>
+                                    {{ list.faction_id }}
+                                </div>
+                                <div class='col d-flex align-items-center d-none d-md-block'>
+                                    {{ list.commandernickname }}
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
 
                         {% if user.username == session['username'] %}
-                            <div class='d-flex flex-row justify-content-evenly'>
-                                <div><form method="GET" action="/users/{{ user.username }}/edit"><button class="btn btn-success">Edit Account</button></form></div>
-                                <div><form method="POST" action="/users/{{ user.username }}/delete"><button class="btn btn-danger">Delete Account</button></form></div>                                
+                            <hr class='border border-2 border-primary rounded-2'>
+
+                            <div class='d-flex flex-row justify-content-evenly flex-wrap'>
+                                <div><form method="GET" action="/users/{{ user.username }}/edit"><button class="btn btn-success mt-1">Edit Account</button></form></div>
+                                <div><form method="POST" action="/users/{{ user.username }}/delete"><button class="btn btn-danger mt-1">Delete Account</button></form></div>                                
                             </div>
                         {% endif %}                        
                     </div>
@@ -39,4 +84,5 @@
             </div>
         </div>
     </div>    
-{% endblock content %}
+    <script>$('#main-area').show('slow','swing');</script>
+    {% endblock content %}

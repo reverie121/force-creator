@@ -145,6 +145,93 @@ class SavedList(db.Model):
     unitcomponent = db.relationship('UnitComponent', backref='savedlist')
     customcomponent = db.relationship('CustomComponent', backref='savedlist')
 
+    def save_to_db(self, save_data):
+        """ Create a new saved file instance from save data. """
+        
+        if 'uuid' in save_data:
+            self.uuid = save_data['uuid']
+        self.name = save_data['name']
+        self.maxpoints = save_data['maxpoints']
+        self.nationality_id = save_data['nationality_id']
+        self.faction_id = save_data['faction_id']
+        if save_data['forceoption_id'] != 0:
+            self.forceoption_id = save_data['forceoption_id']
+        self.commander_id = save_data['commander_id']
+        self.commandernickname = save_data['commandernickname']
+        self.commanderhorseoption = save_data['commanderhorseoption']
+        if save_data['commandersr1_id'] >= 1:        
+            self.commandersr1_id = save_data['commandersr1_id']
+        if save_data['commandersr2_id'] >= 1:
+            self.commandersr2_id = save_data['commandersr2_id']
+        self.idcounter = save_data['idcounter']
+        self.artillerycount = save_data['artillerycount']
+        self.charactercount = save_data['charactercount']
+        self.shipcount = save_data['shipcount']
+        self.unitcount = save_data['unitcount']
+        self.misccount = save_data['misccount']
+
+        db.session.add(self)
+        db.session.commit()    
+
+        if save_data['artillerycount'] > 0:
+            for n in range(0,save_data['artillerycount']):
+                new_artillery_component = ArtilleryComponent()
+                new_artillery_component.list_uuid = str(self.uuid)
+                new_artillery_component.nickname = save_data[f'artillery_{n+1}_nickname']
+                new_artillery_component.fid = save_data[f'artillery_{n+1}_fid']
+                new_artillery_component.artillery_id = save_data[f'artillery_{n+1}_id']
+                new_artillery_component.qty = save_data[f'artillery_{n+1}_qty']
+                new_artillery_component.options = save_data[f'artillery_{n+1}_options']
+                db.session.add(new_artillery_component)
+                db.session.commit()
+
+        if save_data['charactercount'] > 0:
+            for n in range(0,save_data['charactercount']):
+                new_character_component = CharacterComponent()
+                new_character_component.list_uuid = str(self.uuid)
+                new_character_component.nickname = save_data[f'character_{n+1}_nickname']
+                new_character_component.fid = save_data[f'character_{n+1}_fid']
+                new_character_component.character_id = save_data[f'character_{n+1}_id']
+                db.session.add(new_character_component)
+                db.session.commit()
+
+        if save_data['shipcount'] > 0:
+            for n in range(0,save_data['shipcount']):
+                new_ship_component = ShipComponent()
+                new_ship_component.list_uuid = str(self.uuid)
+                new_ship_component.nickname = save_data[f'ship_{n+1}_nickname']
+                new_ship_component.fid = save_data[f'ship_{n+1}_fid']
+                new_ship_component.ship_id = save_data[f'ship_{n+1}_id']
+                new_ship_component.upgrades = save_data[f'ship_{n+1}_upgrades']
+                db.session.add(new_ship_component)
+                db.session.commit()
+
+        if save_data['unitcount'] > 0:
+            for n in range(0,save_data['unitcount']):
+                new_unit_component = UnitComponent()
+                new_unit_component.list_uuid = str(self.uuid)
+                new_unit_component.nickname = save_data[f'unit_{n+1}_nickname']
+                new_unit_component.fid = save_data[f'unit_{n+1}_fid']
+                new_unit_component.unit_id = save_data[f'unit_{n+1}_id']
+                new_unit_component.qty = save_data[f'unit_{n+1}_qty']
+                new_unit_component.options = save_data[f'unit_{n+1}_options']
+                db.session.add(new_unit_component)
+                db.session.commit()
+
+        if save_data['misccount'] > 0:
+            for n in range(0,save_data['misccount']):
+                new_misc_component = CustomComponent()
+                new_misc_component.list_uuid = str(self.uuid)
+                new_misc_component.name = save_data[f'misc_{n+1}_name']
+                new_misc_component.fid = save_data[f'misc_{n+1}_fid']
+                new_misc_component.details = save_data[f'misc_{n+1}_details']
+                new_misc_component.points = save_data[f'misc_{n+1}_points']
+                new_misc_component.qty = save_data[f'misc_{n+1}_qty']
+                db.session.add(new_misc_component)
+                db.session.commit()
+
+        return self.uuid
+
     def pack_data(self):
         """ Create a serialized data set for a saved force list. """
         
@@ -195,7 +282,7 @@ class SavedList(db.Model):
         return saved_list_data
 
     def __repr__(self):
-        return f'<SavedList {self.id} {self.name} {self.uuid}>'    
+        return f'<SavedList {self.uuid} {self.name}>'    
 
 class ArtilleryComponent(db.Model):
     """ ArtilleryComponent Model """

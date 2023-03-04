@@ -362,6 +362,10 @@ for filename in os.listdir(directory):
                         con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (342, 'European Militia Musket for Carbines and Scouts', 'Exchange Muskets for Firelock Carbines and the <i>Scout</i> Special Rule at no cost.', 67, 1)")
                         con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (343, 'Marineros Musket for Carbines and Scouts', 'If this unit has Muskets as a Main Weapon it may exchange its Muskets for Firelock Carbines and the <i>Scout</i> Special Rule at no cost.', 10, 1)")
                         con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (344, 'European Sailors Musket for Carbines and Scouts', 'If this unit has Muskets as a Main Weapon it may exchange its Muskets for Firelock Carbines and the <i>Scout</i> Special Rule at no cost.', 66, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (350, 'African Warriors Slow Reload to Poorly Equipped', 'Any unit in this Force with the <i>Slow Reload</i> Special Rules may replace it with the <i>Poorly Equipped</i> Special Rule at no cost.', 48, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (351, 'Warrior Musketeers Slow Reload to Poorly Equipped', 'Any unit in this Force with the <i>Slow Reload</i> Special Rules may replace it with the <i>Poorly Equipped</i> Special Rule at no cost.', 53, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (348, 'Warrior Archers Slow Reload to Poorly Equipped', 'Any unit in this Force with the <i>Slow Reload</i> Special Rules may replace it with the <i>Poorly Equipped</i> Special Rule at no cost.', 64, 1)")
+                        con.execute("INSERT INTO unitoption(id, name, details, unit_id, limited) VALUES (349, 'Warriors Slow Reload to Poorly Equipped', 'Any unit in this Force with the <i>Slow Reload</i> Special Rules may replace it with the <i>Poorly Equipped</i> Special Rule at no cost.', 45, 1)")
 
                 # if table_name == 'commander':
                 #     with engine.connect() as con:
@@ -517,6 +521,10 @@ with engine.connect() as con:
     con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for European Militia.', 342)")
     con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for Marineros.', 343)")
     con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (51, 'Portuguese Bandeirantes Weapon Swap', 'Add Unit Option for European Sailors.', 344)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (108, 'Miskito African Warriors SR Swap', 'Add Unit Option for African Warriors.', 350)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (108, 'Miskito Warrior Musketeers SR Swap', 'Add Unit Option for Warrior Musketeers.', 351)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (108, 'Miskito Warrior Archers SR Swap', 'Add Unit Option for Warriors Archers.', 348)")
+    con.execute("INSERT INTO factioneffect(faction_id, name, details, unitoption_id) VALUES (108, 'Miskito Warriors SR Swap', 'Add Unit Option for Warriors.', 349)")
 
 
     #Add data to commandernationality

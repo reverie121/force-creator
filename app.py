@@ -89,7 +89,7 @@ def log_out_user():
 def show_secrets(username):
     """ Show information about the given user. """
     user = models.Account.query.get_or_404(username)
-    return render_template('user-info.html', user=user, forcelists=user.savedlist)
+    return render_template('user-info.html', user=user, savedlists=user.savedlist)
 
 
 @app.route('/users/<username>/delete', methods=['POST'])
@@ -137,95 +137,64 @@ def edit_user(username):
 def save_forcelist():
     """ Save a ForceList to database. """
     save_data = request.get_json()
-    print(save_data)
-    # Newly saved lists will not have a uuid.
-    if not 'uuid' in save_data:
+    print('**************************************  IN 1 *****************************************')
+    # If user is not signed in, create new record from save data.
+    if not session["username"]:
+        print('**************************************  IN 2 *****************************************')
         new_save = models.SavedList()
         new_uuid = uuid.uuid4()
-
-        # This will be a class method.
         new_save.uuid = str(new_uuid)
-        new_save.name = save_data['name']
-        new_save.maxpoints = save_data['maxpoints']
-        new_save.nationality_id = save_data['nationality_id']
-        new_save.faction_id = save_data['faction_id']
-        if save_data['forceoption_id'] > 0:
-            new_save.forceoption_id = save_data['forceoption_id']
-        new_save.commander_id = save_data['commander_id']
-        new_save.commandernickname = save_data['commandernickname']
-        new_save.commanderhorseoption = save_data['commanderhorseoption']
-        if save_data['commandersr1_id'] >= 1:        
-            new_save.commandersr1_id = save_data['commandersr1_id']
-        if save_data['commandersr2_id'] >= 1:
-            new_save.commandersr2_id = save_data['commandersr2_id']
-        new_save.idcounter = save_data['idcounter']
-        new_save.artillerycount = save_data['artillerycount']
-        new_save.charactercount = save_data['charactercount']
-        new_save.shipcount = save_data['shipcount']
-        new_save.unitcount = save_data['unitcount']
-        new_save.misccount = save_data['misccount']
+        return new_save.save_to_db(save_data)      
+    else:
+        if not 'uuid' in save_data or not 'username' in save_data or save_data['username'] != session["username"]:
+            print('**************************************  IN 3 *****************************************')
+            new_save = models.SavedList()
+            new_uuid = uuid.uuid4()
+            new_save.uuid = str(new_uuid)
+            new_save.username = session["username"]
+            return new_save.save_to_db(save_data) 
+        elif save_data['username'] == session["username"]:
+            print('**************************************  IN HERE *****************************************')
+            saved_list = models.SavedList.query.get_or_404(save_data['uuid'])
+            models.db.session.delete(saved_list)
+            models.db.session.commit()
+            saved_list_dict = models.serialize(saved_list)
+            new_save = models.SavedList()
+            new_save.created_at = saved_list_dict['created_at']
+            new_save.username = saved_list_dict['username']
+            return new_save.save_to_db(save_data) 
 
-        models.db.session.add(new_save)
-        models.db.session.commit()    
 
-        if save_data['artillerycount'] > 0:
-            for n in range(0,save_data['artillerycount']):
-                new_artillery_component = models.ArtilleryComponent()
-                new_artillery_component.list_uuid = str(new_uuid)
-                new_artillery_component.nickname = save_data[f'artillery_{n+1}_nickname']
-                new_artillery_component.fid = save_data[f'artillery_{n+1}_fid']
-                new_artillery_component.artillery_id = save_data[f'artillery_{n+1}_id']
-                new_artillery_component.qty = save_data[f'artillery_{n+1}_qty']
-                new_artillery_component.options = save_data[f'artillery_{n+1}_options']
-                models.db.session.add(new_artillery_component)
-                models.db.session.commit()
-
-        if save_data['charactercount'] > 0:
-            for n in range(0,save_data['charactercount']):
-                new_character_component = models.CharacterComponent()
-                new_character_component.list_uuid = str(new_uuid)
-                new_character_component.nickname = save_data[f'character_{n+1}_nickname']
-                new_character_component.fid = save_data[f'character_{n+1}_fid']
-                new_character_component.character_id = save_data[f'character_{n+1}_id']
-                models.db.session.add(new_character_component)
-                models.db.session.commit()
-
-        if save_data['shipcount'] > 0:
-            for n in range(0,save_data['shipcount']):
-                new_ship_component = models.ShipComponent()
-                new_ship_component.list_uuid = str(new_uuid)
-                new_ship_component.nickname = save_data[f'ship_{n+1}_nickname']
-                new_ship_component.fid = save_data[f'ship_{n+1}_fid']
-                new_ship_component.ship_id = save_data[f'ship_{n+1}_id']
-                new_ship_component.upgrades = save_data[f'ship_{n+1}_upgrades']
-                models.db.session.add(new_ship_component)
-                models.db.session.commit()
-
-        if save_data['unitcount'] > 0:
-            for n in range(0,save_data['unitcount']):
-                new_unit_component = models.UnitComponent()
-                new_unit_component.list_uuid = str(new_uuid)
-                new_unit_component.nickname = save_data[f'unit_{n+1}_nickname']
-                new_unit_component.fid = save_data[f'unit_{n+1}_fid']
-                new_unit_component.unit_id = save_data[f'unit_{n+1}_id']
-                new_unit_component.qty = save_data[f'unit_{n+1}_qty']
-                new_unit_component.options = save_data[f'unit_{n+1}_options']
-                models.db.session.add(new_unit_component)
-                models.db.session.commit()
-
-        if save_data['misccount'] > 0:
-            for n in range(0,save_data['misccount']):
-                new_misc_component = models.CustomComponent()
-                new_misc_component.list_uuid = str(new_uuid)
-                new_misc_component.name = save_data[f'misc_{n+1}_name']
-                new_misc_component.fid = save_data[f'misc_{n+1}_fid']
-                new_misc_component.details = save_data[f'misc_{n+1}_details']
-                new_misc_component.points = save_data[f'misc_{n+1}_points']
-                new_misc_component.qty = save_data[f'misc_{n+1}_qty']
-                models.db.session.add(new_misc_component)
-                models.db.session.commit()
-
-    return new_save.uuid
+    # # Newly saved lists will not have a uuid.
+    # # Also treat saves without username data as new saves.
+    # # Also treat data as new save if user is not logged in.
+    # if not 'uuid' in save_data or not save_data['username'] or not session["username"]:
+    #     new_save = models.SavedList()
+    #     new_uuid = uuid.uuid4()
+    #     new_save.uuid = str(new_uuid)
+    #     if session["username"]:
+    #         new_save.username = session["username"]
+    #     return new_save.save_to_db(save_data)
+    # elif save_data['username']:
+    # # Or if user's username does not match save data username.
+    #     if save_data['username'] != session["username"]:
+    #         new_save = models.SavedList()
+    #         new_uuid = uuid.uuid4()
+    #         new_save.uuid = str(new_uuid)
+    #         if session["username"]:
+    #             new_save.username = session["username"]
+    #         return new_save.save_to_db(save_data)
+    #     # Otherwise create a new save file and replace the old one.
+    #     # Removing old save should cascade to component records.
+    #     elif save_data['username'] == session["username"]:
+    #         saved_list = models.savedList.get_or_404(save_data.uuid)
+    #         new_save = models.SavedList()
+    #         new_save['uuid'] = saved_list['uuid']
+    #         new_save['created_at'] = saved_list['created_at']
+    #         new_save['username'] = saved_list['username']
+    #         models.db.session.delete(saved_list)
+    #         models.db.session.commit()
+    #         return new_save.save_to_db(save_data)
 
 @app.route('/lists/<uuid>', methods=['GET'])
 def show_forcelist(uuid):

@@ -189,6 +189,9 @@ class ForceList {
         if (this.uuid) {
             newSave['uuid'] = this.uuid;
         }
+        if (this.username) {
+            newSave['username'] = this.username;
+        }
         // Send save data to back end.
         const response = await axios.post('/lists/save', newSave);
         // Take uuid response and add to ForceList and to save data.
@@ -345,11 +348,14 @@ class ForceList {
                     this.addMisc(newMisc);
                 }
             }
+            if (saveData.username) {
+                this.username = saveData.username;
+            }
             this.updateTotalForcePoints();
             this.idCounter = saveData.idcounter;
             this.save = saveData;
             this.resetBuildSideTools();
-        }, 1000)
+        }, 800)
     }
 
     resetBuildSideTools() {
@@ -1200,7 +1206,7 @@ class ForceList {
         newItem.show('medium','swing')
         // Handle updates to nickname.
         $(`#fl-${character.f_id}-nickname`).on('keyup change', () => {
-            this.character[`${character.f_id}`]['nickname'] = $(`#fl-${character.f_id}-nickname`).val();
+            this.characters[`${character.f_id}`]['nickname'] = $(`#fl-${character.f_id}-nickname`).val();
         });
         // Handle expanding/contracting of item information.
         $(`#fl-${character.f_id}-expand`).parent().on('click', () => {
@@ -3241,7 +3247,7 @@ $(window).ready(async function() {
     });
     $('#force-revert').on('click', () => {
         forceList.loadSave(forceList.save);
-        alert('reverted to save!');
+        // alert('reverted to save!');
     })
     $('#force-save').on('click', () => {
         forceList.saveList();
