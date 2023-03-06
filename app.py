@@ -4,16 +4,18 @@ from flask_debugtoolbar import DebugToolbarExtension
 import uuid
 
 import models
-import innocuous
+import config
 
 app = Flask(__name__)
 
-debug = DebugToolbarExtension(app)
+cnfg = config.Config()
 
-app.config['SECRET_KEY'] = innocuous.sk
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
+# debug = DebugToolbarExtension(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp'
+app.config['SECRET_KEY'] = cnfg.FC_SECRET_KEY
+# app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp' or cnfg.POSTGRES_DATABASE_PWD
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
