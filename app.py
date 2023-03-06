@@ -16,12 +16,11 @@ cnfg = config.Config()
 app.config['SECRET_KEY'] = cnfg.FC_SECRET_KEY
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp' or cnfg.FC_DATABASE_URI
+app.config['SQLALCHEMY_DATABASE_URI'] = cnfg.FC_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
-conn = psycopg2.connect(cnfg.FC_DATABASE_URI, sslmode='require')
-
+# conn = psycopg2.connect(cnfg.FC_DATABASE_URI, sslmode='require')
 
 models.connect_db(app)
 models.db.create_all()
