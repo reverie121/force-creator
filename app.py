@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, jsonify, session, request, j
 from forms import ForceSelection, AddToList, AddUserForm, LogInForm, EditUserForm
 from flask_debugtoolbar import DebugToolbarExtension
 import uuid
+import psycopg2
 
 import models
 import config
@@ -18,6 +19,9 @@ app.config['SECRET_KEY'] = cnfg.FC_SECRET_KEY
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp' or cnfg.FC_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
+
+conn = psycopg2.connect(cnfg.FC_DATABASE_URI, sslmode='require')
+
 
 models.connect_db(app)
 models.db.create_all()
