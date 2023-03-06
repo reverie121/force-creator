@@ -20,6 +20,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = cnfg.FC_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
+conn = psycopg2.connect(cnfg.FC_DATABASE_URI, sslmode='require')
+
 models.connect_db(app)
 models.db.create_all()
 
