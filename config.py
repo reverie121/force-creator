@@ -6,4 +6,4 @@ class Config(object):
     FC_DATABASE_URI = os.environ.get("FC_DATABASE_URL")
     FC_SECRET_KEY = os.environ.get("FC_SECRET_KEY")
 
-    conn = psycopg2.connect(FC_DATABASE_URI, sslmode='require')
+    # conn = psycopg2.connect(FC_DATABASE_URI, sslmode='require')
