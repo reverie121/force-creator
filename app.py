@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, jsonify, session, request, json
 from forms import ForceSelection, AddToList, AddUserForm, LogInForm, EditUserForm
-from flask_debugtoolbar import DebugToolbarExtension
+# from flask_debugtoolbar import DebugToolbarExtension
 import uuid
 import psycopg2
 
