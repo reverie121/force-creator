@@ -20,6 +20,8 @@ app.config['SECRET_KEY'] = cnfg.FC_SECRET_KEY
 app.config['SQLALCHEMY_DATABASE_URI'] = cnfg.FC_DATABASE_URI
 print('*********************************************')
 print(cnfg.FC_DATABASE_URI)
+print(type(cnfg.FC_DATABASE_URI))
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
