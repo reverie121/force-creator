@@ -8,18 +8,16 @@ import config
 
 app = Flask(__name__)
 
-cnfg = config.Config()
-
 # debug = DebugToolbarExtension(app)
 
-app.config['SECRET_KEY'] = cnfg.FC_SECRET_KEY
+app.config['SECRET_KEY'] = config.FC_SECRET_KEY
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp'
-app.config['SQLALCHEMY_DATABASE_URI'] = cnfg.FC_DATABASE_URI
+app.config['SQLALCHEMY_DATABASE_URI'] = config.FC_DATABASE_URI
 print('*********************************************')
-print(cnfg.FC_DATABASE_URI)
-print(type(cnfg.FC_DATABASE_URI))
+print(config.FC_DATABASE_URI)
+print(type(config.FC_DATABASE_URI))
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
