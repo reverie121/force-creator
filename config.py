@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
 
 class Config(object):
     POSTGRES_DATABASE_PWD = os.environ.get("POSTGRES_DATABASE_PWD")
