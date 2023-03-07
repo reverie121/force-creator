@@ -16,7 +16,7 @@ cnfg = config.Config()
 app.config['SECRET_KEY'] = cnfg.FC_SECRET_KEY
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = cnfg.FC_DATABASE_URI
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp' or cnfg.FC_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
@@ -92,7 +92,11 @@ def log_out_user():
 def show_secrets(username):
     """ Show information about the given user. """
     user = models.Account.query.get_or_404(username)
-    return render_template('user-info.html', user=user, savedlists=user.savedlist)
+    savedListData = []
+    for save in user.savedlist:
+        savedListData.append(save.pack_data())
+    jsonListData = json.dumps(savedListData)
+    return render_template('user-info.html', user=user, savedlists=user.savedlist, listdata = jsonListData)
 
 
 @app.route('/users/<username>/delete', methods=['POST'])
@@ -140,64 +144,31 @@ def edit_user(username):
 def save_forcelist():
     """ Save a ForceList to database. """
     save_data = request.get_json()
-    print('**************************************  IN 1 *****************************************')
+    list_uuid = 'initialization placeholder'
     # If user is not signed in, create new record from save data.
-    if not session["username"]:
-        print('**************************************  IN 2 *****************************************')
+    if 'username' not in session:
         new_save = models.SavedList()
         new_uuid = uuid.uuid4()
         new_save.uuid = str(new_uuid)
-        return new_save.save_to_db(save_data)      
+        list_uuid = new_save.save_to_db(save_data)      
     else:
-        if not 'uuid' in save_data or not 'username' in save_data or save_data['username'] != session["username"]:
-            print('**************************************  IN 3 *****************************************')
+        if 'uuid' not in save_data or 'username' not in save_data or save_data['username'] != session["username"]:
             new_save = models.SavedList()
             new_uuid = uuid.uuid4()
             new_save.uuid = str(new_uuid)
             new_save.username = session["username"]
-            return new_save.save_to_db(save_data) 
+            list_uuid = new_save.save_to_db(save_data) 
         elif save_data['username'] == session["username"]:
-            print('**************************************  IN HERE *****************************************')
             saved_list = models.SavedList.query.get_or_404(save_data['uuid'])
+            saved_list_dict = models.serialize(saved_list)
             models.db.session.delete(saved_list)
             models.db.session.commit()
-            saved_list_dict = models.serialize(saved_list)
             new_save = models.SavedList()
+            new_save.uuid = save_data['uuid']
             new_save.created_at = saved_list_dict['created_at']
             new_save.username = saved_list_dict['username']
-            return new_save.save_to_db(save_data) 
-
-
-    # # Newly saved lists will not have a uuid.
-    # # Also treat saves without username data as new saves.
-    # # Also treat data as new save if user is not logged in.
-    # if not 'uuid' in save_data or not save_data['username'] or not session["username"]:
-    #     new_save = models.SavedList()
-    #     new_uuid = uuid.uuid4()
-    #     new_save.uuid = str(new_uuid)
-    #     if session["username"]:
-    #         new_save.username = session["username"]
-    #     return new_save.save_to_db(save_data)
-    # elif save_data['username']:
-    # # Or if user's username does not match save data username.
-    #     if save_data['username'] != session["username"]:
-    #         new_save = models.SavedList()
-    #         new_uuid = uuid.uuid4()
-    #         new_save.uuid = str(new_uuid)
-    #         if session["username"]:
-    #             new_save.username = session["username"]
-    #         return new_save.save_to_db(save_data)
-    #     # Otherwise create a new save file and replace the old one.
-    #     # Removing old save should cascade to component records.
-    #     elif save_data['username'] == session["username"]:
-    #         saved_list = models.savedList.get_or_404(save_data.uuid)
-    #         new_save = models.SavedList()
-    #         new_save['uuid'] = saved_list['uuid']
-    #         new_save['created_at'] = saved_list['created_at']
-    #         new_save['username'] = saved_list['username']
-    #         models.db.session.delete(saved_list)
-    #         models.db.session.commit()
-    #         return new_save.save_to_db(save_data)
+            list_uuid = new_save.save_to_db(save_data) 
+    return redirect(f'/lists/{list_uuid}')
 
 @app.route('/lists/<uuid>', methods=['GET'])
 def show_forcelist(uuid):
@@ -209,6 +180,20 @@ def show_forcelist(uuid):
     response = models.SavedList.query.get_or_404(uuid)
     data = json.dumps(response.pack_data())
     return render_template('fc.html', force_selection=force_selection, add_to_list=add_to_list, data=data)    
+
+@app.route('/lists/<uuid>/delete', methods=['GET'])
+def del_forcelist(uuid):
+    """ Delete a ForceList (only if user owns it). """
+
+    saved_list = models.SavedList.query.get_or_404(uuid)
+    saved_list_dict = models.serialize(saved_list)
+    if saved_list_dict['username'] == session["username"]:
+            models.db.session.delete(saved_list)
+            models.db.session.commit()
+            return redirect(f'/users/{session["username"]}')
+
+    else:
+        return redirect(f'/lists/{uuid}')
 
 ############### ***** ########## FC DATA API ROUTES ########## ***** ###############
 

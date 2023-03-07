@@ -148,8 +148,6 @@ class SavedList(db.Model):
     def save_to_db(self, save_data):
         """ Create a new saved file instance from save data. """
         
-        if 'uuid' in save_data:
-            self.uuid = save_data['uuid']
         self.name = save_data['name']
         self.maxpoints = save_data['maxpoints']
         self.nationality_id = save_data['nationality_id']

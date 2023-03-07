@@ -97,107 +97,78 @@
                 </div>
 
                 <!-- WELCOME AREA -->
-                <div class='container-fluid rounded-3 bg-warning p-2 mt-1 mb-0' id='welcome-area'>
+                <div class='container-fluid rounded-3 bg-warning p-2 mt-1 mb-0 fill-screen-scrollable' id='welcome-area'>
                     <div class='container mx-auto mb-0'>
                         <h1 class='fell text-info type-shadow text-center mt-1'>Welcome to the FORCE CREATOR</h1>
                         <h2 class='fell text-info type-shadow text-center'>for Blood & Plunder by Firelock Games</h2>
                         <hr class='border border-secondary border-3 rounded-2 opacity-100'>
                         <div class='row'>
-                            <div class='col-6'>
-                                <div class='container p-1 bg-info border border-5 border-secondary rounded-3'>
-                                    <div class='container text-primary fell fs-4'>TASKS FOR ALPHA RELEASE</div>
-                                    <ul class='fell text-secondary fs-5'>
-                                        <li>Add functionality for user deleting a list from the user info page.</li>
-                                        <li>Set up a proper welcome page with instructions, planned features, known bugs, etc.</li>
-                                    </ul>
-                                    <div class='container text-primary fell fs-4'>TASKS FOR BETA RELEASE</div>
-                                    <ul class='fell text-secondary fs-5'>
-                                        <li>Force List tool button for user to create new list from list (new save from current save).</li>
-                                        <li>Add assign functionality for force list items. (add Great Warrior functionality here with commandereffect/unitoption)</li>
-                                        <li>Localize all possible dependencies.</li>
-                                        <li>Resets for non-Unit components. Add x's.</li>
-                                        <li>Ship upgrades for Piragua and Corvette.</li>
-                                        <li>Add PDF functionality.</li>
-                                        <li>Make fully responsive and finish up styling.</li>
-                                    </ul>
-                                    <div class='container text-primary fell fs-4'>MORE PRIORITY TASKS</div>
-                                    <ul class='fell text-secondary fs-5'>
-                                        <li>Better sorting.</li>
-                                        <li>Add other Native restrictions.</li>
-                                        <li>Add warnings for permitted rule breaking (don't forget Support: X).</li>
-                                        <li>Add theme change functionality via dropdowns.</li>
-                                        <li>Auto-save option.</li>
-                                        <li>Add structure and functionality for characters for commander-requried and commander-conflict-with.</li>
-                                        <li>Fix too-fast-expander-click bug</li>
-                                        <li>Make build-side interior expanders default to open.</li>
-                                        <li>Add casualty - strike point threshold functionality.</li>
-                                    </ul>
-                                </div>
+                            <div class='col mx-1 my-0 pt-1 bg-info rounded-2 text-secondary fell'>
+                                <h3 class='h3 text-primary text-center'>What is Force Creator?</h3>
+                                <p>
+                                    Force Creator is a list builder for the historical tabletop miniature game, <a href='https://www.firelockgames.com/product-category/blood-plunder/'>Blood & Plunder</a> by <a href='https://www.firelockgames.com/'>Firelock Games</a>. It is designed to streamline the list-building experience and provide a comprehensive reference file for the finished force list. Force Creator is currently in ALPHA phase of release. More features coming soon!
+                                </p>
+                                <h3 class='h3 text-primary text-center'>How Do?</h3>
+                                <p>
+                                    After selecting your Nation, Faction, and Commander (above) you will be able to add more elements to your list. You can also set your Force Name and the Max Points for your Force List in the area above. This website is currently formatted for computer monitors. Other devices will be supported soon!
+                                </p>
+                                <h3 class='h3 text-primary text-center'>Known Bugs</h3>
+                                <ul>
+                                    <li>Opening a link for a saved Force List into a new tab or window does not work properly.</li>
+                                    <li>Clicking too fast on expander icons gets them out of sync.</li>
+                                </ul>
+                                <h3 class='h3 text-primary text-center'>Planned Features For Beta Launch</h3>
+                                <ul>
+                                    <li>Feedback Form.</li>
+                                    <li>Make fully responsive to work on any size screen.</li>
+                                    <li>Pre-Formatted PDF Force List downloads.</li>
+                                    <li>Assignment functionality (units and artillery to ship decks, units to artillery, characters and commanders to units). Great Warrior's Unit Option will be implemented along with this.</li>
+                                    <li>Add strike point threshold functionality.</li>
+                                    <li>Make Piragua and Corvette work without multiple versions (requires additional Ship Upgrade functionality).</li>
+                                    <li>Localize dependencies where possible?</li>
+                                </ul>
+                                <h3 class='h3 text-primary text-center'>Additional Planned Features/Changes</h3>
+                                <ul>
+                                    <li>Additional option restrictions for Native and some other Factions (eg no artillery).</li>
+                                    <li>Add warnings when force list breaks rules.</li>
+                                    <li>Include official structure and terrain options.</li>
+                                    <li>Removal x's for entire groups of components (Core Units, Ships, etc) in the build area.</li>
+                                    <li>Theme Change Functionality.</li>
+                                    <li>Functionality for characters that affect commander options (either require or prohibit certain commanders).</li>
+                                    <li>Make build-side interior expanders default to open.</li>
+                                </ul>
                             </div>
-                            <div class='col-6'>
-                                <div class='container bg-info border border-5 border-secondary rounded-3'>
-                                    <div class='container text-primary fell fs-4'>COMPLETED THIS WEEK</div>
-                                    <div class='container text-secondary fell fs-5'>NOT PUSHED</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
+                            <div class='col-12-sm col-lg mx-1 my-0 pt-1 bg-info rounded-2 text-secondary fell'>
+                                <h3 class='h3 text-primary text-center'>New Features</h3>
+                                <p>
+                                    For those familiar with Force Builder, here are some changes and new features to look out for:
+                                </p>
+                                <h4 class='h4 text-primary text-center'>Limitations</h4>
+                                    <ul>
+                                        <li>Only valid Character and Ship choices are displayed. (Some further refinement may be needed to account for Characters that require Ships of a certain size).</li>
+                                        <li>Prevents adding more than one of the same Character (other than Praying Indian) to a Force List.</li>
+                                        <li>The two Ship Upgrades that can change Ship stats permanently (Streamlined Hull and Improved Rig) change the displayed/stored values for those characteristics (Draft and Speed)</li>
                                     </ul>
-                                    <div class='container text-secondary fell fs-5'>PUSHED</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
-                                        <li>Integrated saved lists with users. Some UI polish and light re-structuring still required.</li>
-                                        <li>Added Save and Revert functionality for force lists.</li>
+                                <h4 class='h4 text-primary text-center'>Options</h4>
+                                    <ul>
+                                        <li>Force Options are mutually exclusive.</li>
+                                        <li>Standard Commanders can select their Special Rules. User must self-limit selections.</li>
+                                        <li>The two Ship Upgrades that can change Ship stats permanently (Streamlined Hull and Improved Rig) change the the corresponding Ship characteristics (Draft and Speed).</li>
                                     </ul>
-                                    <div class='container text-secondary fell fs-5'>LAST WEEK</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
-                                        <li>Turned Misc dropdown into a button to add a custom item to list.</li>
-                                        <li>Fixed a couple unit cost calculation bugs in adjustUnitCost and adjustUnitQty.</li>
-                                        <li>Added nickname functionality for Characters and Commanders.</li>
-                                        <li>Added nickname and option functionality for Artillery. Cleaned up Artillery table in db and updated UI.</li>                                        
-                                        <li>Commander display now showing Details and Horse Option where appropriate. Commander.details cleaned out in database.</li>
-                                        <li>Added a weapons and equipment table to the db.</li>
-                                        <li>Added unit options from Faction Special Rules and for Torches, Climbing Gear, and Poisoned Arrows.</li>
-                                        <li>Clean up special rules table and relations.</li>
-                                        <li>Added ship restrictions for relevant factions in db and UI.</li>
-                                        <li>Standardized db to use card suit symbols instead of names.</li>   
+                                <h4 class='h4 text-primary text-center'>"Nicknames"</h4>
+                                    <ul>
+                                        <li>Available to all Characters, Ships, Units, and Artillery Groups. Also available to all generic type (not Historic or Legenadary) Commanders.</li>
+                                        <li>Just click on the component's name in the build area and you will be able to rename the component to your liking!</li>
                                     </ul>
-                                    <div class='container text-secondary fell fs-5'>TWO WEEKS AGO</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
-                                        <li>Added Standard Commander functionality for choosing Special Rules and added supporting data to db.</li>
-                                        <li>Save functionality concept implemented on front end.</li>
-                                        <li>factioneffect table now functional for unit option changes. This should now be fully functional.</li>
-                                        <li>Improved reseting of display and ForceList object in response to commander and faction changes.</li>
-                                        <li>factioneffect table now functional for unit class changes.</li>
-                                        <li>commandereffect table now fully functional (not including Great Warrior, t0 be implemented with assignments).</li>
-                                        <li>Unit Options are now fully functional.</li>
-                                        <li>Ship Upgrades are now fully functional.</li>
-                                        <li>Seed file adapted to restructure unorthodoxforce and unorthodoxoption into commandereffect and factioneffect.</li>
-                                        <li>Additional work to seed file to standardize attack roll bonus language, add a column to Faction table for storing this bonus, and add a column to characters to distinguish those that do not count towards normal limits. Added three columns to forceoption to account for minimum unit and mounted commander requirements.</li>
-                                        <li>Updated seed file to add Faction special rules to db for Factions from FotF and RtB (addsubtract column may still need data modified manually).</li>
-                                        <li>Added Nickname functionality for Units and Ships in ForceList and Unit experience now shows in displays.</li>
+                                    <h4 class='h4 text-primary text-center'>Misc</h4>
+                                    <ul>
+                                        <li>Artillery can be added as multiple groups (or individuals) of the same type. This allows for assigning the same type of Artillery to more than one Unit.</li>
+                                        <li>Language for Faction Special Rules that give a bonus to the roll to determine attacker has been standardized to the RtB version. Card suit names have been standardized to use the appropriate card suit symbol.</li>
+                                        <li>Lots of behind the scenes data and data structure changes and additions that will allow for more and better functionality.</li>
                                     </ul>
-                                    <div class='container text-secondary fell fs-5'>THREE WEEKS AGO</div>
-                                    <ul class='fell text-primary fs-5 text-primary'>
-                                        <li>Characters can now be added to ForceLists with full functionality and integration. User is prevented from adding two of the same Character to a ForceList.</li>
-                                        <li>Ships can now be added to ForceLists with full functionality and integration other than upgrade boxes (same with unit option boxes).</li>
-                                        <li>Artillery can now be added to ForceLists with full functionality and integration.</li>
-                                        <li>Points/cost now updates in both object and display when Units are added or their Qty is changed.</li>
-                                        <li>Unit Qty is now restricted to the ForceList's unitMin and unitMax. When the point total field is changed by user, any ForceList Units with invalid Qty will automatically update to min/max.</li>
-                                        <li>Units can now be added to ForceLists with full functionality for qty changes, removal, and information expanders.</li>
-                                        <li>Added User functionality.</li>
-                                        <li>Finished change/removal effects for Nation/Faction/Commander/ComponentSelector.</li>
-                                        <li>Fixed bug where clicking near expander icon would sometimes work without changing the icon.</li>
-                                        <li>Organized models.py</li>
-                                        <li>Updated front end Character display so only viable choices are visible. Major update to Character menu display.</li>
-                                        <li>Fixed commander lists so that full lists are available for each nation (required multi to multi data).</li>
-                                        <li>Split up character.details disordered information into 10 new columns.</li>
-                                        <li>Data entry for new connecting tables.</li>
-                                        <li>Added multi-multi db structure for commandernationality, characternationality, characterfaction, and characterspecialrule.</li>
-                                        <li>Removed some unneeded records and table columns from db.</li>
-                                        <li>Added functionality for updating and storing max points and unit size range.</li>
-                                        <li>Refactored to add classes for Nationality, Faction, and Commander.</li>
-                                        <li>Added basic navbar with styling.</li>
-                                    </ul>
-                                </div>
-                            </div>                            
+                            </div>
                         </div>
+                        
                     </div>
                 </div>
 

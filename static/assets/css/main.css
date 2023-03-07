@@ -10838,8 +10838,8 @@ textarea.form-control-lg {
   }
 }
 .fill-screen-scrollable {
-  min-height: 95vh !important;
-  height: 95vh !important;
+  min-height: 75vh !important;
+  height: 75vh !important;
   overflow-y: auto;
 }
 
