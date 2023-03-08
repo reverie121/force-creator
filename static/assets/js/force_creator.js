@@ -108,11 +108,18 @@ class ForceList {
         const newSave = {};
         newSave['name'] = this.name;
         newSave['maxpoints'] = this.maxPoints;
+        newSave['totalforcepoints'] = this.totalForcePoints;
         newSave['nationality_id'] = this.nationality.id;
         newSave['faction_id'] = this.faction.id;
         newSave['forceoption_id'] = this.faction.forceoption_id;
         newSave['commander_id'] = this.commander.id;
         newSave['commandernickname'] = this.commander.nickname;
+        newSave['commanderhorseselected'] = 0;
+        if (this.commander.horseoption == 1) {
+            if ($('#fl-commander-horseoption').prop( "checked") == true) {
+                newSave['commanderhorseselected'] = 1;
+            }
+        }
         newSave['commanderhorseoption'] = this.commander.horseoption;
         newSave['commandersr1_id'] = this.commander.specialruleChosenIDs[0] || 0;           
         newSave['commandersr2_id'] = this.commander.specialruleChosenIDs[1] || 0;
@@ -203,7 +210,6 @@ class ForceList {
     }
 
     async loadSave(saveData) {
-        // newSave['commanderhorseoption'] = this.commander.horseoption;
         $forceName.val(saveData.name).change();
         $pointMax.val(saveData.maxpoints).change();
         $selectNationality.val(saveData.nationality_id).change();
@@ -218,7 +224,7 @@ class ForceList {
         }
         $selectCommander.val(saveData.commander_id).change();
         $('#fl-commander-nick-name').val(saveData.commandernickname).change();
-        if (saveData.commanderhorseoption == 1) {
+        if (saveData.commanderhorseselected == 1) {
             setTimeout(() => {
                 $('#fl-commander-horseoption').prop( "checked", true );
                 this.commander.points ++;
@@ -1567,8 +1573,29 @@ class ForceList {
         }
         this.units[`${newUnit.f_id}`] = newUnit;
         this.updateUnitClassCount();
-        this.updateTotalForcePoints();
         this.displayUnit(this.units[`${newUnit.f_id}`]);
+        // Add any applyall unit options that have been selected.
+        for (const unit_f_id in this.units) {
+            if (this.units[`${unit_f_id}`].id == newUnit.id && unit_f_id != newUnit.f_id) {
+                for (const o of this.units[`${unit_f_id}`].option) {
+                    if (o.selected == 1 && o.applyall == 1) {
+                        for (const new_o of this.units[`${newUnit.f_id}`].option) {
+                            if (new_o.id == o.id) {
+                                new_o.selected = 1;
+                                $(`#fl-${newUnit.f_id}-option-${new_o.id}`).prop('checked', true);
+                                this.adjustUnitCost(newUnit.f_id, new_o, 1);
+                                if (new_o.experienceupg) {
+                                    this.units[`${newUnit.f_id}`].experience_id += new_o.experienceupg;
+                                    this.units[`${newUnit.f_id}`].setUnitExperienceName();
+                                    $(`#fl-${newUnit.f_id}-exp-name`).html(this.units[`${newUnit.f_id}`].experience_name);
+                                }                                    
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        this.updateTotalForcePoints();
     }
 
     removeUnit(f_id) {

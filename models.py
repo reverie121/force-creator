@@ -111,6 +111,7 @@ class SavedList(db.Model):
 
     name = db.Column(db.VARCHAR)
     maxpoints = db.Column(db.Integer)
+    totalforcepoints = db.Column(db.Integer)
     nationality_id = db.Column(db.Integer, db.ForeignKey(
         'nationality.id', ondelete='SET NULL'))
     faction_id = db.Column(db.Integer, db.ForeignKey(
@@ -120,7 +121,7 @@ class SavedList(db.Model):
     commander_id = db.Column(db.Integer, db.ForeignKey(
         'commander.id', ondelete='SET NULL'))
     commandernickname = db.Column(db.VARCHAR)
-    commanderhorseoption = db.Column(db.Integer)
+    commanderhorseselected = db.Column(db.Integer)
     commandersr1_id = db.Column(db.Integer, db.ForeignKey(
         'specialrule.id', ondelete='SET NULL'))
     commandersr2_id = db.Column(db.Integer, db.ForeignKey(
@@ -150,13 +151,14 @@ class SavedList(db.Model):
         
         self.name = save_data['name']
         self.maxpoints = save_data['maxpoints']
+        self.totalforcepoints = save_data['totalforcepoints']
         self.nationality_id = save_data['nationality_id']
         self.faction_id = save_data['faction_id']
         if save_data['forceoption_id'] != 0:
             self.forceoption_id = save_data['forceoption_id']
         self.commander_id = save_data['commander_id']
         self.commandernickname = save_data['commandernickname']
-        self.commanderhorseoption = save_data['commanderhorseoption']
+        self.commanderhorseselected = save_data['commanderhorseselected']
         if save_data['commandersr1_id'] >= 1:        
             self.commandersr1_id = save_data['commandersr1_id']
         if save_data['commandersr2_id'] >= 1:

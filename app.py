@@ -13,8 +13,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = config.FC_SECRET_KEY
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://rhrxzxreyogixj:f2a2f17a80d874c6aea9ca1e9d9656ff7da4c52f45c484061a0b82ebbdf2ea80@ec2-52-3-60-53.compute-1.amazonaws.com:5432/d2orrhmsgksfiq'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://rhrxzxreyogixj:f2a2f17a80d874c6aea9ca1e9d9656ff7da4c52f45c484061a0b82ebbdf2ea80@ec2-52-3-60-53.compute-1.amazonaws.com:5432/d2orrhmsgksfiq'
 print('*********************************************')
 print(config.FC_DATABASE_URI)
 print(type(config.FC_DATABASE_URI))

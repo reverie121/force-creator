@@ -6,11 +6,9 @@ from sqlalchemy.types import Integer, String, Text, VARCHAR
 
 import config
 
-cnfg = config.Config()
-
 directory = 'bp_data' # Directory containing csv files to create tables from
 
-engine=create_engine(f'postgresql+psycopg2://postgres:{cnfg.FC_DATABASE_URI}@localhost:5432/bp')
+engine=create_engine(f'postgresql+psycopg2://postgres:{config.POSTGRES_DATABASE_PWD}@localhost:5432/bp')
 
 # Start with a fresh schema
 with engine.connect() as con:
