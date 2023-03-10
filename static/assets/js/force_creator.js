@@ -1218,6 +1218,12 @@ class ForceList {
         $(`#fl-${character.f_id}-expand`).parent().on('click', () => {
             $(`#fl-${character.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
+        if (character.specialrule.length > 0) {
+            // Handle expanding/contracting of item information.
+            $(`#fl-${character.f_id}-specialrules-expand`).parent().on('click', () => {
+                $(`#fl-${character.f_id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            });
+        }
         // Handle removal of Character from ForceList.
         $(`#fl-${character.f_id}-remove`).parent().on('click', () => {
             let thisCharacterType;
@@ -2677,7 +2683,6 @@ class Character {
         cardBody.append(cardHeader, cardDetails);
         newItem.append(cardBody);
         // Add Character to appropriate div of menu display.
-
         if (this.charactertype == 1) {
             $('#fighting-man-characters').append(newItem);
         }
@@ -2688,6 +2693,12 @@ class Character {
         $(`#character-${this.id}-expand`).parent().on('click', () => {
             $(`#character-${this.id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
         });
+        if (this.specialrule.length > 0) {
+            // Handle expanding/contracting of item information.
+            $(`#character-${this.id}-specialrules-expand`).parent().on('click', () => {
+                $(`#character-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            });
+        }
         // Handle button for adding ship to ForceList.
         $(`#character-${this.id}-add`).parent().on('click', (e) => {
             e.preventDefault();
