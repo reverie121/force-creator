@@ -3207,6 +3207,15 @@ function resetComponentSelector() {
     if ($componentSelector[0][0].text != 'Please Select From Menu') {
         $componentSelector.prepend($('<option></option>').val(0).text('Please Select From Menu'));
     }
+    // Hide or show Artillery option based on Faction
+    if ('faction' in forceList) {
+        if (forceList.faction.artilleryallowed == 0) {
+            $("#component_selector option[value='artillery']").hide();
+        }
+        else {
+            $("#component_selector option[value='artillery']").show();
+        }
+    }
     $componentSelector.val(0);
     $('#menu').hide('medium', 'swing');
     setTimeout(() => {
@@ -3349,7 +3358,6 @@ $selectCommander.on('change', function() {
     forceCommander.initialize(selectedCommander, forceList.nationality.name);
     forceList.setCommander(forceCommander);
     forceList.displayCommander();
-    resetComponentSelector()
 });
 
 // Handle Faction Selector dropdown.
@@ -3365,7 +3373,6 @@ $selectFaction.on('change', async function() {
     forceList.setFaction(forceFaction);
     await forceList.faction.setFactionUnits();
     forceList.displayFaction();
-    resetComponentSelector()
 });
 
 // Handle menu component (artillery, characters, units, etc) dropdown.
@@ -3437,8 +3444,10 @@ $componentSelector.on('change', async function() {
                 fluyt.show('medium', 'swing');
                 brigantine.show('medium', 'swing');
                 lightFrigate.show('medium', 'swing');
-                galleon.show('medium', 'swing');
-                sixthRateFrigate.show('medium', 'swing');
+                if (forceList.faction.maxshipdecks > 3) {
+                    galleon.show('medium', 'swing');
+                    sixthRateFrigate.show('medium', 'swing');
+                }
             }
         }
     }

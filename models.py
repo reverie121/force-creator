@@ -435,6 +435,7 @@ class Faction(db.Model):
     nationality_id = db.Column(db.Integer, db.ForeignKey(
         'nationality.id', ondelete='SET NULL'))
     maxshipdecks = db.Column(db.Integer)
+    artilleryallowed = db.Column(db.Integer)
     attackerrollbonus = db.Column(db.Integer)
 
     nationality = db.relationship('Nationality', backref='faction')

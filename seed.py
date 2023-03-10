@@ -218,6 +218,7 @@ for filename in os.listdir(directory):
 
             elif table_name == 'faction':
                 df['maxshipdecks'] = 10
+                df['artilleryallowed'] = 1
                 df['attackerrollbonus'] = 0
                 df.drop(df['id'].loc[df['id'].isin([54])].index, inplace=True)
                 # Add values for maxshipdecks where needed.
@@ -225,6 +226,9 @@ for filename in os.listdir(directory):
                 df.loc[df['id'].isin([46,27,41,108,109,23]), 'maxshipdecks'] = 1
                 df.loc[df['id'].isin([61,72,74,104]), 'maxshipdecks'] = 2
                 df.loc[df['id'].isin([110]), 'maxshipdecks'] = 3
+                # Make artilleryallowed false for appropriate Factions
+                df.loc[df['nationality_id'] == 8, 'artilleryallowed'] = 0
+                df.loc[df['id'].isin([46,108]), 'artilleryallowed'] = 0
                 # Add values for attackerrollbonus where needed.
                 df.loc[df['id'].isin([2,5,7,9,12,13,14,21,24,27,41,45,57,62,69,70,79,82,83,89,91,94,102,103,108]), 'attackerrollbonus'] = 2
                 df.loc[df['id'].isin([3,6,8,43,44,53,81,87,92]), 'attackerrollbonus'] = 3
