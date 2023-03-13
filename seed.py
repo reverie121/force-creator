@@ -8,7 +8,7 @@ import config
 
 directory = 'bp_data' # Directory containing csv files to create tables from
 
-engine=create_engine(f'postgresql+psycopg2://postgres:{config.POSTGRES_DATABASE_PWD}@localhost:5432/bp')
+engine=create_engine(f'postgresql+psycopg2://postgres:{config.POSTGRES_MASTER_PWD}@localhost:5432/bp')
 
 # Start with a fresh schema
 with engine.connect() as con:

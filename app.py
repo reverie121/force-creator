@@ -10,16 +10,15 @@ app = Flask(__name__)
 
 # debug = DebugToolbarExtension(app)
 
-app.config['SECRET_KEY'] = config.FC_SECRET_KEY
+app.config['SECRET_KEY'] = config.SECRET_KEY
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///bp'
-app.config['SQLALCHEMY_DATABASE_URI'] = config.FC_DATABASE_URI
-print('*********************************************')
-print(config.FC_DATABASE_URI)
-print(type(config.FC_DATABASE_URI))
-print(app.config['SQLALCHEMY_DATABASE_URI'])
+# If not local, then string replace postgres to postgresql
+db_conn_str = config.DATABASE_URI
+if config.IS_LOCAL == 0:
+    db_conn_str = db_conn_str.replace("postgres", "postgresql")
 
+app.config['SQLALCHEMY_DATABASE_URI'] = db_conn_str
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
