@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, jsonify, session, request, j
 from forms import ForceSelection, AddToList, AddUserForm, LogInForm, EditUserForm
 # from flask_debugtoolbar import DebugToolbarExtension
 import uuid
+import os
 
 import models
 import config
@@ -10,7 +11,10 @@ app = Flask(__name__)
 
 # debug = DebugToolbarExtension(app)
 
-app.config['SECRET_KEY'] = config.SECRET_KEY
+# Set a randomized Secret Key value for use with CSRF.
+SECRET_KEY = os.urandom(32)
+app.config['SECRET_KEY'] = SECRET_KEY
+
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
 # If not local, then string replace postgres to postgresql
