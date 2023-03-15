@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, jsonify, session, request, json
-from forms import ForceSelection, AddToList, AddUserForm, LogInForm, EditUserForm
+from forms import AddToList, AddUserForm, LogInForm, EditUserForm
 # from flask_debugtoolbar import DebugToolbarExtension
 import uuid
 import os
@@ -37,9 +37,8 @@ def main():
 
 @app.route('/creator')
 def show_creator():
-    force_selection = ForceSelection()
     add_to_list = AddToList()
-    return render_template('fc.html', force_selection=force_selection, add_to_list=add_to_list)
+    return render_template('fc.html', add_to_list=add_to_list)
 
 
 ############### ***** ########## USER ROUTES ########## ***** ###############
@@ -174,18 +173,16 @@ def save_forcelist():
             new_save.created_at = saved_list_dict['created_at']
             new_save.username = saved_list_dict['username']
             list_uuid = new_save.save_to_db(save_data) 
-    return redirect(f'/lists/{list_uuid}')
+    return list_uuid
 
 @app.route('/lists/<uuid>', methods=['GET'])
 def show_forcelist(uuid):
     """ Show a ForceList retrieved from the database. """
 
-    force_selection = ForceSelection()
     add_to_list = AddToList()
-
     response = models.SavedList.query.get_or_404(uuid)
     data = json.dumps(response.pack_data())
-    return render_template('fc.html', force_selection=force_selection, add_to_list=add_to_list, data=data)    
+    return render_template('fc.html', add_to_list=add_to_list, data=data)    
 
 @app.route('/lists/<uuid>/delete', methods=['GET'])
 def del_forcelist(uuid):

@@ -1071,10 +1071,16 @@ class ForceList {
             this.updateCharacterTypeCount();
             this.updateTotalForcePoints();
             this.displayCharacter(this.characters[`${newCharacter.f_id}`]);
+            if (newCharacter.id != 39) {
+                $(`#character-${newCharacter.id}`).hide('medium','swing');
+            }
         }
     }
 
     removeCharacter(f_id) {
+        if (this.characters[`${f_id}`]['id'] != 39) {
+            $(`#character-${this.characters[`${f_id}`]['id']}`).show('medium','swing');
+        }
         delete this.characters[`${f_id}`];
         this.updateCharacterTypeCount();
         this.updateTotalForcePoints();
@@ -2582,7 +2588,7 @@ class Character {
 
     // Display method for Characters on menu side.
     display() {
-        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']);
+        const newItem = $('<div>').addClass(['card', 'm-1', 'bg-info', 'text-primary', 'border', 'border-2', 'border-secondary', 'fell']).attr('id',`character-${this.id}`);
         const cardBody = $('<div>').addClass(['card-body']);
         const cardHeader = $('<div>').addClass(['row']);
         const nameColumn = $('<div>').addClass(['col-8']);
@@ -2726,7 +2732,7 @@ class Character {
                 $(`#character-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
             });
         }
-        // Handle button for adding ship to ForceList.
+        // Handle button for adding Character to ForceList.
         $(`#character-${this.id}-add`).parent().on('click', (e) => {
             e.preventDefault();
             const characterToAdd = new Character(this);
