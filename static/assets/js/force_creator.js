@@ -48,6 +48,7 @@ class ForceList {
         this.updateAllShipsCost();
         this.updateAllUnitsCost();
         this.updateAllMiscCost();
+        this.updateModelCount();
         this.totalForcePoints = this.totalForcePoints + this.allUnitsCost + this.allArtilleryCost + this.allShipsCost + this.allCharactersCost + this.allMiscCost;
         $('#point-total-display').text(`${this.totalForcePoints}`);
     }
@@ -374,6 +375,32 @@ class ForceList {
             $('#force-save').show('medium', 'swing');
             $('#force-download').show('medium', 'swing');
         },400)
+    }
+
+    updateModelCount() {
+        let modelCount = 0;
+        // Count Commmander (count twice for Red & White Chiefs)
+        if (this.commander !== undefined) {
+            modelCount ++;
+            if (this.commander.id == 227) {
+                modelCount ++;
+            }
+        }
+        // Count Characters
+        modelCount += Object.keys(this.characters).length
+        // Count Units
+        for (const unit in this.units) {
+            modelCount += this.units[`${unit}`]['qty']
+        }
+        let strikePointsEvery = Math.floor(modelCount / 4)
+        if (modelCount < 4) {
+            strikePointsEvery = 1
+        }
+        this.modelcount = modelCount
+        $('#model-count').html(`${modelCount}`)
+        $('#strike-points-1').html(`${strikePointsEvery}`)
+        $('#strike-points-2').html(`${strikePointsEvery * 2}`)
+        $('#strike-points-3').html(`${strikePointsEvery * 3}`)
     }
 
     // Assign a nationality object to the force list.
@@ -1627,7 +1654,7 @@ class ForceList {
     updateUnitSize() {
         this.unitMin = Math.floor(this.maxPoints / 100) + 2;
         this.unitMax = (Math.floor(this.maxPoints / 100) + 1)*4;
-        $unitSizeRangeDisplay.html(`<i>${this.unitMin} to ${this.unitMax} models per unit</i>`);
+        $unitSizeRangeDisplay.html(`<i>${this.unitMin} to ${this.unitMax} Models per Unit</i>`);
     }
 
     // Takes a ForceList's unit's unique identifier and recalculates the

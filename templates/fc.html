@@ -16,83 +16,92 @@
                 </h1>
             </div>
 
-            <div class='container p-2 pt-0 m-0'>
+            <div class='container p-0 px-1 m-0'>
                 
                 <!-- MAIN SELECT  -->
-                <div class='container-fluid rounded-3 bg-warning p-0 pe-3'>
+                <div class='container-fluid rounded-3 bg-warning p-0 fell fs-5'>
 
-                    <form>
-                    <div class='row'>
+                    <div class='row px-3'>
+                        
+                        <!-- MAIN SELECT RIGHT SIDE -->
+                        <div class='col-12-sm col-md order-md-last m-1'>      
 
-                        <div class='col m-1 ms-0'>                            
-                            <div class='row g-0 mt-1 align-items-center'>
-                                <div class='col-4 p-0 pe-2 text-end'>
-                                    <i class='force-selector-label form-label'>{{force_selection.force_name.label}}:</i>
+                            <div class='row mt-1'>
+                                <div class='col-auto p-0 pe-2 text-end'>
+                                    <i class='form-label text-info'>Nation:</i>
                                 </div>
-                                <div class='col-8 p-0'>
-                                    {{force_selection.force_name(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0 border border-2 border-secondary')}}
-                                </div>
-                            </div>
-                            
-                            <div class='row g-0 mt-1 align-items-center'>
-                                <div class='col-4 p-0 pe-2 text-end'>
-                                    <i class='force-selector-label form-label'>{{force_selection.point_max.label}}:</i>
-                                </div>
-                                <div class='col-8 p-0'>
-                                    <div class='row g-0'>
-                                        <div class='col-6 col-md-4 p-0'>
-                                            {{force_selection.point_max(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0 border border-2 border-secondary')}}
-                                        </div>
-                                        <div class='col p-0'>
-                                            <!-- Empty space next to max point input -->
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class='row g-0 mt-1 align-items-center'>
-                                <div class='col-4 p-0 pe-2 text-end'>
-                                    <!-- Empty space below point max label -->
-                                </div>
-                                <div class='col-8 p-0 fell text-info fs-6' id='unit-size-range-display'>
-                                    <!-- Space under point max input (filled by js) -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class='col m-1 ms-0'>      
-
-                            <div class='row mt-1 align-items-center'>
-                                <div class='col-4 p-0 pe-2 text-end'>
-                                    <i class='force-selector-label form-label'>{{force_selection.select_nation.label}}:</i>
-                                </div>
-                                <div class='col-8 p-0'>
-                                    {{force_selection.select_nation(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0 border border-2 border-secondary')}}
+                                <div class='col p-0'>
+                                    <select class='form-control rounded-2 text-center pt-0 pb-0 border bg-info border-2 border-secondary text-primary' id='select_nation'></select>
                                 </div>
                             </div>
                                           
-                            <div class='row mt-1 align-items-center'>
-                                <div class='col-4 p-0 pe-2 text-end'>
-                                    <i class='force-selector-label form-label'>{{force_selection.select_faction.label}}:</i>
+                            <div class='row mt-1'>
+                                <div class='col-auto p-0 pe-2 text-end'>
+                                    <i class='form-label text-info'>Faction:</i>
                                 </div>
-                                <div class='col-8 p-0'>
-                                    {{force_selection.select_faction(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0 border border-2 border-secondary')}}
-                                </div>
-                            </div>
-
-                            <div class='row mt-1 align-items-center'>
-                                <div class='col-4 p-0 pe-2 text-end'>
-                                    <i class='force-selector-label form-label'>{{force_selection.select_commander.label}}:</i>
-                                </div>
-                                <div class='col-8 p-0'>
-                                    {{force_selection.select_commander(class_='form-control force-selector-field rounded-2 text-center pt-0 pb-0 border border-2 border-secondary')}}
+                                <div class='col p-0'>
+                                    <select class='form-control rounded-2 text-center pt-0 pb-0 bg-info border border-2 border-secondary text-primary' id='select_faction'></select>
                                 </div>
                             </div>
 
+                            <div class='row mt-1'>
+                                <div class='col-auto p-0 pe-2 text-end'>
+                                    <i class='form-label text-info'>Commander:</i>
+                                </div>
+                                <div class='col p-0'>
+                                    <select class='form-control rounded-2 text-center pt-0 pb-0 bg-info border border-2 border-secondary text-primary' id='select_commander'></select>
+                                </div>
+                            </div>
+                        </div>                        
+
+                        <!-- MAIN SELECT LEFT SIDE -->
+                        <div class='col m-1'>
+                            <!-- FORCE NAME -->
+                            <div class='row mt-1 align-items-center'>
+                                <div class='col-auto p-0 pe-2 text-end'>
+                                    <i class='form-label text-info'>Force Name:</i>
+                                </div>
+                                <div class='col p-0'>
+                                    <input type='text' class='form-control rounded-2 text-center pt-0 pb-0 bg-info border border-2 border-secondary text-primary' id='force_name'>
+                                </div>
+                            </div>
+                            <!-- MAX POINTS -->
+                            <div class='row align-items-center'>
+                                <div class='col-auto mt-1 p-0 pe-2 text-end'>
+                                    <i class='form-label text-info'>Max Points:</i>
+                                </div>
+                                <div class='col-2 col-1-md mt-1 p-0'>
+                                    <input type='number' class='form-control rounded-2 text-center pt-0 pb-0 bg-info border border-2 border-secondary text-primary' id='point_max'>
+                                </div>
+                                <div class='col-auto mt-1'>
+                                    <span class='px-1 rounded-2 text-info border border-primary'>
+                                        <span id='point-total-display'>0</span>
+                                        &nbsp;/&nbsp;
+                                        <span id='point-max-display'>150</span>
+                                    </span>
+                                </div>
+                                <div class='col-auto mt-1'>
+                                    <i  class='p-1 border border-primary rounded-2 text-info fs-6'>
+                                        Models in Force: <span class='fs-5' id='model-count'>-</span>
+                                    </i>
+                                </div>
+                            </div>
+                            <!-- THIRD ROW -->
+                            <div class='row mt-1 align-items-center'>
+                                <div class='col-auto mt-lg-1'>
+                                    <span  class='p-1 border border-primary rounded-2 text-info fs-6' id='unit-size-range-display'>
+                                        <!-- filled by js -->
+                                    </span>
+                                </div>
+                                <div class='col-auto mt-1'>
+                                    <i  class='p-1 border border-primary rounded-2 text-info fs-6'>
+                                        Strike Points At: <span class='fs-5' id='strike-points-1'>-</span> / <span class='fs-5' id='strike-points-2'>-</span> / <span class='fs-5' id='strike-points-3'>-</span>
+                                    </i>
+                                </div>
+                            </div>
                         </div>
 
                     </div>
-                    </form>
                     
                 </div>
 
@@ -106,27 +115,39 @@
                             <div class='col mx-1 my-0 pt-1 bg-info rounded-2 text-secondary fell'>
                                 <h3 class='h3 text-primary text-center'>Alpha Version Disclaimer</h3>
                                 <ul>
-                                    <li>This website has not yet been optimized for mobile.</li>
+                                    <li>This website has not yet been optimized for mobile. For best results view in a window at least 1024 pixels wide.</li>
                                     <li>While in alpha release user accounts and force list saves should not be considered permanent, although they may persist through to beta release and beyond. I will make note here on the front page of any change in the database that will require you to make a new user account.</li>
                                 </ul>
                                 <h3 class='h3 text-primary text-center'>How Do?</h3>
                                 <p>
-                                    After selecting your Nation, Faction, and Commander (above) you will be able to add more elements to your list. You can also set your Force Name and the Max Points for your Force List in the area above. This website is currently formatted for computer monitors. Other devices will be supported soon!
+                                    After selecting your Nation, Faction, and Commander (above) you will be able to add more elements to your list. You can also set your Force Name and the Max Points for your Force List in the area above.
                                 </p>
+                                <h3 class='h3 text-primary text-center'>Changelog</h3>
+                                <p>Click on date to expand.</p>
+                                <ul>
+                                    <li>
+                                        <a href='#mar15-2023' role='button' data-bs-toggle='collapse'><span>Mar 15, 2023</span></a>
+                                        <ul class='collapse' id='mar15-2023'>
+                                            <li>Added Model Count and Strike Point Thresholds.</li>
+                                            <li>Moved current points (x / Total) to top of page.</li>
+                                            <li>Moved model count to top of page.</li>
+                                            <li>Updated menu at top of page to be more mobile friendly.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
                                 <h3 class='h3 text-primary text-center'>Known Bugs</h3>
                                 <ul>
                                     <li>Opening a link for a saved Force List into a new tab or window does not work properly.</li>
                                     <li>Clicking too fast on expander icons gets them out of sync.</li>
+                                    <li>Some commanders that shouldn't have the Horse option do.</li>
                                 </ul>
                                 <h3 class='h3 text-primary text-center'>Planned Features For Beta Launch</h3>
                                 <ul>
                                     <li>Feedback Form.</li>
-                                    <li>Make fully responsive to work on any size screen.</li>
+                                    <li>Make fully responsive to work well on any size screen.</li>
                                     <li>Pre-Formatted PDF Force List downloads.</li>
                                     <li>Assignment functionality (units and artillery to ship decks, units to artillery, characters and commanders to units). Great Warrior's Unit Option will be implemented along with this.</li>
-                                    <li>Add strike point threshold functionality.</li>
                                     <li>Make Piragua and Corvette work without multiple versions (requires additional Ship Upgrade functionality).</li>
-                                    <li>Localize dependencies where possible?</li>
                                 </ul>
                                 <h3 class='h3 text-primary text-center'>Additional Planned Features/Changes</h3>
                                 <ul>
@@ -182,19 +203,15 @@
                             <div class='fill-screen-scrollable'>
                                 <div class='rounded-2 force-selector-field border border-2 border-secondary'>
                                     <div class='row text-center'>
-                                        <div class='col-1'>
+                                        <div class='col-auto'>
                                             <div class='container-fluid d-flex justify-content-center'>
                                                 <a href='#fl-options' role='button' data-bs-toggle='collapse'>
                                                     <i class='fa-solid fa-chevron-down' id='fl-options-expand'></i>
                                                 </a>
                                             </div>
                                         </div>
-                                        <div class='col-7'>
+                                        <div class='col'>
                                             <i id='force-name' class='fs-5'></i>
-                                        </div>
-                                        <div class='col-4'>
-                                             <span id='point-total-display'></span>&nbsp;/&nbsp;
-                                             <span id='point-max-display'></span>
                                         </div>
                                     </div>
                                     <div class='collapse text-primry rounded-2 mt-0 px-1 text-primary' id='fl-options'>
