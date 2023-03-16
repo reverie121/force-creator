@@ -22,7 +22,7 @@
                             {% for field in form if field.widget.input_type != 'hidden' %}
                             <p>
                                 {{ field.label }}
-                                {{ field(class_='form-control bg-info text-secondary') }}
+                                {{ field(class_='form-control bg-info text-primary') }}
                         
                                 {% for error in field.errors %}
                                 {{ error }}

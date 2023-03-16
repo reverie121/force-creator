@@ -19,16 +19,16 @@
                             {{ form.hidden_tag() }} <!--add type=hidden form fields -->
 
                             <label for="first_name" class='mt-1'>First Name</label>
-                            <input type="text" class="form-control bg-info text-secondary" name="first_name" id="first_name" value="{{user.first_name}}">
+                            <input type="text" class="form-control bg-info text-primary" name="first_name" id="first_name" value="{{user.first_name}}">
 
                             <label for="last_name" class='mt-1'>Last Name</label>
-                            <input type="text" class="form-control bg-info text-secondary" name="last_name" id="last_name" value="{{user.last_name}}">
+                            <input type="text" class="form-control bg-info text-primary" name="last_name" id="last_name" value="{{user.last_name}}">
 
                             <label for="email" class='mt-1'>Email</label>
-                            <input type="text" class="form-control bg-info text-secondary" name="email" id="email" value="{{user.email}}">
+                            <input type="text" class="form-control bg-info text-primary" name="email" id="email" value="{{user.email}}">
 
                             <label for="password" class='mt-1'>Password (for verification)</label>
-                            <input type="text" class="form-control bg-info text-secondary" name="password" id="password">
+                            <input type="text" class="form-control bg-info text-primary" name="password" id="password">
 
                             <div class='container-fluid mt-2 p-1'>
                                 <button class="btn btn-danger" formaction="/users/{{user.username}}" formmethod="GET" type="submit">Cancel</button>

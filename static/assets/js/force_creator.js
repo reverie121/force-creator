@@ -1319,11 +1319,21 @@ class ForceList {
             $(`#fl-${f_id}-cost`).html(`${this.ships[`${f_id}`].totalCost} pts`);
             if (u.name.startsWith('Streamlined Hull')) {
                 this.ships[`${f_id}`].draft += 1;
-                $(`#fl-${f_id}-draft`).html(`${this.ships[`${f_id}`].draft}`)
+                $(`#fl-${f_id}-draft`).html(`${this.ships[`${f_id}`].draft}`);
             }
             else if (u.name.startsWith('Improved Rig')) {
                 this.ships[`${f_id}`].topspeed += 1;
-                $(`#fl-${f_id}-speed`).html(`${this.ships[`${f_id}`].topspeed}`)
+                $(`#fl-${f_id}-speed`).html(`${this.ships[`${f_id}`].topspeed}`);
+            }
+            else if (u.name.startsWith('Light Gunboat')) {
+                this.ships[`${f_id}`].swivels = 2;
+                this.ships[`${f_id}`].swivelsdecks = '2';
+                this.ships[`${f_id}`].cannons = 1;
+                this.ships[`${f_id}`].cannonsdecks = '1';
+                $(`#fl-${f_id}-cannonsDecks-${1}`).html('1');
+                $(`#fl-${f_id}-swivelsDecks-${1}`).html('2');
+                $(`#fl-${f_id}-cannonsLabel`).show('medium','swing');
+                $(`#fl-${f_id}-cannonsData`).show('medium','swing');
             }
         }
         else {
@@ -1333,11 +1343,21 @@ class ForceList {
             $(`#fl-${f_id}-cost`).html(`${this.ships[`${f_id}`].totalCost} pts`);
             if (u.name.startsWith('Streamlined Hull')) {
                 this.ships[`${f_id}`].draft -= 1;
-                $(`#fl-${f_id}-draft`).html(`${this.ships[`${f_id}`].draft}`)
+                $(`#fl-${f_id}-draft`).html(`${this.ships[`${f_id}`].draft}`);
             }                        
             else if (u.name.startsWith('Improved Rig')) {
                 this.ships[`${f_id}`].topspeed -= 1;
-                $(`#fl-${f_id}-speed`).html(`${this.ships[`${f_id}`].topspeed}`)
+                $(`#fl-${f_id}-speed`).html(`${this.ships[`${f_id}`].topspeed}`);
+            }
+            else if (u.name.startsWith('Light Gunboat')) {
+                this.ships[`${f_id}`].swivels = 4;
+                this.ships[`${f_id}`].swivelsdecks = '4';
+                this.ships[`${f_id}`].cannons = 0;
+                this.ships[`${f_id}`].cannonsdecks = '0';
+                $(`#fl-${f_id}-cannonsDecks-${1}`).html('0');
+                $(`#fl-${f_id}-swivelsDecks-${1}`).html('4');
+                $(`#fl-${f_id}-cannonsLabel`).hide('medium','swing');
+                $(`#fl-${f_id}-cannonsData`).hide('medium','swing');
             }
         }
     }
@@ -1388,29 +1408,51 @@ class ForceList {
             }
             dataColumn.append(headerColumns);
             dpHeader.append(labelColumn, dataColumn);
-            if (ship.cannons > 0) {
-                const gunsLabel = $('<div>').html('Guns');
-                labelColumn.append(gunsLabel);
-                const gunsData = $('<div>').addClass('row');
-                const gunsPerDeck = ship.cannonsdecks.split('/');
-                for (let i = 0; i < ship.size; i++) {
-                    const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${gunsPerDeck[i]}`);
-                    gunsData.append(newColumn);
+            // Add Cannons Data
+            const gunsLabel = $('<div>').attr('id',`fl-${ship.f_id}-cannonsLabel`).html('Guns');
+            const gunsData = $('<div>').addClass('row').attr('id',`fl-${ship.f_id}-cannonsData`);
+            const gunsPerDeck = ship.cannonsdecks.split('/');
+            for (let i = 0; i < ship.size; i++) {
+                const newColumn = $('<div>')
+                if (ship.cannons > 0) {
+                    newColumn.addClass(`col-${n_of_cols}`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`${gunsPerDeck[i]}`);
                 }
-                dataColumn.append(gunsData);
-            }
-            if (ship.swivels > 0) {
-                const swivelsLabel = $('<div>').html('Swivels');
-                labelColumn.append(swivelsLabel);
-                const swivelsData = $('<div>').addClass('row');
-                const swivelsPerDeck = ship.swivelsdecks.split('/');
-                for (let i = 0; i < ship.size; i++) {
-                    const newColumn = $('<div>').addClass(`col-${n_of_cols}`).html(`${swivelsPerDeck[i]}`);
-                    swivelsData.append(newColumn);
+                else {
+                    gunsLabel.css("display", "none");
+                    newColumn.addClass(`col-${n_of_cols}`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`0`);
                 }
-                dataColumn.append(swivelsData);
+                gunsData.append(newColumn);
             }
-
+            labelColumn.append(gunsLabel);
+            dataColumn.append(gunsData);
+            // Hide Cannons Row if ship cannot have them.
+            if (!ship.cannons > 0) {
+                gunsLabel.css("display", "none");
+                gunsData.css("display", "none");
+            }  
+            // Add Swivels Data
+            const swivelsLabel = $('<div>').attr('id',`fl-${ship.f_id}-swivelsLabel`).html('Swivels');
+            const swivelsData = $('<div>').addClass('row').attr('id',`fl-${ship.f_id}-swivelsData`);
+            const swivelsPerDeck = ship.swivelsdecks.split('/');
+            for (let i = 0; i < ship.size; i++) {
+                const newColumn = $('<div>');
+                if (ship.swivels > 0) {
+                    newColumn.addClass(`col-${n_of_cols}`).attr('id',`fl-${ship.f_id}-swivelsDecks-${i+1}`).html(`${swivelsPerDeck[i]}`);
+                }
+                else {
+                    swivelsLabel.css("display", "none");
+                    newColumn.addClass(`col-${n_of_cols}`).attr('id',`fl-${ship.f_id}-swivelsDecks-${i+1}`).html(`0`);
+                }
+                swivelsData.append(newColumn);
+            }
+            labelColumn.append(swivelsLabel);
+            dataColumn.append(swivelsData);
+            // Hide Swivels Row if ship cannot have them.
+            if (!ship.swivels > 0) {
+                swivelsData.css("display", "none");
+                swivelsLabel.css("display", "none");
+            }              
+            // End of Cannons/Swivels Data
             deckPlan.append(dpHeader);
             leftBox.append(deckPlan);
         }

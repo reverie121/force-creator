@@ -205,7 +205,6 @@ for filename in os.listdir(directory):
                 df.loc[df['id'] == 208, 'unorthodoxforce'] = 'A Force led by this Commander may include Braves (Native American) as Core units.'
                 df['horseoption'] = 0
                 df.loc[df['id'].isin([2,3,4,7,8,9,10,11,12,26,27,28,71,73,74,75,93,94,95,96,99,100,101,102,118,121,126,127,129]), 'horseoption'] = 1
-                df.loc[df['commanderclass_id'] == 1, 'horseoption'] = 1
                 df.sort_values(by=['name'], inplace=True)
 
             elif table_name == 'commanderfaction':
@@ -272,6 +271,8 @@ for filename in os.listdir(directory):
                     df.loc[df['id'].isin([19,22,63,73]), 'details'] = 'This Force adds +3 when determining the attacker in a scenario.'
 
             elif table_name == 'ship':
+                df.drop(df['id'].loc[df['id'] == 9].index, inplace=True)
+                df.loc[df['id'] == 10, 'name'] = 'Piragua'
                 df['topspeed'] = df['topspeed'].str[:-1].astype(int)
 
             elif table_name == 'specialrule':

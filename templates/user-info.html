@@ -22,8 +22,8 @@
 
                         <div class='container-fluid d-flex flex-row justify-content-start'>
                             <div>
-                                <p>Name: {{ user.first_name }} {{ user.last_name }}</p>
-                                <p>Email: {{ user.email }}</p>
+                                <p>Name: <span class='text-secondary'>{{ user.first_name }} {{ user.last_name }}</span></p>
+                                <p>Email: <span class='text-secondary'>{{ user.email }}</span></p>
                             </div>
                         </div>
 
@@ -31,24 +31,24 @@
 
                         <div id='user-saved-lists' class='container-fluid' data-saved-lists='{{ listdata }}'>
                             <div class='row'>  
-                                <div class='col'>
+                                <div class='col fs-5 text-secondary'>
                                     List Name
                                 </div>
-                                <div class='col-3 col-md-2 col-l-1 d-none d-md-block'>
+                                <div class='col-3 col-md-2 col-l-1 d-none d-md-block fs-5'>
                                     Points
                                 </div>
-                                <div class='col-2 d-none d-xl-block'>
+                                <div class='col-2 d-none d-xl-block fs-5'>
                                     Nationality
                                 </div>
-                                <div class='col d-none d-xl-block'>
+                                <div class='col d-none d-xl-block fs-5'>
                                     Faction
                                 </div>
-                                <div class='col d-none d-md-block'>
+                                <div class='col d-none d-md-block fs-5'>
                                     Commander
                                 </div>
                             </div>
                             {% for list in savedlists %}
-                            <div class='row'>             
+                            <div class='row text-secondary'>             
                                 <div class='col d-flex align-items-center'>
                                     {% if user.username == session['username'] %}
                                         <a href='#/' role='button'><i class='me-2 fa-solid fa-xmark text-primary' id='{{ list.uuid }}-remove'></i></a>
@@ -58,10 +58,10 @@
                                 <div class='col-3 col-md-2 col-l-1 d-flex align-items-center d-none d-md-block'>
                                     {{ list.totalforcepoints }} / {{ list.maxpoints }}
                                 </div>
-                                <div class='col-2 d-flex align-items-center d-none d-xl-block'>
+                                <div class='col-2 d-flex align-items-center d-none d-xl-block' id='list-{{list.uuid}}-nationality'>
                                     {{ list.nationality_id }}
                                 </div>
-                                <div class='col d-flex align-items-center d-none d-xl-block'>
+                                <div class='col d-flex align-items-center d-none d-xl-block' id='list-{{list.uuid}}-faction'>
                                     {{ list.faction_id }}
                                 </div>
                                 <div class='col d-flex align-items-center d-none d-md-block'>
