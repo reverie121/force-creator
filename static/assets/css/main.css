@@ -10769,78 +10769,571 @@ textarea.form-control-lg {
     display: none !important;
   }
 }
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.overflow-y-scroll {
+  overflow-y: scroll;
+}
+
+.h-33 {
+  height: 33% !important;
+}
+
+.h-67 {
+  height: 67% !important;
+}
+
+.vh-25 {
+  height: 25vh !important;
+}
+
+.vh-33 {
+  height: 33vh !important;
+}
+
+.vh-50 {
+  height: 50vh !important;
+}
+
+.vh-67 {
+  height: 67vh !important;
+}
+
+.vh-75 {
+  height: 75vh !important;
+}
+
+.min-vh-25 {
+  min-height: 25vh !important;
+}
+
+.min-vh-33 {
+  min-height: 33vh !important;
+}
+
+.min-vh-50 {
+  min-height: 50vh !important;
+}
+
+.min-vh-75 {
+  min-height: 75vh !important;
+}
+
+.min-h-25 {
+  min-height: 25% !important;
+}
+
+.min-h-33 {
+  min-height: 33% !important;
+}
+
+.min-h-50 {
+  min-height: 50% !important;
+}
+
+.min-h-75 {
+  min-height: 75% !important;
+}
+
+.min-h-100 {
+  min-height: 100% !important;
+}
+
+@media (min-width: 576px) {
+  .h-sm-25 {
+    height: 25% !important;
+  }
+  .h-sm-33 {
+    height: 33% !important;
+  }
+  .h-sm-50 {
+    height: 50% !important;
+  }
+  .h-sm-67 {
+    height: 67% !important;
+  }
+  .h-sm-75 {
+    height: 75% !important;
+  }
+  .h-sm-100 {
+    height: 100% !important;
+  }
+  .vh-sm-25 {
+    height: 25vh !important;
+  }
+  .vh-sm-33 {
+    height: 33vh !important;
+  }
+  .vh-sm-50 {
+    height: 50vh !important;
+  }
+  .vh-sm-67 {
+    height: 67vh !important;
+  }
+  .vh-sm-75 {
+    height: 75vh !important;
+  }
+  .vh-sm-100 {
+    height: 100vh !important;
+  }
+  .min-vh-sm-25 {
+    min-height: 25vh !important;
+  }
+  .min-vh-sm-33 {
+    min-height: 33vh !important;
+  }
+  .min-vh-sm-50 {
+    min-height: 50vh !important;
+  }
+  .min-vh-sm-67 {
+    min-height: 67vh !important;
+  }
+  .min-vh-sm-75 {
+    min-height: 75vh !important;
+  }
+  .min-vh-sm-100 {
+    min-height: 100vh !important;
+  }
+  .min-h-sm-25 {
+    min-height: 25% !important;
+  }
+  .min-h-sm-33 {
+    min-height: 33% !important;
+  }
+  .min-h-sm-50 {
+    min-height: 50% !important;
+  }
+  .min-h-sm-67 {
+    min-height: 67% !important;
+  }
+  .min-h-sm-75 {
+    min-height: 75% !important;
+  }
+  .min-h-sm-100 {
+    min-height: 100% !important;
+  }
+}
+@media (min-width: 768px) {
+  .h-md-25 {
+    height: 25% !important;
+  }
+  .h-md-33 {
+    height: 33% !important;
+  }
+  .h-md-50 {
+    height: 50% !important;
+  }
+  .h-md-67 {
+    height: 67% !important;
+  }
+  .h-md-75 {
+    height: 75% !important;
+  }
+  .h-md-100 {
+    height: 100% !important;
+  }
+  .vh-md-25 {
+    height: 25vh !important;
+  }
+  .vh-md-33 {
+    height: 33vh !important;
+  }
+  .vh-md-50 {
+    height: 50vh !important;
+  }
+  .vh-md-67 {
+    height: 67vh !important;
+  }
+  .vh-md-75 {
+    height: 75vh !important;
+  }
+  .vh-md-100 {
+    height: 100vh !important;
+  }
+  .min-vh-md-25 {
+    min-height: 25vh !important;
+  }
+  .min-vh-md-33 {
+    min-height: 33vh !important;
+  }
+  .min-vh-md-50 {
+    min-height: 50vh !important;
+  }
+  .min-vh-md-67 {
+    min-height: 67vh !important;
+  }
+  .min-vh-md-75 {
+    min-height: 75vh !important;
+  }
+  .min-vh-md-100 {
+    min-height: 100vh !important;
+  }
+  .min-h-md-25 {
+    min-height: 25% !important;
+  }
+  .min-h-md-33 {
+    min-height: 33% !important;
+  }
+  .min-h-md-50 {
+    min-height: 50% !important;
+  }
+  .min-h-md-67 {
+    min-height: 67% !important;
+  }
+  .min-h-md-75 {
+    min-height: 75% !important;
+  }
+  .min-h-md-100 {
+    min-height: 100% !important;
+  }
+}
+@media (min-width: 992px) {
+  .h-lg-25 {
+    height: 25% !important;
+  }
+  .h-lg-33 {
+    height: 33% !important;
+  }
+  .h-lg-50 {
+    height: 50% !important;
+  }
+  .h-lg-67 {
+    height: 67% !important;
+  }
+  .h-lg-75 {
+    height: 75% !important;
+  }
+  .h-lg-100 {
+    height: 100% !important;
+  }
+  .vh-lg-25 {
+    height: 25vh !important;
+  }
+  .vh-lg-33 {
+    height: 33vh !important;
+  }
+  .vh-lg-50 {
+    height: 50vh !important;
+  }
+  .vh-lg-67 {
+    height: 67vh !important;
+  }
+  .vh-lg-75 {
+    height: 75vh !important;
+  }
+  .vh-lg-100 {
+    height: 100vh !important;
+  }
+  .min-vh-lg-25 {
+    min-height: 25vh !important;
+  }
+  .min-vh-lg-33 {
+    min-height: 33vh !important;
+  }
+  .min-vh-lg-50 {
+    min-height: 50vh !important;
+  }
+  .min-vh-lg-67 {
+    min-height: 67vh !important;
+  }
+  .min-vh-lg-75 {
+    min-height: 75vh !important;
+  }
+  .min-vh-lg-100 {
+    min-height: 100vh !important;
+  }
+  .min-h-lg-25 {
+    min-height: 25% !important;
+  }
+  .min-h-lg-33 {
+    min-height: 33% !important;
+  }
+  .min-h-lg-50 {
+    min-height: 50% !important;
+  }
+  .min-h-lg-67 {
+    min-height: 67% !important;
+  }
+  .min-h-lg-75 {
+    min-height: 75% !important;
+  }
+  .min-h-lg-100 {
+    min-height: 100% !important;
+  }
+}
+@media (min-width: 1200px) {
+  .h-xl-25 {
+    height: 25% !important;
+  }
+  .h-xl-33 {
+    height: 33% !important;
+  }
+  .h-xl-50 {
+    height: 50% !important;
+  }
+  .h-xl-67 {
+    height: 67% !important;
+  }
+  .h-xl-75 {
+    height: 75% !important;
+  }
+  .h-xl-100 {
+    height: 100% !important;
+  }
+  .vh-xl-25 {
+    height: 25vh !important;
+  }
+  .vh-xl-33 {
+    height: 33vh !important;
+  }
+  .vh-xl-50 {
+    height: 50vh !important;
+  }
+  .vh-xl-67 {
+    height: 67vh !important;
+  }
+  .vh-xl-75 {
+    height: 75vh !important;
+  }
+  .vh-xl-100 {
+    height: 100vh !important;
+  }
+  .min-vh-xl-25 {
+    min-height: 25vh !important;
+  }
+  .min-vh-xl-33 {
+    min-height: 33vh !important;
+  }
+  .min-vh-xl-50 {
+    min-height: 50vh !important;
+  }
+  .min-vh-xl-67 {
+    min-height: 67vh !important;
+  }
+  .min-vh-xl-75 {
+    min-height: 75vh !important;
+  }
+  .min-vh-xl-100 {
+    min-height: 100vh !important;
+  }
+  .min-h-xl-25 {
+    min-height: 25% !important;
+  }
+  .min-h-xl-33 {
+    min-height: 33% !important;
+  }
+  .min-h-xl-50 {
+    min-height: 50% !important;
+  }
+  .min-h-xl-67 {
+    min-height: 67% !important;
+  }
+  .min-h-xl-75 {
+    min-height: 75% !important;
+  }
+  .min-h-xl-100 {
+    min-height: 100% !important;
+  }
+}
+@media (min-width: 1400px) {
+  .h-xxl-25 {
+    height: 25% !important;
+  }
+  .h-xxl-33 {
+    height: 33% !important;
+  }
+  .h-xxl-50 {
+    height: 50% !important;
+  }
+  .h-xxl-67 {
+    height: 67% !important;
+  }
+  .h-xxl-75 {
+    height: 75% !important;
+  }
+  .h-xxl-100 {
+    height: 100% !important;
+  }
+  .vh-xxl-25 {
+    height: 25vh !important;
+  }
+  .vh-xxl-33 {
+    height: 33vh !important;
+  }
+  .vh-xxl-50 {
+    height: 50vh !important;
+  }
+  .vh-xxl-67 {
+    height: 67vh !important;
+  }
+  .vh-xxl-75 {
+    height: 75vh !important;
+  }
+  .vh-xxl-100 {
+    height: 100vh !important;
+  }
+  .min-vh-xxl-25 {
+    min-height: 25vh !important;
+  }
+  .min-vh-xxl-33 {
+    min-height: 33vh !important;
+  }
+  .min-vh-xxl-50 {
+    min-height: 50vh !important;
+  }
+  .min-vh-xxl-67 {
+    min-height: 67vh !important;
+  }
+  .min-vh-xxl-75 {
+    min-height: 75vh !important;
+  }
+  .min-vh-xxl-100 {
+    min-height: 100vh !important;
+  }
+  .min-h-xxl-25 {
+    min-height: 25% !important;
+  }
+  .min-h-xxl-33 {
+    min-height: 33% !important;
+  }
+  .min-h-xxl-50 {
+    min-height: 50% !important;
+  }
+  .min-h-xxl-67 {
+    min-height: 67% !important;
+  }
+  .min-h-xxl-75 {
+    min-height: 75% !important;
+  }
+  .min-h-xxl-100 {
+    min-height: 100% !important;
+  }
+}
 .fell {
   font-family: "IM Fell English", serif;
+}
+
+.type-shadow {
+  text-shadow: -1px -1px 0 darkred, 1px -1px 0 darkred, -1px 1px 0 darkred, 1px 1px 0 darkred;
 }
 
 .main_header {
   color: beige;
   font-family: "IM Fell English", serif;
-  font-size: 6.2vw;
+  font-size: calc(1.275rem + 2vw) !important;
   text-shadow: -1px -1px 0 darkred, 1px -1px 0 darkred, -1px 1px 0 darkred, 1px 1px 0 darkred;
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (max-width: 374px) {
   .main_header {
-    font-size: 5.8vw;
+    font-size: calc(1.275rem + 1vw) !important;
+  }
+}
+@media screen and (min-width: 768px) {
+  .main_header {
+    font-size: calc(1.325rem + 4vw) !important;
+    text-shadow: -1.5px -1.5px 0 darkred, 1.5px -1.5px 0 darkred, -1.5px 1.5px 0 darkred, 1.5px 1.5px 0 darkred;
   }
 }
 @media screen and (min-width: 1200px) {
   .main_header {
-    font-size: 8vh;
-  }
-}
-.type-shadow {
-  text-shadow: -1px -1px 0 darkred, 1px -1px 0 darkred, -1px 1px 0 darkred, 1px 1px 0 darkred;
-}
-
-.force-selector-label {
-  font-family: "IM Fell English", serif;
-  font-size: 2vw;
-  color: beige;
-}
-
-@media screen and (max-width: 575px) {
-  .force-selector-label {
-    font-size: 2.4vw;
-  }
-}
-@media screen and (min-width: 1200px) {
-  .force-selector-label {
-    font-size: 1.6vw;
+    font-size: calc(1.375rem + 4vw) !important;
+    text-shadow: -2px -2px 0 darkred, 2px -2px 0 darkred, -2px 2px 0 darkred, 2px 2px 0 darkred;
   }
 }
 @media screen and (min-width: 1400px) {
-  .force-selector-label {
-    font-size: 1.4vw;
+  .main_header {
+    font-size: calc(1.6rem + 3.5vw) !important;
+    text-shadow: -2.5px -2.5px 0 darkred, 2.5px -2.5px 0 darkred, -2.5px 2.5px 0 darkred, 2.5px 2.5px 0 darkred;
+  }
+}
+.bigger-text, .card-title {
+  font-size: 1rem;
+}
+
+@media screen and (min-width: 768) {
+  .bigger-text, .card-title {
+    font-size: 1.2rem;
+  }
+}
+@media screen and (min-width: 1200px) {
+  .bigger-text, .card-title {
+    font-size: 1.4rem;
+  }
+}
+.normal-text, .card-body {
+  font-size: 0.9rem;
+}
+
+@media screen and (min-width: 768) {
+  .normal-text, .card-body {
+    font-size: 1rem;
+  }
+}
+@media screen and (min-width: 1200px) {
+  .normal-text, .card-body {
+    font-size: 1.1rem;
+  }
+}
+@media screen and (max-width: 575px) {
+  .display-faction-commander {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .display-card-body {
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 1;
+    padding-right: 1;
+  }
+  .display-card-header {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+@media screen and (max-width: 767) {
+  .display-faction-commander {
+    padding-top: 1;
+    padding-bottom: 1;
+    padding-left: 1;
+    padding-right: 1;
+  }
+  .display-card-body {
+    padding-top: 1;
+    padding-bottom: 1;
+    padding-left: 1;
+    padding-right: 1;
+  }
+  .display-card-header {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+@media screen and (min-width: 576px) {
+  .vh-md-80 {
+    height: 80vh !important;
+  }
+  .min-vh-md-80 {
+    min-height: 80vh !important;
   }
 }
 .force-selector-field {
   font-family: "IM Fell English", serif;
-  font-size: 1.6vw;
+  font-size: 1rem;
   color: darkred;
   background-color: beige;
 }
 
-@media screen and (max-width: 575px) {
-  .force-selector-field {
-    font-size: 2.3vw;
-  }
-}
-@media screen and (min-width: 1200px) {
-  .force-selector-field {
-    font-size: 1.3vw;
-  }
-}
 @media screen and (min-width: 1400px) {
   .force-selector-field {
-    font-size: 1.2vw;
+    font-size: 1.2rem;
   }
-}
-.fill-screen-scrollable {
-  min-height: 75vh !important;
-  height: 75vh !important;
-  overflow-y: auto;
 }
 
 /*# sourceMappingURL=main.css.map */
