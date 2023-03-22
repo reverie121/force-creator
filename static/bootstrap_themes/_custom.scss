@@ -470,16 +470,32 @@
 @media screen and (min-width: 1200px) {
 .main_header {
     font-size: calc(1.375rem + 4vw) !important;
-    text-shadow: -2px -2px 0 $primary, 2px -2px 0 $primary, -2px 2px 0 $primary, 2px 2px 0 $primary;
+    text-shadow: -1.75px -1.75px 0 $primary, 1.75px -1.75px 0 $primary, -1.75px 1.75px 0 $primary, 1.75px 1.75px 0 $primary;
     }
 }
 
 @media screen and (min-width: 1400px) {
     .main_header {
       font-size: calc(1.6rem + 3.5vw) !important;
-      text-shadow: -2.5px -2.5px 0 darkred, 2.5px -2.5px 0 darkred, -2.5px 2.5px 0 darkred, 2.5px 2.5px 0 darkred;
+      text-shadow: -2px -2px 0 $primary, 2px -2px 0 $primary, -2px 2px 0 $primary, 2px 2px 0 $primary;
     }
   }
+
+.biggest-text {
+    font-size: 1.1rem;
+}
+
+@media screen and (min-width: 768) {
+    .biggest-text {
+        font-size: 1.3rem;
+    }
+} 
+
+@media screen and (min-width: 1200px) {
+    .biggest-text {
+        font-size: 1.4rem;
+    }
+} 
 
 .bigger-text, .card-title {
     font-size: 1rem;
@@ -493,7 +509,7 @@
 
 @media screen and (min-width: 1200px) {
     .bigger-text, .card-title {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
 } 
 

@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WW9DH25XE0"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WW9DH25XE0');
+    </script>  
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,19 +30,21 @@
 <body class='min-vh-100 bg-secondary'>
     
   <nav class='navbar navbar-expand-md sticky-top px-2 py-1 bg-secondary border border-2 border-top-0 border-start-0 border-end-0 border-info min-vw-100 bg-warning'>
-    <a class='navbar-brand text-info fell fs-6' href='/creator'>B&P FORCE CREATOR</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <i class="fa-solid fa-bars text-info"></i>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <div class='navbar-nav'>
-        {% if session['username'] %}
-          <a class="nav-item nav-link text-info fell" href="/users/{{ session['username'] }}">Account Info</a>
-          <a class="nav-item nav-link text-info fell" href="/user/logout">Log Out</a>
-        {% else %}
-          <a class="nav-item nav-link text-info fell" href="/user/new">Register</a>
-          <a class="nav-item nav-link text-info fell" href="/user/login">Log In</a>         
-        {% endif %}
+    <div class='container'>
+      <a class='navbar-brand text-info fell fs-6' href='/creator'>B&P FORCE CREATOR</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars text-info"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <div class='navbar-nav'>
+          {% if session['username'] %}
+            <a class="nav-item nav-link text-info fell" href="/users/{{ session['username'] }}">Account Info</a>
+            <a class="nav-item nav-link text-info fell" href="/user/logout">Log Out</a>
+          {% else %}
+            <a class="nav-item nav-link text-info fell" href="/user/new">Register</a>
+            <a class="nav-item nav-link text-info fell" href="/user/login">Log In</a>         
+          {% endif %}
+        </div>
       </div>
     </div>
   </nav>
