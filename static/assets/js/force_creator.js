@@ -1394,7 +1394,7 @@ class ForceList {
             <div><b>Sail Settings:</b> ${ship.sailssettings}</div>
         `);
         // Artillery Deck Layout
-        if (ship.swivels > 0 || ship.cannons > 0) {
+        if (ship.swivels > 0) {
             const deckPlan = $('<div>');
             const dpHeader = $('<div>').addClass('row');
             const labelColumn = $('<div>').addClass(`col-auto`)
@@ -1411,22 +1411,24 @@ class ForceList {
             // Add Cannons Data
             const gunsLabel = $('<div>').attr('id',`fl-${ship.f_id}-cannonsLabel`).html('Guns');
             const gunsData = $('<div>').addClass('row g-0').attr('id',`fl-${ship.f_id}-cannonsData`);
-            const gunsPerDeck = ship.cannonsdecks.split('/');
-            for (let i = 0; i < ship.size; i++) {
-                const newColumn = $('<div>')
-                if (ship.cannons > 0) {
-                    newColumn.addClass(`col col-md-2`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`${gunsPerDeck[i]}`);
+            if (ship.cannons > 0) {
+                const gunsPerDeck = ship.cannonsdecks.split('/');
+                for (let i = 0; i < ship.size; i++) {
+                    const newColumn = $('<div>')
+                    if (ship.cannons > 0) {
+                        newColumn.addClass(`col col-md-2`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`${gunsPerDeck[i]}`);
+                    }
+                    else {
+                        gunsLabel.css("display", "none");
+                        newColumn.addClass(`col col-md-2`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`0`);
+                    }
+                    gunsData.append(newColumn);
                 }
-                else {
-                    gunsLabel.css("display", "none");
-                    newColumn.addClass(`col col-md-2`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`0`);
-                }
-                gunsData.append(newColumn);
+                labelColumn.append(gunsLabel);
+                dataColumn.append(gunsData);
             }
-            labelColumn.append(gunsLabel);
-            dataColumn.append(gunsData);
             // Hide Cannons Row if ship cannot have them.
-            if (!ship.cannons > 0) {
+            else {
                 gunsLabel.css("display", "none");
                 gunsData.css("display", "none");
             }  

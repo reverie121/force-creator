@@ -1,5 +1,5 @@
 # Force Creator
-A tool for making force lists for the tabletop game Blood &amp; Plunder by Firelock Games.
+A web tool for making force lists for the tabletop game Blood &amp; Plunder by Firelock Games.
 
 ## Goal
 The Blood & Plunder Force Creator is intended as an improvement on and alternative to the currently available tool, the Force Builder.
@@ -64,6 +64,6 @@ The Force Creator will retain the current features of the Force Builder to aid t
 - Collection Units may include an image gallery (user uploads), one image from which may be selected as the Collection Unit’s icon.
 
 ### Additional Community Features
+- Likes and Comments for Force Lists with potential Rate-My-List feature utilizing categories such as: Competitiveness, Fun-to-Play, and Fun-to-Play-Against.
 - A local discussion board with shared user accounts.
 - A geographically based player/opponent locator that users may opt into.
-- Rate-My-List feature where users may provide feedback on other users’ force lists.
