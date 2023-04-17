@@ -1,14 +1,44 @@
 # Force Creator
-A web tool for making force lists for the tabletop game Blood &amp; Plunder by Firelock Games.
+A web tool for the historical tabletop miniature game Blood &amp; Plunder by Firelock Games.
 
 ## Goal
-The Blood & Plunder Force Creator is intended as an improvement on and alternative to the currently available tool, the Force Builder.
+The Blood & Plunder Force Creator is intended as an improvement on and alternative to the currently available tool, the Force Builder. It will provide the end user with an improved list buildng experience and streamlined gameplay.
 
 ## User Demographics
 The Blood & Plunder Force Creator is for anyone who plays or might be interested in playing Blood & Plunder by Firelock Games.
 
 ## Data
-Most if not all necessary data can be obtained from the current Force Builder. Additional data from official Firelock sources as well as third-party sources will be added manually as needed. A local API will be created to provide this data for the front-end.
+Most of the site's data was obtained from Force Builder. Additional data from official Firelock sources was added manually.
+
+## Tech Stack
+
+Written with Python, Javascript, HTML, CSS, and SaSS.
+
+### Database
+
+PostgreSQL Database was recreated and improved on using the following Python Libraries:
+
+- Beautiful Soup
+- NumPy
+- Pandas
+
+### Back End
+
+Original Python (Flask) back end utilizing:
+
+- SQLAlchemy
+- WTForms
+- BCrypt
+- Jinja2
+
+### Front End
+
+Original front end built with:
+
+- Vanilla JavaScript
+- JQuery
+- Bootstrap
+- SaSS for Bootstramp customization
 
 ## Features and Improvements
 The Force Creator will retain the current features of the Force Builder to aid the user in creating valid force lists for Blood & Plunder, as well as storage and print-formatting of lists. The Force Creator will build on this functionality with the following improvements:
