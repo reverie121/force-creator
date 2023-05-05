@@ -725,8 +725,9 @@ class ForceList {
         if (this.faction.details) {
             details.html(`${this.faction.details}`);
         }        
+        const activePeriod = $('<div>').addClass(['card-text']).html(`<b>Active Period:</b> ${this.faction.first_year} to ${this.faction.last_year} `)
         const commandOptions = $('<div>').addClass(['card-text']).html(`<b>Commander Options:</b> ${this.faction.commandoptions}`);
-        cardDetails.append([details, commandOptions]);
+        cardDetails.append([details, activePeriod, commandOptions]);
         // If selected faction has special rules, display with a dropdown.
         if (this.faction.specialrule.length > 0) {
             const specialruleCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
@@ -751,7 +752,7 @@ class ForceList {
         if (this.faction.option.length > 0) {
             const optionsCard = $('<div>').html(`<hr class='border border-2 border-primary rounded-2'>`);
             const factionOptionsHeader = $('<div>').addClass(['row', 'mt-2']);
-            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Faction Options</h5>`);
+            const descColumn = $('<div>').addClass(['col-10']).html(`<h5 class='card-title mb-0'>Force Options</h5>`);
             const optionExpandColumn = $('<div>').addClass(['col-1']);
             optionExpandColumn.html(`
                 <a href='#faction-${this.id}-options-details' role='button' data-bs-toggle='collapse'>
@@ -1280,13 +1281,29 @@ class ForceList {
         });
     }
 
+    removeAnachronisticShipUpgrades(upgrades) {
+        let i = 0;
+        while (i < upgrades.length) {
+          if (upgrades[i]['post1700'] === 1) {
+            console.debug(`Removing ${upgrades[i]['name']} upgrade from Ship (Anachronistic).`)
+            upgrades.splice(i, 1);
+          } else {
+            ++i;
+          }
+        }
+        return upgrades;
+      }
+
     addShip(newShip) {
         if (!Object.keys(newShip).includes('f_id')) {
             newShip['f_id'] = this.generateId();
         }
         newShip['upgradeCost'] = 0;
         newShip['totalCost'] = newShip.points;
-        this.ships[`${newShip.f_id}`] = newShip
+        if (this.faction.last_year < 1701) {
+            newShip['upgrade'] = this.removeAnachronisticShipUpgrades(newShip['upgrade']);
+        }
+        this.ships[`${newShip.f_id}`] = newShip;
         this.updateTotalForcePoints();
         this.displayShip(this.ships[`${newShip.f_id}`]);
     }
@@ -1411,27 +1428,21 @@ class ForceList {
             // Add Cannons Data
             const gunsLabel = $('<div>').attr('id',`fl-${ship.f_id}-cannonsLabel`).html('Guns');
             const gunsData = $('<div>').addClass('row g-0').attr('id',`fl-${ship.f_id}-cannonsData`);
-            if (ship.cannons > 0) {
-                const gunsPerDeck = ship.cannonsdecks.split('/');
-                for (let i = 0; i < ship.size; i++) {
-                    const newColumn = $('<div>')
-                    if (ship.cannons > 0) {
-                        newColumn.addClass(`col col-md-2`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`${gunsPerDeck[i]}`);
-                    }
-                    else {
-                        gunsLabel.css("display", "none");
-                        newColumn.addClass(`col col-md-2`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`0`);
-                    }
-                    gunsData.append(newColumn);
+            for (let i = 0; i < ship.size; i++) {
+                const newColumn = $('<div>')
+                newColumn.addClass(`col col-md-2`).attr('id',`fl-${ship.f_id}-cannonsDecks-${i+1}`).html(`0`);
+                if (ship.cannons > 0) {
+                    const gunsPerDeck = ship.cannonsdecks.split('/');
+                    newColumn.html(`${gunsPerDeck[i]}`);
                 }
-                labelColumn.append(gunsLabel);
-                dataColumn.append(gunsData);
+                else {
+                    gunsLabel.css("display", "none");
+                    gunsData.css("display", "none");
+                }
+                gunsData.append(newColumn);
             }
-            // Hide Cannons Row if ship cannot have them.
-            else {
-                gunsLabel.css("display", "none");
-                gunsData.css("display", "none");
-            }  
+            labelColumn.append(gunsLabel);
+            dataColumn.append(gunsData);
             // Add Swivels Data
             const swivelsLabel = $('<div>').attr('id',`fl-${ship.f_id}-swivelsLabel`).html('Swivels');
             const swivelsData = $('<div>').addClass('row g-0').attr('id',`fl-${ship.f_id}-swivelsData`);

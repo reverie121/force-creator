@@ -25,17 +25,27 @@ with engine.connect() as con:
     con.execute('CREATE TABLE characternationality(id SERIAL PRIMARY KEY, character_id INT NOT NULL, nationality_id INT NOT NULL)')
     con.execute('CREATE TABLE characterfaction(id SERIAL PRIMARY KEY, character_id INT NOT NULL, faction_id INT NOT NULL)')
     con.execute('CREATE TABLE characterspecialrule(id SERIAL PRIMARY KEY, character_id INT NOT NULL, specialrule_id INT NOT NULL)')
+    con.execute('CREATE TABLE source(id SERIAL PRIMARY KEY, name VARCHAR, year_of_publication INT, print_url VARCHAR, digital_url VARCHAR)')
+    con.execute('CREATE TABLE componentsource(id SERIAL PRIMARY KEY, source_id INT, faction_id INT, commander_id INT)')
 
 # Add new tables to table list.
 tables.append({'table_name': 'commandernationality', 'table_columns': ['id', 'commander_id', 'nationality_id', 'primary_nationality']})
 tables.append({'table_name': 'characternationality', 'table_columns': ['id', 'character_id', 'nationality_id']})
 tables.append({'table_name': 'characterfaction', 'table_columns': ['id', 'character_id', 'faction_id']})
 tables.append({'table_name': 'characterspecialrule', 'table_columns': ['id', 'character_id', 'specialrule_id']})
-
+tables.append({'table_name': 'source', 'table_columns': ['id', 'name', 'year_of_publication', 'print_url', 'digital_url']})
+tables.append({'table_name': 'componentsource', 'table_columns': ['id', 'source_id', 'faction_id', 'commander_id']})
 
 # Instantiate lists for commandereffect and factioneffect
 commandereffects = []
 factioneffects = []
+
+# Instantiate lists for source documents (books)
+core_book = {'commanders': [], 'factions': []}
+no_peace = {'commanders': [], 'factions': []}
+bucc_companion = {'commanders': [], 'factions': []}
+fire_on_frontier = {'commanders': [], 'factions': []}
+raise_the_black = {'commanders': [], 'factions': []}
 
 # Repeat same process for every file in the specified directory.
 for filename in os.listdir(directory):
@@ -49,7 +59,7 @@ for filename in os.listdir(directory):
             with open(f, 'r') as file:
                 df = pd.read_csv(f)
 
-            ### Begin Data Cleanup ###
+            ###### Begin Data Cleanup ######
 
             # Get table name from file name.
             if filename == 'data_location.csv':
@@ -174,7 +184,7 @@ for filename in os.listdir(directory):
                     df.drop(columns = ['details', 'model', 'uifolder', 'sort'], inplace=True)
 
             elif table_name == 'commander':
-                df.drop(df['id'].loc[df['id'].isin([130,131,132])].index, inplace=True)                
+                df.drop(df['id'].loc[df['id'].isin([13,14,15,58,59,60,130,131,132,193])].index, inplace=True)                
                 with engine.connect() as con:
                     for row in df.iterrows():
                         nationality_id = df.columns.get_loc('nationality_id')
@@ -182,6 +192,7 @@ for filename in os.listdir(directory):
                             con.execute(f'INSERT INTO commandernationality(commander_id,nationality_id, primary_nationality) VALUES({row[1][0]}, {int(row[1][nationality_id])}, true);')
                 df.drop(columns = ['nationality_id','nickname','extrainfo'], inplace = True)
                 df.loc[~df['id'].isin([39,68,120,133,136,139,140,143,157,159,212,227,233,240,241]), 'details'] = np.NaN
+                # Add data for Unorthodox Force.                
                 df.loc[df['id'] == 16, 'unorthodoxforce'] = 'A Force led by this commander may take Sea Dogs, (Native American) Warriors, (Native American) Warrior Musketeers, and (Spanish) Milicianos Indios as Core units.'
                 df.loc[df['id'] == 17, 'unorthodoxforce'] = 'A force lead by this commander may take Milicianos Indios (Spanish) and Warrior Musketeers (Native Americans) as Core Units.'
                 df.loc[df['id'] == 38, 'unorthodoxforce'] = 'A Force lead by this commander may take Flibustiers as Core units.'
@@ -216,6 +227,8 @@ for filename in os.listdir(directory):
                 df.drop(df['commander_id'].loc[df['commander_id'].isin([130,131,132])].index, inplace=True)                
 
             elif table_name == 'faction':
+                df['first_year'] = 0
+                df['last_year'] = 0
                 df['maxshipdecks'] = 10
                 df['artilleryallowed'] = 1
                 df['attackerrollbonus'] = 0
@@ -274,6 +287,17 @@ for filename in os.listdir(directory):
                 df.drop(df['id'].loc[df['id'] == 9].index, inplace=True)
                 df.loc[df['id'] == 10, 'name'] = 'Piragua'
                 df['topspeed'] = df['topspeed'].str[:-1].astype(int)
+
+            elif table_name == 'shipupgrade':
+                df['post1700'] = 0
+                df.drop(df['id'].loc[df['id'].isin([28])].index, inplace=True)
+                df.drop(df['ship_id'].loc[df['ship_id'] == 9].index, inplace=True)
+                df['name'].replace(to_replace = '\(2\)', value = ' \(2\)', inplace=True, regex=True)
+                df['name'].replace(to_replace = '\(post 1700\)', value = '\(post 1700 factions\)', inplace=True, regex=True)
+                df.loc[df['name'].str.contains('post 1700'), 'post1700'] = 1
+
+            elif table_name == 'shipspecialrule':
+                df.drop(df['ship_id'].loc[df['ship_id'] == 9].index, inplace=True)
 
             elif table_name == 'specialrule':
                 df.drop(columns = ['onunit', 'oncommander', 'onship', 'onfactionopt'], inplace=True)
@@ -871,8 +895,5 @@ with engine.connect() as con:
     con.execute('INSERT INTO characterspecialrule(character_id, specialrule_id) VALUES (42,96)')
     con.execute('INSERT INTO characterspecialrule(character_id, specialrule_id) VALUES (46,6)')
     con.execute('INSERT INTO characterspecialrule(character_id, specialrule_id) VALUES (46,125)')
-
-
-
 
 engine.dispose()

@@ -428,6 +428,8 @@ class Faction(db.Model):
                    primary_key=True,
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
+    first_year = db.Column(db.Integer)
+    last_year = db.Column(db.Integer)
     details = db.Column(db.Text)
     forcespecialrules = db.Column(db.VARCHAR)
     commandoptions = db.Column(db.VARCHAR)
@@ -459,6 +461,11 @@ class Faction(db.Model):
     factionunitclass = db.relationship(
         'FactionUnitclass', 
         secondary = 'factionunit', 
+        backref = 'faction'
+    )
+    source = db.relationship(
+        'Source',
+        secondary = 'componentsource',
         backref = 'faction'
     )
 
@@ -518,7 +525,12 @@ class Commander(db.Model):
         secondary = 'commanderspecialrule',
         backref = 'commander'
     )
-    
+    source = db.relationship(
+        'Source',
+        secondary = 'componentsource',
+        backref = 'commander'
+    )
+
     def pack_data(self):
         """ Create a serialized data set for a specified Commander.
             Returns a dict containing lists of dicts of that Commander's data. """
@@ -854,6 +866,21 @@ class FactionUnitclass(db.Model):
     def __repr__(self):
         return f'<FactionUnitclass {self.id} {self.name} {self.details}>'
 
+class Source(db.Model):
+    """ Source Model. """
+
+    __tablename__ = "source"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    name = db.Column(db.VARCHAR)
+    year_of_publication = db.Column(db.Integer)
+    print_url = db.Column(db.VARCHAR)
+    digital_url = db.Column(db.VARCHAR)
+
+    componentsource = db.relationship('ComponentSource', backref='source')
+
 class Specialrule(db.Model):
     """ Specialrule Model. """
 
@@ -1013,6 +1040,24 @@ class CommanderSpecialrule(db.Model):
     def __repr__(self):
         return f'<CommanderSpecialrule {self.id}>'
 
+class ComponentSource(db.Model):
+    """ ComponentSource Model.
+        Connects Component Model to
+        Faction and Commander Models. """
+    
+    __tablename__ = "componentsource"
+
+    id = db.Column(db.Integer,
+                   primary_key=True,
+                   autoincrement=True)
+    source_id = db.Column(db.Integer, db.ForeignKey(
+        'source.id', ondelete='CASCADE'))
+    faction_id = db.Column(db.Integer, db.ForeignKey(
+        'faction.id', ondelete='CASCADE'))
+    commander_id = db.Column(db.Integer, db.ForeignKey(
+        'commander.id', ondelete='CASCADE'))
+
+
 class FactionUnit(db.Model):
     """ FactionUnit Model.
         Connects Faction and Unit Models.
@@ -1096,7 +1141,7 @@ class ShipSpecialrule(db.Model):
                    primary_key=True,
                    autoincrement=True)
     ship_id = db.Column(db.Integer, db.ForeignKey(
-        'ship.id', ondelete='CASCADE'))
+        'ship.id', ondelete='SET NULL'))
     specialrule_id = db.Column(db.Integer, db.ForeignKey(
         'specialrule.id', ondelete='CASCADE'))
     namecustomadd = db.Column(db.VARCHAR)
@@ -1117,8 +1162,9 @@ class ShipUpgrade(db.Model):
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
     ship_id = db.Column(db.Integer, db.ForeignKey(
-        'ship.id', ondelete='CASCADE'))
+        'ship.id', ondelete='SET NULL'))
     pointcost = db.Column(db.Integer)
+    post1700 = db.Column(db.Integer)
 
     def __repr__(self):
         return f'<ShipUpgrade {self.id}>'
