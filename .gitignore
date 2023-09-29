@@ -1,0 +1,17 @@
+venv/
+
+__pycache__/
+
+.vscode/
+
+supplemental/database_build/bp_data/
+
+/static/node_modules
+
+innocuous.py
+
+.DS_Store
+
+static/node_modules/
+
+.env
