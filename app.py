@@ -198,6 +198,15 @@ def del_forcelist(uuid):
     else:
         return redirect(f'/lists/{uuid}')
 
+@app.route('/lists/pdf', methods=['POST'])
+def pdf_from_forcelist():
+    """ Creates a pdf from a posted ForceList object. """
+    save_data = request.get_json()
+    print('****************************')
+    print(save_data)
+    print('****************************')
+    return render_template('base.html')
+
 ############### ***** ########## FC DATA API ROUTES ########## ***** ###############
 
 def pack_universal_data():   

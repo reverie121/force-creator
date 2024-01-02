@@ -95,7 +95,7 @@ class ForceList {
         return String(idList);
     }
 
-    async saveList() {
+    prepareSave() {
         const newSave = {};
         newSave['name'] = this.name;
         newSave['maxpoints'] = this.maxPoints;
@@ -190,6 +190,11 @@ class ForceList {
         if (this.username) {
             newSave['username'] = this.username;
         }
+        return newSave;
+    }
+
+    async saveList() {
+        const newSave = this.prepareSave();
         // Send save data to back end.
         const response = await axios.post('/lists/save', newSave);
         // Take uuid response and add to ForceList and to save data.
@@ -199,6 +204,14 @@ class ForceList {
         this.save = newSave;
         this.resetBuildSideTools();
         window.location.href = `/lists/${this.save.uuid}`;
+    }
+
+    async saveListToPDF() {
+        // const newSave = this.prepareSave();
+        // this.save = newSave;
+        // Send save data to back end for conversion.
+        const response = await axios.post('/lists/pdf', this);
+        console.log(response);
     }
 
     async loadSave(saveData) {

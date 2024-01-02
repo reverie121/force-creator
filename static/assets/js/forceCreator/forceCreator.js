@@ -103,6 +103,9 @@ $(window).ready(async function() {
     $('#force-save').on('click', () => {
         forceList.saveList();
     })
+    $('#force-pdf').on('click', () => {
+        forceList.saveListToPDF();
+    })    
     // Handle button for adding custom/misc to ForceList.
     $(`#add-custom-button`).on('click', () => {
         const customToAdd = new Misc();
