@@ -33,9 +33,9 @@ models.db.create_all()
 
 @app.route('/')
 def main():
-    return redirect('/creator')
+    return redirect('/new')
 
-@app.route('/creator')
+@app.route('/new')
 def show_creator():
     add_to_list = AddToList()
     return render_template('fc.html', add_to_list=add_to_list)
@@ -182,7 +182,7 @@ def show_forcelist(uuid):
     add_to_list = AddToList()
     response = models.SavedList.query.get_or_404(uuid)
     data = json.dumps(response.pack_data())
-    return render_template('fc.html', add_to_list=add_to_list, data=data)    
+    return render_template('list-edit.html', add_to_list=add_to_list, data=data)    
 
 @app.route('/lists/<uuid>/delete', methods=['GET'])
 def del_forcelist(uuid):

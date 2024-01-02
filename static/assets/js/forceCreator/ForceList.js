@@ -198,6 +198,7 @@ class ForceList {
         // Add save data to ForceList. Save data is used for 'revert' feature and to update future saves.
         this.save = newSave;
         this.resetBuildSideTools();
+        window.location.href = `/lists/${this.save.uuid}`;
     }
 
     async loadSave(saveData) {
@@ -359,11 +360,11 @@ class ForceList {
         // Hide and show forceList tool icons.
         // $('#force-revert').hide('medium', 'swing');
         // $('#force-save').hide('medium', 'swing');
-        // $('#force-download').hide('medium', 'swing');
+        // $('#force-pdf').hide('medium', 'swing');
         setTimeout(() => {
             $('#force-revert').show('medium', 'swing');
             $('#force-save').show('medium', 'swing');
-            $('#force-download').show('medium', 'swing');
+            $('#force-pdf').show('medium', 'swing');
         },400)
     }
 
@@ -419,6 +420,8 @@ class ForceList {
         resetComponentSelector();
     }
 
+    // Used for commanders with an Unorthodox Force rule to change unit 
+    // classes from core to support or support to core as appropriate.
     handleCommanderUnitClassChanges(plusOrMinusOne) {
         if (this.commander && this.faction) {
             // if ((this.commander.commandereffects).length > 0) {

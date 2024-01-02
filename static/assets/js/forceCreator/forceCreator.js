@@ -1,43 +1,6 @@
 // Create new ForceList object to use throughout process.
 const forceList = new ForceList(150);
 
-// Make axios request for data required by all users 
-// and add data to session storage.
-async function requestUniversalData() {
-    console.debug('Requesting universal data.');
-    const response = await axios.get('/universal');
-    sessionStorage.setItem('nationality', JSON.stringify(response.data.nationality));
-    sessionStorage.setItem('commanderclass', JSON.stringify(response.data.commanderclass));
-    sessionStorage.setItem('experience', JSON.stringify(response.data.experience));
-    sessionStorage.setItem('factionunit', JSON.stringify(response.data.factionunit));
-    sessionStorage.setItem('factionunitclass', JSON.stringify(response.data.factionunitclass));
-    sessionStorage.setItem('commandereffect', JSON.stringify(response.data.commandereffect));
-    sessionStorage.setItem('commandernationality', JSON.stringify(response.data.commandernationality));
-    sessionStorage.setItem('commanderfaction', JSON.stringify(response.data.commanderfaction));
-    sessionStorage.setItem('commanderspecialrule', JSON.stringify(response.data.commanderspecialrule));
-    sessionStorage.setItem('factioneffect', JSON.stringify(response.data.factioneffect));
-    sessionStorage.setItem('factionupgrade', JSON.stringify(response.data.factionupgrade));
-    sessionStorage.setItem('forceoption', JSON.stringify(response.data.forceoption));
-    sessionStorage.setItem('forcespecialrule', JSON.stringify(response.data.forcespecialrule));
-    sessionStorage.setItem('specialrule', JSON.stringify(response.data.specialrule));
-    sessionStorage.setItem('unitoption', JSON.stringify(response.data.unitoption));
-    sessionStorage.setItem('unitspecialrule', JSON.stringify(response.data.unitspecialrule));
-    sessionStorage.setItem('upgrade', JSON.stringify(response.data.upgrade));
-    sessionStorage.setItem('weaponequipment', JSON.stringify(response.data.weaponequipment));
-    return
-}
-
-// Add Nation data from axios request to session storage.
-function storeFactionsAndCommanders(axiosResponse) {
-    const nationality = axiosResponse.data.nationality;
-    const commanders = axiosResponse.data.commander;
-    const factions = axiosResponse.data.faction;
-    console.debug(`Adding nation data to session storage for ${nationality.name}.`);
-    sessionStorage.setItem(nationality.name,JSON.stringify(axiosResponse.data));
-    sessionStorage.setItem(`${nationality.name}_commanders`,JSON.stringify(commanders));
-    sessionStorage.setItem(`${nationality.name}_factions`,JSON.stringify(factions));
-}
-
 // Retrieve a Nationality list with id and name from session storage for dropdown.
 function getNationData() {
     console.debug('Getting nation data from session storage.');
@@ -78,7 +41,7 @@ function resetComponentSelector() {
         }
         $('#force-revert').hide('fast', 'swing');
         $('#force-save').hide('fast', 'swing');
-        $('#force-download').hide('fast', 'swing');
+        $('#force-pdf').hide('fast', 'swing');
     } else {
         $('#component-instructions').hide('fast', 'swing');
         $('#add-custom-button').show('medium', 'swing');
@@ -87,8 +50,19 @@ function resetComponentSelector() {
             $('#force-revert').show('fast', 'swing');            
         }
         $('#force-save').show('fast', 'swing');
-        $('#force-download').show('fast', 'swing');
+        $('#force-pdf').show('fast', 'swing');
     }
+}
+
+// Add Nation data from axios request to session storage.
+function storeFactionsAndCommanders(axiosResponse) {
+    const nationality = axiosResponse.data.nationality;
+    const commanders = axiosResponse.data.commander;
+    const factions = axiosResponse.data.faction;
+    console.debug(`Adding nation data to session storage for ${nationality.name}.`);
+    sessionStorage.setItem(nationality.name,JSON.stringify(axiosResponse.data));
+    sessionStorage.setItem(`${nationality.name}_commanders`,JSON.stringify(commanders));
+    sessionStorage.setItem(`${nationality.name}_factions`,JSON.stringify(factions));
 }
 
 // Empty Faction dropdown and refill with options from input variable.
@@ -125,11 +99,9 @@ $(window).ready(async function() {
     });
     $('#force-revert').on('click', () => {
         forceList.loadSave(forceList.save);
-        // alert('reverted to save!');
     })
     $('#force-save').on('click', () => {
         forceList.saveList();
-        alert('saved!');
     })
     // Handle button for adding custom/misc to ForceList.
     $(`#add-custom-button`).on('click', () => {
