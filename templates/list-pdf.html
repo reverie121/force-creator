@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='assets/css/list-pdf.css') }}" _external=True> -->
+    <title>{{data.name}}</title>
+</head>
+<body>
+
+    <table width='100%' id='top-section'>
+        <tr>
+            <!-- ForceList name and nationality -->
+            <td width='70%'>
+                <H2>{{data.name}}</H2>
+                <H3>{{data.nationality.name}}</H3>
+            </td>
+            <!-- General ForceList info: points, model count, strike points -->
+            <td width='30%'>
+                <p><b>{{data.totalForcePoints}} / {{data.maxPoints}}</b> Points</p>
+                <p><b>{{data.modelCount}}</b> Models</p>
+                <p>Strike Points at <b>{{data.strikePointsEvery}}/{{data.strikePointsEvery * 2}}/{{data.strikePointsEvery * 3}}</b> Casualties</p>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Faction and Commander Data -->
+    <table width='100%' if='faction-and-commander'>
+        <tr>
+            <!-- Faction Data -->
+            <td width='59%' class='boxed'>
+                <p>
+                    <b>{{data.faction.name}}</b> ({{data.faction.first_year}} - {{data.faction.last_year}})
+                </p>
+                <!-- Faction Special Rules -->
+                <div>
+                    <b>Special Rules:</b>
+                    <ul>
+                        {% for rule in data.faction.specialrule %}
+                            <li>{{rule.details}}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <!-- Faction Options -->
+                <div id='faction-option'>
+                    {% for option in data.faction.option %}
+                        {% if option.selected == 1 %}
+                            <b>{{option.name}}</b>
+                            <div>
+                                {{option.details.replace('» ', '')}}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </td>
+            <td width='2%'> </td>
+            <!-- Commander Data -->
+            <td width='39%' class='boxed'>
+                {% if data.commander.name != data.commander.nickname %}
+                    <div><b>{{data.commander.nickname}}</b></div>
+                    <div>({{data.commander.name}})</div>
+                {% else %}
+                    <div><b>{{data.commander.name}}</b></div>
+                {% endif%}
+                {% if data.commander.horseoption == 1 %}
+                    <p>On Horse</p>
+                {% endif %}
+                <!-- Commander Command Points -->
+                <table width='100%' id='commander-commandpoints'>
+                    <tr>
+                        <td width='50%'>
+                            <b>Command Points:</b> {{data.commander.commandpoints}}
+                        </td>
+                        <td width='50%'>
+                            <b>Command Range:</b> {{data.commander.commandrange}}"
+                        </td>
+                    </tr>
+                </table>
+                <!-- Commander Main Weapons and Sidearms -->
+                <div id='commander-mainweapons'>
+                    <b>Main Weapons:</b>
+                    <div>
+                        {{data.commander.mainweapons}}
+                    </div>
+                </div>
+                {% if data.commander.sidearms != None %}
+                    <div id='commander-sidearms'>
+                        <b>Sidearms:</b>
+                        <div>
+                            {{data.commander.sidearms}}
+                        </div>
+                    </div>                
+                {% endif %}                
+                <!-- Commander Special Rules -->
+                <div id='commander-specialrules'>
+                    <b>Special Rules:</b>
+                    <div>
+                        {% for rule in data.commander.specialrule %}
+                        {{rule.name}}{% if not loop.last %}, 
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    {% if data.units != {} %}
+    <!-- Units -->
+    <div id='units'>
+        <H3>Units</H3>
+
+    {% for unit in data.units.values() %}
+        <div class='unit'>
+            {% if unit.name != unit.nickname %}
+                <b>{{unit.nickname}}</b> ({{unit.name}})
+            {% else %}
+                <b>{{unit.name}}</b>
+            {% endif%}
+
+            <table width='100%'>
+                <tr>
+                    <td width='50%'>
+                        <i>{{unit.class.capitalize()}} Unit</i>
+                    </td>
+                    <td width='50%'>
+                        <i>{{unit.experience_name}}</i>
+                    </td>                    
+                </tr>
+            </table>
+
+            <div class='unit-cost-breakdown'>
+                {% if unit.perUnitCost == 0 %}
+                    {{unit.qty}} Models @ {{unit.points}} Points ea. = {{unit.totalUnitCost}} Points
+                {% else %}
+                    {{unit.qty}} Models @ {{unit.points}} Points ea. + {{unit.perUnitCost}} Points = {{unit.totalUnitCost}} Points
+                {% endif %}
+            </div>
+
+            <table width='100%'>
+                <tr>
+                    <td width='25%'>
+                        <div class='unit-stats'>
+                            <table width='100%'>
+                                <tr>
+                                    <td width='50%'>
+                                        <b>Fight:</b>
+                                    </td>
+                                    <td width='50%' class='unit-stat-value'>
+                                        {{unit.fightskill}} / {{unit.fightsave}}
+                                    </td>                                    
+                                </tr>
+                                <tr>
+                                    <td width='50%'>
+                                        <b>Shoot:</b>
+                                    </td>
+                                    <td width='50%' class='unit-stat-value'>
+                                        {{unit.shootskill}} / {{unit.shootsave}}
+                                    </td>     
+                                </tr>
+                                <tr>
+                                    <td width='50%'>
+                                        <b>Resolve:</b>
+                                    </td>
+                                    <td width='50%' class='unit-stat-value'>
+                                        {{unit.resolve}}
+                                    </td>                                      
+                                </tr>
+                            </table>
+                        </div>
+                    </td>  
+                    <td width='75%' class='unit-equipment'>
+                        <div id='unit-mainweapons'>
+                            <b>Main Weapons:</b> {{unit.mainweapons}}
+                        </div>
+                        {% if unit.sidearms != None %}
+                            <div id='unit-sidearms'>
+                                <b>Sidearms:</b> {{unit.sidearms}}
+                            </div>                
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+            <!-- Unit Special Rules -->
+            <div class='unit-specialrules'>
+                <b>Special Rules:</b> 
+                {% for rule in unit.specialrule %}
+                        {{rule.name}}{% if not loop.last %}, 
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <!-- Unit Options -->
+            <div class='unit-options'>
+                {% for option in unit.option %}
+                    {% if option.selected == 1 %}
+                        <hr>
+                        <b>{{option.name}}</b>
+                        <div>
+                            {{option.details}}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if data.characters != {} %}
+    <!-- Characters -->
+    <div id='characters'>
+        <H3>Characters</H3>
+
+    {% for character in data.characters.values() %}
+        <div class='character'>
+            <!-- Character Name -->
+            {% if character.name != character.nickname %}
+                <b>{{character.nickname}}</b> ({{character.name}})
+            {% else %}
+                <b>{{character.name}}</b>
+            {% endif%}
+            <!-- Character Type -->
+            {% if character.charactertype == 1 %}
+                <div>
+                    <i>Fighting Man</i>
+                </div>
+            {% elif character.charactertype == 2 %}
+                <div>
+                    <i>Hostage / Advisor</i>
+                </div>
+            {% endif %}
+            <!-- Character Command Points -->
+            {% if character.commandpoints > 0 %}
+                <table width='100%'>
+                    <tr>
+                        <td width='50%'>
+                            <b>Command Points:</b> {{character.commandpoints}}
+                        </td>
+                        <td width='50%'>
+                            <b>Command Range:</b> {{character.commandrange}}"
+                        </td>
+                    </tr>
+                </table> 
+                {% if character.commandpointconditions != "" %}
+                    <div>
+                        {{character.commandpointconditions}}
+                    </div>
+                {% endif %}               
+            {% endif %}
+            <!-- Character Unit Restrictions -->
+            {% if character.unitrestrictions != "" %}
+                <div><b>Unit Restrictions:</b></div>
+                <div>
+                    {{character.unitrestrictions}}
+                </div>            
+            {% endif %}
+            <!-- Character Extra Rules -->
+            {% if character.extraabilities != "" %}
+                <div><b>Extra Rules:</b></div>
+                <div>
+                    {{character.extraabilities}}
+                </div>            
+            {% endif %}            
+            <!-- Character Special Rules -->
+            <div class='character-specialrules'>
+                <b>Special Rules:</b> 
+                {% for rule in character.specialrule %}
+                        {{rule.name}}{% if not loop.last %}, 
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if data.artillery != {} %}
+    <!-- Artillery -->
+    <div id='artillery'>
+        <H3>Artillery</H3>
+    {% for artillery in data.artillery.values() %}
+        <div class='artillery'>
+            <!-- Artillery Name -->
+            {% if artillery.name != artillery.nickname %}
+                <b>{{artillery.nickname}}</b> ({{artillery.name}})
+            {% else %}
+                <b>{{artillery.name}}</b>
+            {% endif%}
+            <!-- Artillery Point Cost Breakdown -->
+            <div>
+                <b>{{artillery.qty}}</b> @ <b>{{artillery.points}}</b> Points ea. = <b>{{artillery.totalCost}}</b> Points
+            </div>
+            <!-- Artillery Stats -->
+            <table width='100%'>
+                <tr>
+                    <td width='65%'>
+                        <b>Dice:</b> {{artillery.d10}}
+                    </td>
+                    <td width='35%'>
+                        <b>Minimum Crew:</b> {{artillery.minimumcrew}}
+                    </td>                    
+                </tr>
+                <tr>
+                    <td width='65%'>
+                        <b>Arc of Fire:</b> {{artillery.arcfire}}
+                    </td>
+                    <td width='35%'>
+                        <b>Shoot Base:</b> {{artillery.shootbase}}
+                    </td>                    
+                </tr>
+                <tr>
+                    <td width='65%'>
+                        <b>Movement Penalty:</b> {{artillery.movepenalty}}
+                    </td>
+                    <td width='35%'>
+                        <b>Reload Markers:</b> {{artillery.reloadmarkers}}
+                    </td>                    
+                </tr>                                
+            </table>
+        </div>
+    {% endfor %}
+    </div>        
+    {% endif %}
+
+    {% if data.ships != {} %}
+    <!-- Ships -->
+    <div id='ships'>
+        <H3>Ships</H3>
+    {% for ship in data.ships.values() %}
+        <div class='ship'>
+            <!-- Ship Name -->
+            {% if ship.name != ship.nickname %}
+                <b>{{ship.nickname}}</b> ({{ship.name}})
+            {% else %}
+                <b>{{ship.name}}</b>
+            {% endif%}
+            <!-- Ship Stats -->
+            <table width='100%'>
+                <tr>
+                    <td width='50%'>
+                        <div>
+                            <b>Size:</b> {{ship.size}}
+                        </div>
+                        <div>
+                            <b>Draft:</b> {{ship.draft}}
+                        </div>
+                        <div>
+                            <b>Speed:</b> {{ship.topspeed}}
+                        </div>
+                        <div>
+                            <b>Windward:</b> {{ship.windward}}
+                        </div>
+                        <div>
+                            <b>Turn:</b> {{ship.turn}}
+                        </div>
+                        <div>
+                            <b>Sail Setting:</b> {{ship.sailssettings}}
+                        <div>             
+                    </td>
+                    <!-- Ship Rigging and Hull -->
+                    <td width='50%'>
+                        <table width='100%'>
+                            <tr>
+                                <td width='50%'>
+                                {% if ship.riggingfortitude > 0 %}    
+                                    <b>Rigging</b>
+                                {% for y in range(ship.riggingfortitude) %}
+                                    <div>
+                                        {% if y+1 != ship.riggingfortitude %}
+                                            {% for x in range(ship.riggingintegrity) %}
+                                                {{ship.riggingfortitude - y}}
+                                            {% endfor %}
+                                        {% else %}
+                                            1  
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}  
+                                {% endif %}
+                                </td>
+                                <td width='50%'>
+                                    <b>Hull</b>
+                                {% for y in range(ship.hullfortitude) %}
+                                    <div>
+                                        {% if y+1 != ship.hullfortitude %}
+                                            {% for x in range(ship.hullintegrity) %}
+                                                {{ship.hullfortitude - y}}
+                                            {% endfor %}
+                                        {% else %}
+                                            1  
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}                                    
+                                </td>                                
+                            </tr>
+                        </table>
+                    </td>                    
+                </tr>
+            </table>
+            <!-- Ship Traits -->
+            <div class='ship-traits'>
+                <b>Traits:</b> 
+                {% for rule in ship.specialrule %}
+                        {{rule.name}}{% if not loop.last %}, 
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <!-- Ship Upgrades -->
+            <div class='ship-upgrades'>
+                {% for upgrade in ship.upgrade %}
+                    {% if upgrade.selected == 1 %}
+                        <hr>
+                        <b>{{upgrade.name}}</b>
+                        <div>
+                            {{upgrade.details}}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>            
+        </div>
+    {% endfor %}
+    </div>    
+    {% endif %}
+
+    {% if data.misc != {} %}
+    <!-- Miscellaneous -->
+    <div id='misc'>
+        <H3>Miscellaneous</H3>
+    {% for misc in data.misc.values() %}
+        <div class='misc'>
+            <!-- Misc Name -->
+            <b>{{misc.name}}</b>
+            <!-- Misc Cost Breakdown -->
+            {% if misc.totalCost != 0 %}
+                <div>
+                    <b>{{misc.qty}}</b> @ <b>{{misc.points}}</b> Points ea. = <b>{{misc.totalCost}}</b> Points
+                </div>
+            {% endif %}   
+            <!-- Misc Description          -->
+            {% if misc.details != "Describe Me" %}
+                {% if misc.details != "" %}
+                    <div>
+                        {{misc.details}}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endfor %}
+    </div>    
+    {% endif %}
+
+</body>
+</html>

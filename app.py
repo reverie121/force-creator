@@ -1,8 +1,9 @@
-from flask import Flask, render_template, redirect, jsonify, session, request, json
+from flask import Flask, render_template, redirect, jsonify, session, request, json, make_response
 from forms import AddToList, AddUserForm, LogInForm, EditUserForm
 # from flask_debugtoolbar import DebugToolbarExtension
 import uuid
 import os
+import pdfkit
 
 import models
 import config
@@ -201,11 +202,14 @@ def del_forcelist(uuid):
 @app.route('/lists/pdf', methods=['POST'])
 def pdf_from_forcelist():
     """ Creates a pdf from a posted ForceList object. """
-    save_data = request.get_json()
-    print('****************************')
-    print(save_data)
-    print('****************************')
-    return render_template('base.html')
+    forceListData = request.get_json()
+    rendered = render_template('list-pdf.html', data=forceListData)
+    css = "static/assets/css/list-pdf.css"
+    pdf = pdfkit.from_string(rendered, False, options={"enable-local-file-access": "", "page-size": "Letter"}, css=css)
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=forcelist.pdf'
+    return response
 
 ############### ***** ########## FC DATA API ROUTES ########## ***** ###############
 

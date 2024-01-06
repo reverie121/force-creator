@@ -1,0 +1,63 @@
+body {
+    background: none;
+    color: #000;
+}
+
+td {
+    vertical-align: top;
+}
+
+ul {
+    margin: 0in;
+}
+
+td.boxed {
+    border: 1px solid gray;
+    margin-left: 0.23in;
+    margin-right: 0.23in;
+    border-radius: 3px;
+    padding-left: 0.1in;
+    padding-right: 0.1in;
+}
+
+#faction-option, #commander-commandpoints, #commander-specialrules, #commander-mainweapons, #commander-sidearms {
+    margin-top: 12pt;
+}
+
+#units, #characters, #artillery, #ships, #misc {
+    margin-top: 12pt;
+    overflow: hidden; /* Clear floats for proper layout */
+    page-break-inside: avoid !important;
+}
+
+#units > h3, #characters > h3, #artillery > h3, #ships > h3, #misc  > h3 {
+    margin-bottom: 0px;
+    margin-top: 0px;
+}
+
+div.unit, div.character, div.artillery, div.ship, div.misc {
+    border: 1px solid gray;
+    padding: 3px;
+    border-radius: 3px;
+    width: 48%; /* 100% / 3 = 33.33%, adjusted for margins */
+    float: left;
+    margin-right: 1%; /* Space between elements */
+    margin-bottom: 12pt; /* Space between rows */
+}
+
+div.unit-cost-breakdown {
+    font-size: 11pt;
+}
+
+div.unit-stats {
+    border: 1px solid gray;
+}
+
+ td.unit-stat-value {
+    text-align: right;
+ }
+
+ td.unit-equipment {
+    padding: 3px;
+    padding-left: 12px;
+ }

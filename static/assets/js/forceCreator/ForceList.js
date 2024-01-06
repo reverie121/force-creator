@@ -209,9 +209,21 @@ class ForceList {
     async saveListToPDF() {
         // const newSave = this.prepareSave();
         // this.save = newSave;
-        // Send save data to back end for conversion.
-        const response = await axios.post('/lists/pdf', this);
-        console.log(response);
+
+        // Send save data to back end for conversion to pdf.
+        const response = await axios.post('/lists/pdf', this, {responseType: 'blob'});
+        // Get list data from response. List name will be used for file name.
+        const listData = JSON.parse(response.config.data);
+        console.log(listData)
+        // Create a URL for the PDF and a link to the URL.
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        // Link is set to download a PDF file.
+        link.setAttribute('download', `${listData.name}.pdf`);
+        document.body.appendChild(link);
+        // Click the link.
+        link.click();
     }
 
     async loadSave(saveData) {
@@ -391,20 +403,21 @@ class ForceList {
             }
         }
         // Count Characters
-        modelCount += Object.keys(this.characters).length
+        modelCount += Object.keys(this.characters).length;
         // Count Units
         for (const unit in this.units) {
-            modelCount += this.units[`${unit}`]['qty']
+            modelCount += this.units[`${unit}`]['qty'];
         }
-        let strikePointsEvery = Math.floor(modelCount / 4)
+        let strikePointsEvery = Math.floor(modelCount / 4);
         if (modelCount < 4) {
-            strikePointsEvery = 1
+            strikePointsEvery = 1;
         }
-        this.modelcount = modelCount
-        $('#model-count').html(`${modelCount}`)
-        $('#strike-points-1').html(`${strikePointsEvery}`)
-        $('#strike-points-2').html(`${strikePointsEvery * 2}`)
-        $('#strike-points-3').html(`${strikePointsEvery * 3}`)
+        this.modelCount = modelCount;
+        this.strikePointsEvery = strikePointsEvery;
+        $('#model-count').html(`${modelCount}`);
+        $('#strike-points-1').html(`${strikePointsEvery}`);
+        $('#strike-points-2').html(`${strikePointsEvery * 2}`);
+        $('#strike-points-3').html(`${strikePointsEvery * 3}`);
     }
 
     // Assign a nationality object to the force list.
