@@ -16,11 +16,10 @@ td.boxed {
     margin-left: 0.23in;
     margin-right: 0.23in;
     border-radius: 3px;
-    padding-left: 0.1in;
-    padding-right: 0.1in;
+    padding: 0.1in;
 }
 
-#faction-option, #commander-commandpoints, #commander-specialrules, #commander-mainweapons, #commander-sidearms {
+#faction-specialrules, #faction-option, #commander-commandpoints, #commander-specialrules, #commander-mainweapons, #commander-sidearms {
     margin-top: 12pt;
 }
 
@@ -37,12 +36,17 @@ td.boxed {
 
 div.unit, div.character, div.artillery, div.ship, div.misc {
     border: 1px solid gray;
-    padding: 3px;
     border-radius: 3px;
-    width: 48%; /* 100% / 3 = 33.33%, adjusted for margins */
+    width: 46.5%;
     float: left;
-    margin-right: 1%; /* Space between elements */
-    margin-bottom: 12pt; /* Space between rows */
+    margin-right: 1%;
+    margin-bottom: 12pt;
+    padding: 0.1in;
+    page-break-inside: avoid !important;
+}
+
+div.unit-mainweapons, div.character-commandpoints, div.character-unitrestrictions, div.character-extrarules, div.character-specialrules, table.artillery-stats, div.misc-cost, div.misc-details {
+    margin-top: 6pt;
 }
 
 div.unit-cost-breakdown {

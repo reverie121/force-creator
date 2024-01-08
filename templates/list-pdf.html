@@ -12,7 +12,7 @@
             <!-- ForceList name and nationality -->
             <td width='70%'>
                 <H2>{{data.name}}</H2>
-                <H3>{{data.nationality.name}}</H3>
+                <H3>{{data.nationality}}</H3>
             </td>
             <!-- General ForceList info: points, model count, strike points -->
             <td width='30%'>
@@ -28,11 +28,11 @@
         <tr>
             <!-- Faction Data -->
             <td width='59%' class='boxed'>
-                <p>
-                    <b>{{data.faction.name}}</b> ({{data.faction.first_year}} - {{data.faction.last_year}})
-                </p>
-                <!-- Faction Special Rules -->
                 <div>
+                    <b>{{data.faction.name}}</b> ({{data.faction.first_year}} - {{data.faction.last_year}})
+                </div>
+                <!-- Faction Special Rules -->
+                <div id='faction-specialrules'>
                     <b>Special Rules:</b>
                     <ul>
                         {% for rule in data.faction.specialrule %}
@@ -43,12 +43,10 @@
                 <!-- Faction Options -->
                 <div id='faction-option'>
                     {% for option in data.faction.option %}
-                        {% if option.selected == 1 %}
-                            <b>{{option.name}}</b>
-                            <div>
-                                {{option.details.replace('» ', '')}}
-                            </div>
-                        {% endif %}
+                        <b>{{option.name}}</b>
+                        <div>
+                            {{option.details.replace('» ', '')}}
+                        </div>
                     {% endfor %}
                 </div>
             </td>
@@ -104,43 +102,54 @@
         </tr>
     </table>
 
-    {% if data.units != {} %}
+    {% if data.units != [] %}
     <!-- Units -->
     <div id='units'>
         <H3>Units</H3>
-
-    {% for unit in data.units.values() %}
+    {% for unit in data.units %}
         <div class='unit'>
+            <!-- Unit Name -->
             {% if unit.name != unit.nickname %}
                 <b>{{unit.nickname}}</b> ({{unit.name}})
             {% else %}
                 <b>{{unit.name}}</b>
             {% endif%}
-
             <table width='100%'>
                 <tr>
-                    <td width='50%'>
-                        <i>{{unit.class.capitalize()}} Unit</i>
+                    <td width='75%' class='unit-equipment'>
+                        <!-- Unit Class and Experience Level -->
+                        <table width='100%'>
+                            <tr>
+                                <td width='50%'>
+                                    <i>{{unit.class}} Unit</i>
+                                </td>
+                                <td width='50%'>
+                                    <i>{{unit.experience_name}}</i>
+                                </td>                    
+                            </tr>
+                        </table>
+                        <!-- Unit Cost -->
+                        <div class='unit-cost-breakdown'>
+                            {% if unit.perUnitCost == 0 %}
+                                {{unit.qty}} Models @ {{unit.points}} Points ea. = {{unit.totalUnitCost}} Points
+                            {% else %}
+                                {{unit.qty}} Models @ {{unit.points}} Points ea. + {{unit.perUnitCost}} Points = {{unit.totalUnitCost}} Points
+                            {% endif %}
+                        </div>     
+                        <!-- Unit Equipment -->
+                        <div class='unit-mainweapons'>
+                            <b>Main Weapons:</b> {{unit.mainweapons}}
+                        </div>
+                        {% if unit.sidearms != None %}
+                            <div class='unit-sidearms'>
+                                <b>Sidearms:</b> {{unit.sidearms}}
+                            </div>                
+                        {% endif %}
                     </td>
-                    <td width='50%'>
-                        <i>{{unit.experience_name}}</i>
-                    </td>                    
-                </tr>
-            </table>
-
-            <div class='unit-cost-breakdown'>
-                {% if unit.perUnitCost == 0 %}
-                    {{unit.qty}} Models @ {{unit.points}} Points ea. = {{unit.totalUnitCost}} Points
-                {% else %}
-                    {{unit.qty}} Models @ {{unit.points}} Points ea. + {{unit.perUnitCost}} Points = {{unit.totalUnitCost}} Points
-                {% endif %}
-            </div>
-
-            <table width='100%'>
-                <tr>
                     <td width='25%'>
                         <div class='unit-stats'>
                             <table width='100%'>
+                                <!-- Unit Combat Stats -->
                                 <tr>
                                     <td width='50%'>
                                         <b>Fight:</b>
@@ -167,17 +176,7 @@
                                 </tr>
                             </table>
                         </div>
-                    </td>  
-                    <td width='75%' class='unit-equipment'>
-                        <div id='unit-mainweapons'>
-                            <b>Main Weapons:</b> {{unit.mainweapons}}
-                        </div>
-                        {% if unit.sidearms != None %}
-                            <div id='unit-sidearms'>
-                                <b>Sidearms:</b> {{unit.sidearms}}
-                            </div>                
-                        {% endif %}
-                    </td>
+                    </td>                    
                 </tr>
             </table>
             <!-- Unit Special Rules -->
@@ -191,13 +190,8 @@
             <!-- Unit Options -->
             <div class='unit-options'>
                 {% for option in unit.option %}
-                    {% if option.selected == 1 %}
-                        <hr>
-                        <b>{{option.name}}</b>
-                        <div>
-                            {{option.details}}
-                        </div>
-                    {% endif %}
+                    <hr>
+                    <div>✓ {{option.details}}</div>
                 {% endfor %}
             </div>
         </div>
@@ -205,12 +199,11 @@
     </div>
     {% endif %}
 
-    {% if data.characters != {} %}
+    {% if data.characters != [] %}
     <!-- Characters -->
     <div id='characters'>
         <H3>Characters</H3>
-
-    {% for character in data.characters.values() %}
+    {% for character in data.characters %}
         <div class='character'>
             <!-- Character Name -->
             {% if character.name != character.nickname %}
@@ -220,17 +213,13 @@
             {% endif%}
             <!-- Character Type -->
             {% if character.charactertype == 1 %}
-                <div>
-                    <i>Fighting Man</i>
-                </div>
+                <div><i>Fighting Man</i></div>
             {% elif character.charactertype == 2 %}
-                <div>
-                    <i>Hostage / Advisor</i>
-                </div>
+                <div><i>Hostage / Advisor</i></div>
             {% endif %}
             <!-- Character Command Points -->
             {% if character.commandpoints > 0 %}
-                <table width='100%'>
+                <table width='100%' id='character-commandpoints'>
                     <tr>
                         <td width='50%'>
                             <b>Command Points:</b> {{character.commandpoints}}
@@ -241,26 +230,25 @@
                     </tr>
                 </table> 
                 {% if character.commandpointconditions != "" %}
-                    <div>
-                        {{character.commandpointconditions}}
-                    </div>
+                    <div>{{character.commandpointconditions}}</div>
                 {% endif %}               
             {% endif %}
             <!-- Character Unit Restrictions -->
             {% if character.unitrestrictions != "" %}
+            <div class='character-unitrestrictions'>
                 <div><b>Unit Restrictions:</b></div>
-                <div>
-                    {{character.unitrestrictions}}
-                </div>            
+                <div>{{character.unitrestrictions}}</div>            
+            </div>
             {% endif %}
             <!-- Character Extra Rules -->
             {% if character.extraabilities != "" %}
+            <div class='character-extrarules'>
                 <div><b>Extra Rules:</b></div>
-                <div>
-                    {{character.extraabilities}}
-                </div>            
-            {% endif %}            
+                <div>{{character.extraabilities}}</div>            
+            </div>    
+            {% endif %}   
             <!-- Character Special Rules -->
+            {% if character.specialrule != [] %}
             <div class='character-specialrules'>
                 <b>Special Rules:</b> 
                 {% for rule in character.specialrule %}
@@ -268,16 +256,17 @@
                     {% endif %}
                 {% endfor %}
             </div>
+            {% endif %}   
         </div>
     {% endfor %}
     </div>
     {% endif %}
 
-    {% if data.artillery != {} %}
+    {% if data.artillery != [] %}
     <!-- Artillery -->
     <div id='artillery'>
         <H3>Artillery</H3>
-    {% for artillery in data.artillery.values() %}
+    {% for artillery in data.artillery %}
         <div class='artillery'>
             <!-- Artillery Name -->
             {% if artillery.name != artillery.nickname %}
@@ -290,7 +279,7 @@
                 <b>{{artillery.qty}}</b> @ <b>{{artillery.points}}</b> Points ea. = <b>{{artillery.totalCost}}</b> Points
             </div>
             <!-- Artillery Stats -->
-            <table width='100%'>
+            <table width='100%' class='artillery-stats'>
                 <tr>
                     <td width='65%'>
                         <b>Dice:</b> {{artillery.d10}}
@@ -316,16 +305,24 @@
                     </td>                    
                 </tr>                                
             </table>
+            <!-- Artillery Options -->
+            <div class='artillery-options'>
+                {% for option in artillery.option %}
+                    <hr>
+                    <div>✓ <b>{{option.name}}</b></div>
+                    <div>{{option.rules}}</div>
+                {% endfor %}
+            </div>            
         </div>
     {% endfor %}
     </div>        
     {% endif %}
 
-    {% if data.ships != {} %}
+    {% if data.ships != [] %}
     <!-- Ships -->
     <div id='ships'>
         <H3>Ships</H3>
-    {% for ship in data.ships.values() %}
+    {% for ship in data.ships %}
         <div class='ship'>
             <!-- Ship Name -->
             {% if ship.name != ship.nickname %}
@@ -406,13 +403,11 @@
             <!-- Ship Upgrades -->
             <div class='ship-upgrades'>
                 {% for upgrade in ship.upgrade %}
-                    {% if upgrade.selected == 1 %}
-                        <hr>
-                        <b>{{upgrade.name}}</b>
-                        <div>
-                            {{upgrade.details}}
-                        </div>
-                    {% endif %}
+                    <hr>
+                    <b>✓ {{upgrade.name}}</b>
+                    <div>
+                        {{upgrade.details}}
+                    </div>
                 {% endfor %}
             </div>            
         </div>
@@ -420,24 +415,24 @@
     </div>    
     {% endif %}
 
-    {% if data.misc != {} %}
+    {% if data.misc != [] %}
     <!-- Miscellaneous -->
     <div id='misc'>
-        <H3>Miscellaneous</H3>
-    {% for misc in data.misc.values() %}
+        <H3>Additional</H3>
+    {% for misc in data.misc %}
         <div class='misc'>
             <!-- Misc Name -->
             <b>{{misc.name}}</b>
             <!-- Misc Cost Breakdown -->
             {% if misc.totalCost != 0 %}
-                <div>
+                <div class='misc-cost'>
                     <b>{{misc.qty}}</b> @ <b>{{misc.points}}</b> Points ea. = <b>{{misc.totalCost}}</b> Points
                 </div>
             {% endif %}   
             <!-- Misc Description          -->
             {% if misc.details != "Describe Me" %}
                 {% if misc.details != "" %}
-                    <div>
+                    <div class='misc-details'>
                         {{misc.details}}
                     </div>
                 {% endif %}

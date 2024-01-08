@@ -214,7 +214,6 @@ class ForceList {
         const response = await axios.post('/lists/pdf', this, {responseType: 'blob'});
         // Get list data from response. List name will be used for file name.
         const listData = JSON.parse(response.config.data);
-        console.log(listData)
         // Create a URL for the PDF and a link to the URL.
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');

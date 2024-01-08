@@ -7,6 +7,7 @@ import pdfkit
 
 import models
 import config
+from helpers import prepPdfData
 
 app = Flask(__name__)
 
@@ -202,10 +203,16 @@ def del_forcelist(uuid):
 @app.route('/lists/pdf', methods=['POST'])
 def pdf_from_forcelist():
     """ Creates a pdf from a posted ForceList object. """
-    forceListData = request.get_json()
-    rendered = render_template('list-pdf.html', data=forceListData)
+    # Get ForceList object from post request.
+    force_list_data = request.get_json()
+    # Remove unrequired data and reformat as needed for pdf.
+    pdf_data = prepPdfData(force_list_data)
+    # Render HTML from the pdf template passing in the pdf data.
+    rendered = render_template('list-pdf.html', data=pdf_data)
+    # Create a PDF from the rendered HTML.
     css = "static/assets/css/list-pdf.css"
     pdf = pdfkit.from_string(rendered, False, options={"enable-local-file-access": "", "page-size": "Letter"}, css=css)
+    # Send out PDF as a response.
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=forcelist.pdf'
