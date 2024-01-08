@@ -36,6 +36,10 @@ def prepPdfData(force_list_data):
                 pdf_data['faction']['option'].append({"name": option['name'], "details": option['details']})
     for rule in force_list_data['commander']['specialrule']:
             pdf_data['commander']['specialrule'].append({"name": rule['name']})
+    if force_list_data['commander']['specialruleChoice'] != []:
+         for rule in force_list_data['commander']['specialruleChoice']:
+              if rule['id'] in force_list_data['commander']['specialruleChosenIDs']:
+                  pdf_data['commander']['specialrule'].append({"name": rule['name']})
     for f_id in force_list_data['units']:
             unit = force_list_data['units'][f_id]
             new_unit = {
