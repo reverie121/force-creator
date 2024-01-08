@@ -1,3 +1,8 @@
+def addSpecialruleToList(rule, specialruleList, specialruleIds):
+    if rule['id'] not in specialruleIds:
+        specialruleList.append({"name": rule['name'], "details": rule['details'], "id": rule['id']})
+        specialruleIds.append(rule['id'])
+
 def prepPdfData(force_list_data):       
     pdf_data = {
         "name": force_list_data['name'],
@@ -27,7 +32,11 @@ def prepPdfData(force_list_data):
         "characters": [], 
         "artillery": [], 
         "ships": [], 
-        "misc": []
+        "misc": [], 
+        "specialrule": [], 
+        "specialruleIds": [], 
+        "shiptrait": [], 
+        "shiptraitIds": []
     }
     for rule in force_list_data['faction']['specialrule']:
             pdf_data['faction']['specialrule'].append({"details": rule['details']})
@@ -36,10 +45,13 @@ def prepPdfData(force_list_data):
                 pdf_data['faction']['option'].append({"name": option['name'], "details": option['details']})
     for rule in force_list_data['commander']['specialrule']:
             pdf_data['commander']['specialrule'].append({"name": rule['name']})
+            addSpecialruleToList(rule, pdf_data['specialrule'], pdf_data['specialruleIds'])
     if force_list_data['commander']['specialruleChoice'] != []:
          for rule in force_list_data['commander']['specialruleChoice']:
               if rule['id'] in force_list_data['commander']['specialruleChosenIDs']:
-                  pdf_data['commander']['specialrule'].append({"name": rule['name']})
+                    pdf_data['commander']['specialrule'].append({"name": rule['name']})
+                    addSpecialruleToList(rule, pdf_data['specialrule'], pdf_data    ['specialruleIds'])
+
     for f_id in force_list_data['units']:
             unit = force_list_data['units'][f_id]
             new_unit = {
@@ -63,6 +75,7 @@ def prepPdfData(force_list_data):
             }
             for rule in unit['specialrule']:
                 new_unit['specialrule'].append({"name": rule['name']})
+                addSpecialruleToList(rule, pdf_data['specialrule'], pdf_data['specialruleIds'])
             for option in unit['option']:
                 if option['selected'] == 1:
                     new_unit['option'].append({"name": option['name'], "details": option['details']})
@@ -82,6 +95,7 @@ def prepPdfData(force_list_data):
         }
         for rule in character['specialrule']:
             new_character['specialrule'].append({"name": rule['name']})
+            addSpecialruleToList(rule, pdf_data['specialrule'], pdf_data['specialruleIds'])
         pdf_data['characters'].append(new_character)
     for f_id in force_list_data['artillery']:
         artillery = force_list_data['artillery'][f_id]
@@ -127,6 +141,7 @@ def prepPdfData(force_list_data):
         }
         for rule in ship['specialrule']:
             new_ship['specialrule'].append({"name": rule['name']})
+            addSpecialruleToList(rule, pdf_data['shiptrait'], pdf_data['shiptraitIds'])
         for upgrade in ship['upgrade']:
             if upgrade['selected'] == 1:
                 new_ship['upgrade'].append({"name": upgrade['name'], "details": upgrade['details']})
@@ -141,4 +156,10 @@ def prepPdfData(force_list_data):
             "totalCost": misc['totalCost'],                 
         }
         pdf_data['misc'].append(new_misc)
+
+    pdf_data['specialrule'].sort(key=lambda x: x['name'])
+    del pdf_data['specialruleIds']
+    pdf_data['shiptrait'].sort(key=lambda x: x['name'])
+    del pdf_data['shiptraitIds']
+
     return pdf_data

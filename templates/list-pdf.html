@@ -442,5 +442,23 @@
     </div>    
     {% endif %}
 
+    {% if data.specialrule != [] %}
+        <div id='specialrules'>
+            <H3>Special Rules</H3>
+            {% for rule in data.specialrule %}
+                <div class='specialrule'><b>{{rule.name}}</b>: {{rule.details}}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if data.specialrule != [] %}
+        <div id='shiptraits'>
+            <H3>Ship Traits</H3>
+            {% for rule in data.shiptrait %}
+                <div class='specialrule'><b>{{rule.name}}</b>: {{rule.details}}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
 </body>
 </html>
