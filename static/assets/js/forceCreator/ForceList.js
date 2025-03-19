@@ -2209,3 +2209,8 @@ class ForceList {
         });
     }
 }
+
+$(document).ready(() => {
+    $('#force-save').on('click', () => { forceList.saveList(); });
+    $('#force-download').on('click', () => { forceList.saveListToPDF(); });
+});
