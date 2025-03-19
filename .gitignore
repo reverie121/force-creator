@@ -22,3 +22,5 @@ templates/list-view.html
 templates/list-view-backup.html
 
 static/assets/js/forceCreator/list-view.js
+
+config.py

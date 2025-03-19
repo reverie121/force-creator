@@ -203,17 +203,40 @@ def del_forcelist(uuid):
 @app.route('/lists/pdf', methods=['POST'])
 def pdf_from_forcelist():
     """ Creates a pdf from a posted ForceList object. """
-    # Get ForceList object from post request.
+    # Check if we're on cPanel (or remote) by looking for an environment variable or path
+    cpanel_path = os.path.expanduser('~/bin/wkhtmltopdf')
+    # Use configuration only if the custom path exists (remote case)
+    if os.path.exists(cpanel_path):
+        config = pdfkit.configuration(wkhtmltopdf=cpanel_path)
+    else:
+        config = None  # Local will use system PATH
+    
+    # Get ForceList object from post request
     force_list_data = request.get_json()
-    # Remove unrequired data and reformat as needed for pdf.
+    # Remove unrequired data and reformat as needed for pdf
     pdf_data = prepPdfData(force_list_data)
-    # Render HTML from the pdf template passing in the pdf data.
+    # Render HTML from the pdf template passing in the pdf data
     rendered = render_template('list-pdf.html', data=pdf_data)
-    # Create a PDF from the rendered HTML.
+    # Create a PDF from the rendered HTML
     css = "static/assets/css/list-pdf.css"
     try:
-        pdf = pdfkit.from_string(rendered, False, options={"enable-local-file-access": "", "page-size": "Letter"}, css=css)
-        # Send out PDF as a response.
+        # Pass config only if it was set (remote), otherwise use default
+        if config:
+            pdf = pdfkit.from_string(
+                rendered, 
+                False, 
+                configuration=config,
+                options={"enable-local-file-access": "", "page-size": "Letter"},
+                css=css
+            )
+        else:
+            pdf = pdfkit.from_string(
+                rendered, 
+                False, 
+                options={"enable-local-file-access": "", "page-size": "Letter"},
+                css=css
+            )
+        # Send out PDF as a response
         response = make_response(pdf)
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = f'attachment; filename={pdf_data["name"]}.pdf'
