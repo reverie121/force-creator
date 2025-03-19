@@ -211,12 +211,16 @@ def pdf_from_forcelist():
     rendered = render_template('list-pdf.html', data=pdf_data)
     # Create a PDF from the rendered HTML.
     css = "static/assets/css/list-pdf.css"
-    pdf = pdfkit.from_string(rendered, False, options={"enable-local-file-access": "", "page-size": "Letter"}, css=css)
-    # Send out PDF as a response.
-    response = make_response(pdf)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'attachment; filename=forcelist.pdf'
-    return response
+    try:
+        pdf = pdfkit.from_string(rendered, False, options={"enable-local-file-access": "", "page-size": "Letter"}, css=css)
+        # Send out PDF as a response.
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename={pdf_data["name"]}.pdf'
+        return response
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return f"Error generating PDF: {e}", 500
 
 ############### ***** ########## FC DATA API ROUTES ########## ***** ###############
 

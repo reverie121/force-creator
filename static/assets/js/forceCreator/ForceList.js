@@ -223,6 +223,8 @@ class ForceList {
         document.body.appendChild(link);
         // Click the link.
         link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);        
     }
 
     async loadSave(saveData) {
