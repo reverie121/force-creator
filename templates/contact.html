@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Force Creator Contact Form
+{% endblock title %}
+
+{% block content %}
+    <div class='container-fluid border border-5 border-start-0 border-end-0 border-secondary bg-warning'>
+        <h1 class='main_header p-1 text-center'>
+            <i>Contact Us</i>
+        </h1>
+    </div>
+    <div class='container-fluid pb-2 vh-100'>
+        <div class='container mt-1 bg-warning rounded-2'>
+            <div class="row align-items-center p-3">
+                <div class="col-12 col-sm-10 offset-sm-1 col-md-8 offset-md-2 col-lg-6 offset-lg-3">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    <form id="contact-form" method="POST">
+                        <div class="form-group text-info fell fs-5">
+                            {{ form.hidden_tag() }} <!-- Add CSRF token -->
+
+                            <label for="name" class='mt-1'>Name</label>
+                            <input type="text" maxlength='50' class="form-control bg-info text-primary" name="name" id="name" value="{{ form.name.data or '' }}">
+
+                            <label for="email" class='mt-1'>Email</label>
+                            <input type="email" maxlength='75' class="form-control bg-info text-primary" name="email" id="email" value="{{ form.email.data or '' }}">
+
+                            <label for="message" class='mt-1'>Message</label>
+                            <textarea class="form-control bg-info text-primary" name="message" id="message" rows="5">{{ form.message.data or '' }}</textarea>
+
+                            <!-- Add reCAPTCHA widget -->
+                            <div class="mb-3 mt-1">
+                                <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                                <input type="hidden" name="recaptcha_response" id="recaptcha_response">
+                            </div>
+
+                            <div class='container-fluid mt-2 p-1'>
+                                <button class="btn btn-success" type="submit">Send Message</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>    
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script>
+        $('#main-area').show('slow','swing');
+        // Set the hidden recaptcha_response field with the token on form submission
+        document.getElementById('contact-form').addEventListener('submit', function(event) {
+            var recaptchaResponse = grecaptcha.getResponse();
+            if (!recaptchaResponse) {
+                event.preventDefault();
+                alert('Please complete the reCAPTCHA.');
+                return;
+            }
+            document.getElementById('recaptcha_response').value = recaptchaResponse;
+        });
+    </script>
+{% endblock content %}

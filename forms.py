@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectField, PasswordField, TextField
-from wtforms.validators import InputRequired, Length, Email
+from wtforms import StringField, IntegerField, SelectField, PasswordField, TextAreaField, SubmitField
+from wtforms.validators import InputRequired, Length, Email, DataRequired
 
 #################### User Related Forms ####################
 
@@ -26,7 +26,12 @@ class EditUserForm(FlaskForm):
     last_name = StringField("Last Name", validators=[InputRequired(), Length(max=50)])
     password = PasswordField("Password", validators=[InputRequired()])
 
-
+class ContactForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    message = TextAreaField('Message', validators=[DataRequired()])
+    recaptcha_response = StringField('reCAPTCHA', validators=[DataRequired()])
+    submit = SubmitField('Send Message')
 #################### Force Creator Forms ####################
 
 class AddToList(FlaskForm):

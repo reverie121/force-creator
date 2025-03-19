@@ -1,21 +1,23 @@
-from flask import Flask, render_template, redirect, jsonify, session, request, json, make_response
-from forms import AddToList, AddUserForm, LogInForm, EditUserForm
+from flask import Flask, render_template, redirect, jsonify, session, request, json, make_response, url_for, flash
+from forms import AddToList, AddUserForm, LogInForm, EditUserForm, ContactForm
 # from flask_debugtoolbar import DebugToolbarExtension
 import uuid
 import os
 import pdfkit
-
+import smtplib
+from email.mime.text import MIMEText
+import requests
 import models
 import config
 from helpers import prepPdfData
+import logging
 
 app = Flask(__name__)
 
 # debug = DebugToolbarExtension(app)
 
-# Set a randomized Secret Key value for use with CSRF.
-SECRET_KEY = os.urandom(32)
-app.config['SECRET_KEY'] = SECRET_KEY
+# Set the SECRET_KEY from config.py (loaded from .env)
+app.config['SECRET_KEY'] = config.SECRET_KEY
 
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
@@ -31,6 +33,9 @@ app.config['SQLALCHEMY_ECHO'] = True
 models.connect_db(app)
 models.db.create_all()
 
+# Set up logging for debugging
+logging.basicConfig(level=logging.DEBUG)
+
 ############### ***** ############### ROUTES ############### ***** ###############
 
 @app.route('/')
@@ -42,6 +47,56 @@ def show_creator():
     add_to_list = AddToList()
     return render_template('fc.html', add_to_list=add_to_list)
 
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    form = ContactForm()
+    if request.method == 'POST':
+        logging.debug("Form data: %s", form.data)
+        if form.validate_on_submit():
+            name = form.name.data
+            email = form.email.data
+            message = form.message.data
+            recaptcha_response = form.recaptcha_response.data
+
+            # Validate reCAPTCHA
+            recaptcha_verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+            recaptcha_data = {
+                'secret': config.RECAPTCHA_SECRET_KEY,
+                'response': recaptcha_response,
+                'remoteip': request.remote_addr
+            }
+            recaptcha_result = requests.post(recaptcha_verify_url, data=recaptcha_data).json()
+            logging.debug("reCAPTCHA result: %s", recaptcha_result)
+
+            if not recaptcha_result.get('success'):
+                flash('reCAPTCHA verification failed. Please try again.', 'error')
+                return redirect(url_for('contact'))
+
+            # Send email to yourself
+            msg = MIMEText(f"Name: {name}\nEmail: {email}\nMessage: {message}")
+            msg['Subject'] = 'New Contact Form Submission from ForceCreator'
+            msg['From'] = config.EMAIL_ADDRESS  # Must match the authenticated email account
+            msg['To'] = config.EMAIL_ADDRESS
+            msg['Reply-To'] = email  # Allow replying to the user's email
+
+            try:
+                with smtplib.SMTP('mi3-ts107.a2hosting.com', 587) as server:
+                    server.starttls()
+                    server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
+                    server.send_message(msg)
+                flash('Your message has been sent successfully!', 'success')
+            except Exception as e:
+                flash(f'Error sending message: {str(e)}', 'error')
+
+            return redirect(url_for('contact'))
+        else:
+            # Log and display validation errors
+            logging.debug("Form validation failed: %s", form.errors)
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Error in {field}: {error}", 'error')
+
+    return render_template('contact.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 ############### ***** ########## USER ROUTES ########## ***** ###############
 
