@@ -206,27 +206,36 @@ class ForceList {
         window.location.href = `/lists/${this.save.uuid}`;
     }
 
-    async saveListToPDF() {
-        // const newSave = this.prepareSave();
-        // this.save = newSave;
-
-        // Send save data to back end for conversion to pdf.
+    async saveListToPDF(options = {}) {
+        // Add PDF options to the ForceList data
+        this.pdfOptions = {
+            includeSpecialRules: options.includeSpecialRules !== undefined ? options.includeSpecialRules : true,
+            includeShipTraits: options.includeShipTraits !== undefined ? options.includeShipTraits : true
+        };
+        console.log('ForceList.pdfOptions set to:', this.pdfOptions); // Debugging
+    
+        // Send save data to back end for conversion to pdf
         const response = await axios.post('/lists/pdf', this, {responseType: 'blob'});
-        // Get list data from response. List name will be used for file name.
+        // Get list data from response. List name will be used for file name
         const listData = JSON.parse(response.config.data);
-        // Create a URL for the PDF and a link to the URL.
+        // Create a URL for the PDF and a link to the URL
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        // Link is set to download a PDF file.
+        // Link is set to download a PDF file
         link.setAttribute('download', `${listData.name}.pdf`);
         document.body.appendChild(link);
-        // Click the link.
+        // Click the link
         link.click();
         document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);        
+        window.URL.revokeObjectURL(url);
     }
-
+    
+    // Show the PDF options modal
+    showPDFOptionsModal() {
+        $('#pdfOptionsModal').modal('show');
+    }
+    
     async loadSave(saveData) {
         $forceName.val(saveData.name).change();
         $pointMax.val(saveData.maxpoints).change();
@@ -2209,8 +2218,3 @@ class ForceList {
         });
     }
 }
-
-$(document).ready(() => {
-    $('#force-save').on('click', () => { forceList.saveList(); });
-    $('#force-download').on('click', () => { forceList.saveListToPDF(); });
-});

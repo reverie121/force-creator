@@ -199,7 +199,7 @@ def del_forcelist(uuid):
 
     else:
         return redirect(f'/lists/{uuid}')
-
+    
 @app.route('/lists/pdf', methods=['POST'])
 def pdf_from_forcelist():
     """ Creates a pdf from a posted ForceList object. """
@@ -213,10 +213,13 @@ def pdf_from_forcelist():
     
     # Get ForceList object from post request
     force_list_data = request.get_json()
+    # Extract pdfOptions
+    pdf_options = force_list_data.get('pdfOptions', {'includeSpecialRules': True, 'includeShipTraits': True})
+    app.logger.debug(f"Received pdf_options in app.py: {pdf_options}")  # Debugging
     # Remove unrequired data and reformat as needed for pdf
     pdf_data = prepPdfData(force_list_data)
-    # Render HTML from the pdf template passing in the pdf data
-    rendered = render_template('list-pdf.html', data=pdf_data)
+    # Render HTML from the pdf template passing in the pdf data and pdf options
+    rendered = render_template('list-pdf.html', data=pdf_data, pdf_options=pdf_options)
     # Create a PDF from the rendered HTML
     css = "static/assets/css/list-pdf.css"
     try:

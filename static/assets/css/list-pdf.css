@@ -61,6 +61,7 @@ div.unit-stats {
 
  td.unit-stat-value {
     text-align: right;
+    white-space: nowrap; /* Prevent text from wrapping */
  }
 
  td.unit-equipment {
@@ -71,3 +72,10 @@ div.unit-stats {
  #specialrules, #shiptraits {
     page-break-inside: avoid !important;
  }
+
+.mt-0 {
+    margin-top: 0;
+}
+.mb-0 {
+    margin-bottom: 0;
+}

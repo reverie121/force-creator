@@ -36,7 +36,7 @@
                     <b>Special Rules:</b>
                     <ul>
                         {% for rule in data.faction.specialrule %}
-                            <li>{{rule.details}}</li>
+                            <li>{{rule.details | safe}}</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -45,7 +45,7 @@
                     {% for option in data.faction.option %}
                         <b>{{option.name}}</b>
                         <div>
-                            {{option.details.replace('» ', '')}}
+                            {{option.details.replace('» ', '') | safe}}
                         </div>
                     {% endfor %}
                 </div>
@@ -93,9 +93,9 @@
                     <b>Special Rules:</b>
                     <div>
                         {% for rule in data.commander.specialrule %}
-                        {{rule.name}}{% if not loop.last %}, 
-                        {% endif %}
-                    {% endfor %}
+                            {{rule.name}}{% if not loop.last %}, 
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </td>
@@ -183,7 +183,7 @@
             <div class='unit-specialrules'>
                 <b>Special Rules:</b> 
                 {% for rule in unit.specialrule %}
-                        {{rule.name}}{% if not loop.last %}, 
+                    {{rule.name}}{% if not loop.last %}, 
                     {% endif %}
                 {% endfor %}
             </div>
@@ -191,7 +191,7 @@
             <div class='unit-options'>
                 {% for option in unit.option %}
                     <hr>
-                    <div>✓ {{option.details}}</div>
+                    <div>✓ {{option.details | safe}}</div>
                 {% endfor %}
             </div>
         </div>
@@ -230,21 +230,21 @@
                     </tr>
                 </table> 
                 {% if character.commandpointconditions != "" %}
-                    <div>{{character.commandpointconditions}}</div>
+                    <div>{{character.commandpointconditions | safe}}</div>
                 {% endif %}               
             {% endif %}
             <!-- Character Unit Restrictions -->
             {% if character.unitrestrictions != "" %}
             <div class='character-unitrestrictions'>
                 <div><b>Unit Restrictions:</b></div>
-                <div>{{character.unitrestrictions}}</div>            
+                <div>{{character.unitrestrictions | safe}}</div>            
             </div>
             {% endif %}
             <!-- Character Extra Rules -->
             {% if character.extraabilities != "" %}
             <div class='character-extrarules'>
                 <div><b>Extra Rules:</b></div>
-                <div>{{character.extraabilities}}</div>            
+                <div>{{character.extraabilities | safe}}</div>            
             </div>    
             {% endif %}   
             <!-- Character Special Rules -->
@@ -252,7 +252,7 @@
             <div class='character-specialrules'>
                 <b>Special Rules:</b> 
                 {% for rule in character.specialrule %}
-                        {{rule.name}}{% if not loop.last %}, 
+                    {{rule.name}}{% if not loop.last %}, 
                     {% endif %}
                 {% endfor %}
             </div>
@@ -310,7 +310,7 @@
                 {% for option in artillery.option %}
                     <hr>
                     <div>✓ <b>{{option.name}}</b></div>
-                    <div>{{option.rules}}</div>
+                    <div>{{option.rules | safe}}</div>
                 {% endfor %}
             </div>            
         </div>
@@ -396,7 +396,7 @@
             <div class='ship-traits'>
                 <b>Traits:</b> 
                 {% for rule in ship.specialrule %}
-                        {{rule.name}}{% if not loop.last %}, 
+                    {{rule.name}}{% if not loop.last %}, 
                     {% endif %}
                 {% endfor %}
             </div>
@@ -406,7 +406,7 @@
                     <hr>
                     <b>✓ {{upgrade.name}}</b>
                     <div>
-                        {{upgrade.details}}
+                        {{upgrade.details | safe}}
                     </div>
                 {% endfor %}
             </div>            
@@ -429,11 +429,11 @@
                     <b>{{misc.qty}}</b> @ <b>{{misc.points}}</b> Points ea. = <b>{{misc.totalCost}}</b> Points
                 </div>
             {% endif %}   
-            <!-- Misc Description          -->
+            <!-- Misc Description -->
             {% if misc.details != "Describe Me" %}
                 {% if misc.details != "" %}
                     <div class='misc-details'>
-                        {{misc.details}}
+                        {{misc.details | safe}}
                     </div>
                 {% endif %}
             {% endif %}
@@ -442,20 +442,22 @@
     </div>    
     {% endif %}
 
-    {% if data.specialrule != [] %}
+    <!-- Special Rules Section -->
+    {% if data.specialrule != [] and pdf_options.includeSpecialRules %}
         <div id='specialrules'>
             <H3>Special Rules</H3>
             {% for rule in data.specialrule %}
-                <div class='specialrule'><b>{{rule.name}}</b>: {{rule.details}}</div>
+                <div class='specialrule'><b>{{rule.name}}</b>: {{rule.details | safe}}</div>
             {% endfor %}
         </div>
     {% endif %}
 
-    {% if data.specialrule != [] %}
+    <!-- Ship Traits Section -->
+    {% if data.shiptrait != [] and pdf_options.includeShipTraits %}
         <div id='shiptraits'>
             <H3>Ship Traits</H3>
             {% for rule in data.shiptrait %}
-                <div class='specialrule'><b>{{rule.name}}</b>: {{rule.details}}</div>
+                <div class='specialrule'><b>{{rule.name}}</b>: {{rule.details | safe}}</div>
             {% endfor %}
         </div>
     {% endif %}

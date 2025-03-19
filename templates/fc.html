@@ -15,14 +15,11 @@
 
     <div class='container p-0 px-1 m-0'>
         
-        <!-- MAIN SELECT  -->
+        <!-- MAIN SELECT -->
         <div class='container-fluid rounded-3 bg-warning p-0 fell bigger-text'>
-
             <div class='row px-3'>
-                
                 <!-- MAIN SELECT RIGHT SIDE -->
                 <div class='col-12-sm col-md order-md-last m-1'>      
-
                     <div class='row mt-1 align-items-center'>
                         <div class='col-auto p-0 pe-2 text-end'>
                             <i class='form-label text-info'>Nation:</i>
@@ -31,7 +28,6 @@
                             <select class='form-control rounded-2 text-center pt-0 pb-0 border bg-info border-2 border-secondary text-primary' id='select_nation'></select>
                         </div>
                     </div>
-                                    
                     <div class='row mt-1 align-items-center'>
                         <div class='col-auto p-0 pe-2 text-end'>
                             <i class='form-label text-info'>Faction:</i>
@@ -40,7 +36,6 @@
                             <select class='form-control rounded-2 text-center pt-0 pb-0 bg-info border border-2 border-secondary text-primary' id='select_faction'></select>
                         </div>
                     </div>
-
                     <div class='row mt-1 align-items-center'>
                         <div class='col-auto p-0 pe-2 text-end'>
                             <i class='form-label text-info'>Commander:</i>
@@ -50,7 +45,6 @@
                         </div>
                     </div>
                 </div>                        
-
                 <!-- MAIN SELECT LEFT SIDE -->
                 <div class='col m-1'>
                     <!-- FORCE NAME -->
@@ -79,25 +73,23 @@
                             </span>
                         </div>
                         <div class='col-auto mt-2'>
-                            <i  class='p-1 border border-primary rounded-2 text-info normal-text'>
+                            <i class='p-1 border border-primary rounded-2 text-info normal-text'>
                                 Models in Force: <span class='bigger-text' id='model-count'>0</span>
                             </i>
                         </div>                           
                         <div class='col-auto mt-2'>
-                            <span  class='p-1 border border-primary rounded-2 text-info normal-text' id='unit-size-range-display'>
+                            <span class='p-1 border border-primary rounded-2 text-info normal-text' id='unit-size-range-display'>
                                 <!-- filled by js -->
                             </span>
                         </div>                                             
                         <div class='col-auto mt-2'>
-                            <i  class='p-1 border border-primary rounded-2 text-info normal-text'>
+                            <i class='p-1 border border-primary rounded-2 text-info normal-text'>
                                 Strike Points at <span class='bigger-text' id='strike-points-1'>0</span> / <span class='bigger-text' id='strike-points-2'>0</span> / <span class='bigger-text' id='strike-points-3'>0</span> Casualties
                             </i>
                         </div>
                     </div>
                 </div>
-
             </div>
-            
         </div>
 
         <!-- WELCOME AREA -->
@@ -110,21 +102,18 @@
                         </div>
                     </div>
                 </div>
-                
             </div>
         </div>
 
         <!-- CREATION AREA -->
         <div class='collapse container-fluid overflow-y-scroll m-0 vh-50 min-vh-50 vh-md-80 min-vh-md-80' id='build-area'>
             <div class='row h-100'>
-
                 <!-- BUILD SIDE -->
                 <div class='col mt-1 mb-0 ms-0 me-0 pt-2 pb-1 rounded-3 bg-warning' id='build-side' data-list-save='{{ data }}'>
-                    
                     <div class='rounded-2 force-selector-field border border-2 border-secondary'>
                         <div class='row text-center align-items-center'>
                             <div class='col-auto' id='force-revert'>
-                                <a href='#/' role='button'><i class="fa-solid fa-clock-rotate-left m-1="></i></a>
+                                <a href='#/' role='button'><i class="fa-solid fa-clock-rotate-left m-1"></i></a>
                             </div>                         
                             <div class='col'>
                                 <i id='force-name' class='biggest-text'></i>
@@ -141,7 +130,6 @@
                             </div>   
                         </div>
                     </div>
-
                     <div id='force-info'>
                         <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-faction'></div>
                         <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-commander'></div>
@@ -157,7 +145,6 @@
                 
                 <!-- MENU SIDE -->
                 <div class='col-12-sm col-lg order-lg-first mt-1 mb-0 me-2 ms-0 pt-2 pb-2 rounded-3 bg-warning'>
-                    
                     <div class='row p-0'>
                         <div class='col mx-0'>
                             <form>
@@ -168,25 +155,54 @@
                             <button class='btn btn-primary border border-info py-0 px-1 text-info fell' id='add-custom-button'>+ Custom</button>
                         </div>
                     </div>
-
                     <div class='container rounded-2 text-center text-info bigger-text fell' id='component-instructions'>
                         Please select a Faction and Commander.
                     </div>
                     <div class='' id='menu'>
                     </div>
                 </div>
-
+            </div>
+        </div>
+        
+        <!-- Bootstrap Modal for PDF Options -->
+        <div class="modal fade" id="pdfOptionsModal" tabindex="-1" aria-labelledby="pdfOptionsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="pdfOptionsModalLabel">PDF Options</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="pdfOptionsForm">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="includeSpecialRules" id="includeSpecialRules" checked>
+                                <label class="form-check-label" for="includeSpecialRules">
+                                    Include Special Rules
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="includeShipTraits" id="includeShipTraits" checked>
+                                <label class="form-check-label" for="includeShipTraits">
+                                    Include Ship Traits
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="generatePDFButton">Generate PDF</button>
+                    </div>
+                </div>
             </div>
         </div>
 
     </div>
 
-
     <!-- FOOTER -->
     <!-- <div class='container-fluid bg-primary sticky-bottom mb-0' id='footer'>
         <div class='container p-0 pt-1 mb-0 bg-secondary border border-2 border-top-0 border-bottom-0 border-info text-info'>
             <div class='container-fluid border border-5 border-top-0 border-start-0 border-end-0 border-secondary bg-warning m-0'>
-                &nbsp;
+                 
             </div>
         </div>
     </div> -->

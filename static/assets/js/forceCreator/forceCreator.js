@@ -81,9 +81,7 @@ function populateCommanderDropdown(commanderList) {
      });
 }
 
-
 // ************************* PAGE EVENT HANDLERS *************************
-
 
 // When the page has loaded request universal data if not already in session
 // and populate Nation selector from stored data.
@@ -99,13 +97,38 @@ $(window).ready(async function() {
     });
     $('#force-revert').on('click', () => {
         forceList.loadSave(forceList.save);
-    })
+    });
     $('#force-save').on('click', () => {
         forceList.saveList();
-    })
-    $('#force-pdf').on('click', () => {
-        forceList.saveListToPDF();
-    })    
+    });
+    // Updated handler to show the PDF options modal instead of downloading directly
+    $('#force-pdf a').on('click', (e) => {
+        e.preventDefault();
+        console.log('PDF button clicked - showing modal'); // Debugging
+        forceList.showPDFOptionsModal();
+    });
+    // Handle the "Generate PDF" button in the modal
+    $('#generatePDFButton').on('click', () => {
+        const includeSpecialRules = $('#includeSpecialRules').is(':checked');
+        const includeShipTraits = $('#includeShipTraits').is(':checked');
+
+        const pdfOptions = {
+            includeSpecialRules: includeSpecialRules,
+            includeShipTraits: includeShipTraits
+        };
+
+        console.log('Generate PDF clicked with options:', pdfOptions); // Debugging
+        forceList.saveListToPDF(pdfOptions)
+            .then(() => {
+                console.log('PDF generated successfully'); // Debugging
+                $('#pdfOptionsModal').modal('hide');
+            })
+            .catch(error => {
+                console.error('Error generating PDF:', error);
+                alert('Failed to generate the PDF. Please try again or contact support if the issue persists.');
+                $('#pdfOptionsModal').modal('hide');
+            });
+    });
     // Handle button for adding custom/misc to ForceList.
     $(`#add-custom-button`).on('click', () => {
         const customToAdd = new Misc();
@@ -126,7 +149,7 @@ $forceName.on('keyup change', () => {
         $('#force-name').text($forceName.val());
     }
     forceList.name = $forceName.val();
-})
+});
 
 $pointMax.on('change', () => {
     forceList.updateMaxPoints();
@@ -158,7 +181,7 @@ $selectNationality.on('change', async function(e) {
     populateFactionDropdown(forceList.nationality.factionList);
     populateCommanderDropdown(forceList.nationality.commanderList);
     // Show display in UI.
-    resetComponentSelector()
+    resetComponentSelector();
     $('#welcome-area').hide('fast', 'swing');
     $('#build-area').show('slow', 'swing');    
 });
@@ -327,5 +350,4 @@ $componentSelector.on('change', async function() {
             menuItem.display();
         }
     }
-
 });
