@@ -24,3 +24,12 @@ templates/list-view-backup.html
 static/assets/js/forceCreator/list-view.js
 
 config.py
+
+# cPanel-specific files
+.well-known.zip
+.well-known/
+*.bak
+*.log
+tmp/
+.htaccess
+passenger_wsgi.py
