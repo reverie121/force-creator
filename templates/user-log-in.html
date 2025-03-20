@@ -14,23 +14,23 @@
         <div class='container bg-warning mt-1 rounded-2'>
             <div class="row align-items-center p-3">
                 <div class="col-12 col-sm-10 offset-sm-1 col-md-8 offset-md-2 col-lg-6 offset-lg-3">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
                     <form id="add-user-form" method="POST">
                         <div class="form-group text-info fell fs-5">
-                            
                             {{ form.hidden_tag() }} <!--add type=hidden form fields -->
-        
                             {% for field in form if field.widget.input_type != 'hidden' %}
                             <p>
                                 {{ field.label }}
                                 {{ field(class_='form-control bg-info text-primary') }}
-                        
-                                {% for error in field.errors %}
-                                {{ error }}
-                                {% endfor %}
                             </p>
                             {% endfor %}
                             <button type="submit" class="btn btn-success mt-1">Submit</button>
-
                         </div>
                     </form>
                 </div>

@@ -11,6 +11,7 @@ import models
 import config
 from helpers import prepPdfData
 import logging
+from psycopg2 import IntegrityError
 
 app = Flask(__name__)
 
@@ -86,7 +87,7 @@ def contact():
                     server.send_message(msg)
                 flash('Your message has been sent successfully!', 'success')
             except Exception as e:
-                flash(f'Error sending message: {str(e)}', 'error')
+                flash(f'Error sending message: {str(e)}', 'danger')
 
             return redirect(url_for('contact'))
         else:
@@ -94,14 +95,14 @@ def contact():
             logging.debug("Form validation failed: %s", form.errors)
             for field, errors in form.errors.items():
                 for error in errors:
-                    flash(f"Error in {field}: {error}", 'error')
+                    flash(f"Error in {field}: {error}", 'danger')
 
     return render_template('contact.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 ############### ***** ########## USER ROUTES ########## ***** ###############
 
 
-@app.route('/user/new', methods=['GET','POST'])
+@app.route('/user/new', methods=['GET', 'POST'])
 def new_user():
     """ Show a form that when submitted will register/create a user. 
     This form should accept a username, password, email, first_name, and last_name. 
@@ -110,20 +111,35 @@ def new_user():
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-        # Returned hashed password
-        user = models.Account.register(username, password)
-        user.email = form.email.data
-        user.first_name = form.first_name.data
-        user.last_name = form.last_name.data
-        models.db.session.add(user)
-        models.db.session.commit()
-        session["username"] = user.username  # keep logged in    
-        return redirect(f'/users/{user.username}')
+        email = form.email.data
+        # Check for duplicate email before proceeding
+        if models.Account.query.filter_by(email=email).first():
+            flash('That email is already registered. Please use a different email or log in.', 'danger')
+            return render_template('user-new.html', form=form)
+        
+        try:
+            user = models.Account.register(username, password)
+            user.email = email
+            user.first_name = form.first_name.data
+            user.last_name = form.last_name.data
+            models.db.session.add(user)
+            models.db.session.commit()
+            session["username"] = user.username  # keep logged in
+            flash('User registered successfully!', 'success')
+            return redirect(f'/users/{user.username}')
+        except IntegrityError as e:
+            models.db.session.rollback()
+            flash('An error occurred. The username might already be taken. Please try a different username.', 'danger')
+            logging.error(f"IntegrityError during user registration: {str(e)}")
     else:
-        return render_template('user-new.html', form=form)
+        # Flash validation errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error in {field}: {error}", 'danger')
+    return render_template('user-new.html', form=form)
 
 
-@app.route('/user/login', methods=['GET','POST'])
+@app.route('/user/login', methods=['GET', 'POST'])
 def log_in_user():
     """ Show a form that when submitted will login a user. 
     This form should accept a username and a password. 
@@ -137,17 +153,24 @@ def log_in_user():
         user = models.Account.authenticate(usr, pwd)
         if user:
             session["username"] = user.username  # keep logged in
+            flash('Login successful!', 'success')
             return redirect(f'/users/{user.username}')
         else:
-            form.password.errors = ["* Username or Password is incorrect *"]
+            flash("* Username or Password is incorrect *", 'danger')
+    else:
+        # Flash validation errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error in {field}: {error}", 'danger')
     return render_template('user-log-in.html', form=form)
 
 
 @app.route('/user/logout')
 def log_out_user():
     """ Clear any information from the session and redirect to /. """
-    session.pop("username")
-    return redirect('/')
+    session.pop("username", None)  # Use None as default to avoid KeyError
+    flash('You have been logged out successfully.', 'success')
+    return redirect('/user/login')
 
 
 @app.route('/users/<username>')
@@ -158,30 +181,38 @@ def show_secrets(username):
     for save in user.savedlist:
         savedListData.append(save.pack_data())
     jsonListData = json.dumps(savedListData)
-    return render_template('user-info.html', user=user, savedlists=user.savedlist, listdata = jsonListData)
+    return render_template('user-info.html', user=user, savedlists=user.savedlist, listdata=jsonListData)
 
 
 @app.route('/users/<username>/delete', methods=['POST'])
 def delete_user(username):
     """ Remove the user from the database and delete all of their feedback. 
     Clear any user information in the session and redirect to /. """
-    if session.get('username') == username:
-        user = models.Account.query.get_or_404(username)
-        models.db.session.delete(user)
-        models.db.session.commit()
-        session.pop("username")    
-    return redirect('/')
+    if session.get('username') != username:
+        flash('You are not authorized to delete this account.', 'danger')
+        return redirect('/')
+    user = models.Account.query.get_or_404(username)
+    models.db.session.delete(user)
+    models.db.session.commit()
+    session.pop("username", None)  # Use None as default to avoid KeyError
+    flash('Your account has been deleted successfully.', 'success')
+    return redirect('/user/new')
 
 
-@app.route('/users/<username>/edit', methods=['GET','POST'])
+@app.route('/users/<username>/edit', methods=['GET', 'POST'])
 def edit_user(username):
     """ Show a form that when submitted will edit a user account. """
-    form = EditUserForm()
-    if not session['username']:
+    if 'username' not in session:
+        flash('Please log in to edit your account.', 'danger')
         return redirect('/user/login')
-    elif session['username'] != username:
-        return redirect(f'/users/{username}/login')
-    elif form.validate_on_submit():
+    if session['username'] != username:
+        flash('You are not authorized to edit this account.', 'danger')
+        return redirect(f'/users/{session["username"]}')
+    
+    form = EditUserForm()
+    user = models.Account.query.get_or_404(username)
+    
+    if form.validate_on_submit():
         usr = session['username']
         pwd = form.password.data
         # authenticate will return a user or False
@@ -192,13 +223,17 @@ def edit_user(username):
             user.email = form.email.data
             models.db.session.add(user)
             models.db.session.commit()
+            flash('Account updated successfully!', 'success')
             return redirect(f'/users/{usr}')
         else:
-            form.password.errors = ["* Password is incorrect *"]
+            flash("* Password is incorrect *", 'danger')
     else:
-        user = models.Account.query.get_or_404(username)
-        return render_template('user-edit.html', form=form, user=user)
-
+        # Flash validation errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error in {field}: {error}", 'danger')
+    
+    return render_template('user-edit.html', form=form, user=user)
 
 ############### ***** ########## FC USER ROUTES ########## ***** ###############
 
