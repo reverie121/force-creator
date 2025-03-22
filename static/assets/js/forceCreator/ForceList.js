@@ -178,9 +178,8 @@ class ForceList {
                 newSave[`misc_${count}_name`] = this.misc[`${f_id}`].name;
                 newSave[`misc_${count}_details`] = this.misc[`${f_id}`].details;
                 newSave[`misc_${count}_points`] = this.misc[`${f_id}`].points;
-                newSave[`misc_${count}_qty`] = this.misc[`${f_id}`].qty;
+                newSave[`misc_${count}_qty`] = this.misc[`${f_id}`].qty;        }
             newSave[`misccount`] = count;
-           }
         } else {
             newSave[`misccount`] = 0;
         }
@@ -190,6 +189,7 @@ class ForceList {
         if (this.username) {
             newSave['username'] = this.username;
         }
+        console.debug('newSave: ',newSave);
         return newSave;
     }
 
@@ -2210,7 +2210,7 @@ class ForceList {
     }
 }
 
-$(document).ready(() => {
-    $('#force-save').on('click', () => { forceList.saveList(); });
-    $('#force-download').on('click', () => { forceList.saveListToPDF(); });
-});
+// $(document).ready(() => {
+//     $('#force-save').on('click', () => { forceList.saveList(); });
+//     $('#force-download').on('click', () => { forceList.saveListToPDF(); });
+// });

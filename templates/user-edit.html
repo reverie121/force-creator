@@ -22,7 +22,7 @@
                         {% endif %}
                     {% endwith %}
                     <form id="add-user-form" method="POST">
-                        <div class="form-group text-info fell fs-5">
+                        <div class="form-group text-info fell fs-5 rounded-2 p-3">
                             {{ form.hidden_tag() }} <!--add type=hidden form fields -->
                             <label for="first_name" class='mt-1'>First Name</label>
                             <input type="text" maxlength='50' class="form-control bg-info text-primary" name="first_name" id="first_name" value="{{user.first_name}}">

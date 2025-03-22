@@ -239,23 +239,23 @@ def edit_user(username):
 
 @app.route('/lists/save', methods=['POST'])
 def save_forcelist():
-    """ Save a ForceList to database. """
     save_data = request.get_json()
-    list_uuid = 'initialization placeholder'
-    # If user is not signed in, create new record from save data.
+    # Corrected logging syntax: specify the log level
+    logging.debug(f"Session: {session}")
+    logging.debug(f"Save data: {save_data}")
+    list_uuid = None
+
     if 'username' not in session:
+        logging.debug("User not logged in, creating new save.")
         new_save = models.SavedList()
         new_uuid = uuid.uuid4()
         new_save.uuid = str(new_uuid)
-        list_uuid = new_save.save_to_db(save_data)      
+        list_uuid = new_save.save_to_db(save_data)
     else:
-        if 'uuid' not in save_data or 'username' not in save_data or save_data['username'] != session["username"]:
-            new_save = models.SavedList()
-            new_uuid = uuid.uuid4()
-            new_save.uuid = str(new_uuid)
-            new_save.username = session["username"]
-            list_uuid = new_save.save_to_db(save_data) 
-        elif save_data['username'] == session["username"]:
+        logging.debug("User logged in, checking conditions.")
+        current_username = session["username"]
+        if 'uuid' in save_data and save_data.get('username') == current_username:
+            logging.debug("Updating existing save for logged-in user.")
             saved_list = models.SavedList.query.get_or_404(save_data['uuid'])
             saved_list_dict = models.serialize(saved_list)
             models.db.session.delete(saved_list)
@@ -263,8 +263,16 @@ def save_forcelist():
             new_save = models.SavedList()
             new_save.uuid = save_data['uuid']
             new_save.created_at = saved_list_dict['created_at']
-            new_save.username = saved_list_dict['username']
-            list_uuid = new_save.save_to_db(save_data) 
+            new_save.username = current_username
+            list_uuid = new_save.save_to_db(save_data)
+        else:
+            logging.debug("Creating new save for logged-in user.")
+            new_save = models.SavedList()
+            new_uuid = uuid.uuid4()
+            new_save.uuid = str(new_uuid)
+            new_save.username = current_username
+            list_uuid = new_save.save_to_db(save_data)
+
     return list_uuid
 
 @app.route('/lists/<uuid>', methods=['GET'])
