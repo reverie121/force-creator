@@ -228,6 +228,7 @@ class ForceList {
     }
 
     async loadSave(saveData) {
+        console.debug('Loaded saveData:', saveData)            
         $forceName.val(saveData.name).change();
         $pointMax.val(saveData.maxpoints).change();
         $selectNationality.val(saveData.nationality_id).change();

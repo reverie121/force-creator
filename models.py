@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+import logging
+from sqlalchemy.exc import SQLAlchemyError
 
 db = SQLAlchemy()
 
@@ -146,22 +148,23 @@ class SavedList(db.Model):
     unitcomponent = db.relationship('UnitComponent', backref='savedlist')
     customcomponent = db.relationship('CustomComponent', backref='savedlist')
 
-    def save_to_db(self, save_data):
-        """ Create a new saved file instance from save data. """
-        
+def save_to_db(self, save_data):
+    """Create a new saved file instance from save data in a single transaction."""
+    try:
+        # Set SavedList fields
         self.name = save_data['name']
         self.maxpoints = save_data['maxpoints']
         self.totalforcepoints = save_data['totalforcepoints']
         self.nationality_id = save_data['nationality_id']
         self.faction_id = save_data['faction_id']
-        if save_data['forceoption_id'] != 0:
+        if save_data.get('forceoption_id', 0) != 0:
             self.forceoption_id = save_data['forceoption_id']
         self.commander_id = save_data['commander_id']
         self.commandernickname = save_data['commandernickname']
         self.commanderhorseselected = save_data['commanderhorseselected']
-        if save_data['commandersr1_id'] >= 1:        
+        if save_data.get('commandersr1_id', 0) >= 1:
             self.commandersr1_id = save_data['commandersr1_id']
-        if save_data['commandersr2_id'] >= 1:
+        if save_data.get('commandersr2_id', 0) >= 1:
             self.commandersr2_id = save_data['commandersr2_id']
         self.idcounter = save_data['idcounter']
         self.artillerycount = save_data['artillerycount']
@@ -170,208 +173,237 @@ class SavedList(db.Model):
         self.unitcount = save_data['unitcount']
         self.misccount = save_data['misccount']
 
+        # Add SavedList to session
         db.session.add(self)
-        db.session.commit()    
 
+        # Save artillery components
         if save_data['artillerycount'] > 0:
-            for n in range(0,save_data['artillerycount']):
+            for n in range(save_data['artillerycount']):
                 new_artillery_component = ArtilleryComponent()
+                key_prefix = f'artillery_{n+1}_'
                 new_artillery_component.list_uuid = str(self.uuid)
-                new_artillery_component.nickname = save_data[f'artillery_{n+1}_nickname']
-                new_artillery_component.fid = save_data[f'artillery_{n+1}_fid']
-                new_artillery_component.artillery_id = save_data[f'artillery_{n+1}_id']
-                new_artillery_component.qty = save_data[f'artillery_{n+1}_qty']
-                new_artillery_component.options = save_data[f'artillery_{n+1}_options']
+                new_artillery_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                new_artillery_component.fid = save_data.get(f'{key_prefix}fid', '')
+                new_artillery_component.artillery_id = save_data.get(f'{key_prefix}id')
+                new_artillery_component.qty = save_data.get(f'{key_prefix}qty', 1)
+                new_artillery_component.options = save_data.get(f'{key_prefix}options', '')
                 db.session.add(new_artillery_component)
-                db.session.commit()
 
+        # Save character components
         if save_data['charactercount'] > 0:
-            for n in range(0,save_data['charactercount']):
+            for n in range(save_data['charactercount']):
                 new_character_component = CharacterComponent()
+                key_prefix = f'character_{n+1}_'
                 new_character_component.list_uuid = str(self.uuid)
-                new_character_component.nickname = save_data[f'character_{n+1}_nickname']
-                new_character_component.fid = save_data[f'character_{n+1}_fid']
-                new_character_component.character_id = save_data[f'character_{n+1}_id']
+                new_character_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                new_character_component.fid = save_data.get(f'{key_prefix}fid', '')
+                new_character_component.character_id = save_data.get(f'{key_prefix}id')
                 db.session.add(new_character_component)
-                db.session.commit()
 
+        # Save ship components
         if save_data['shipcount'] > 0:
-            for n in range(0,save_data['shipcount']):
+            for n in range(save_data['shipcount']):
                 new_ship_component = ShipComponent()
+                key_prefix = f'ship_{n+1}_'
                 new_ship_component.list_uuid = str(self.uuid)
-                new_ship_component.nickname = save_data[f'ship_{n+1}_nickname']
-                new_ship_component.fid = save_data[f'ship_{n+1}_fid']
-                new_ship_component.ship_id = save_data[f'ship_{n+1}_id']
-                new_ship_component.upgrades = save_data[f'ship_{n+1}_upgrades']
+                new_ship_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                new_ship_component.fid = save_data.get(f'{key_prefix}fid', '')
+                new_ship_component.ship_id = save_data.get(f'{key_prefix}id')
+                new_ship_component.upgrades = save_data.get(f'{key_prefix}upgrades', '')
                 db.session.add(new_ship_component)
-                db.session.commit()
 
+        # Save unit components
         if save_data['unitcount'] > 0:
-            for n in range(0,save_data['unitcount']):
+            for n in range(save_data['unitcount']):
                 new_unit_component = UnitComponent()
+                key_prefix = f'unit_{n+1}_'
                 new_unit_component.list_uuid = str(self.uuid)
-                new_unit_component.nickname = save_data[f'unit_{n+1}_nickname']
-                new_unit_component.fid = save_data[f'unit_{n+1}_fid']
-                new_unit_component.unit_id = save_data[f'unit_{n+1}_id']
-                new_unit_component.qty = save_data[f'unit_{n+1}_qty']
-                new_unit_component.options = save_data[f'unit_{n+1}_options']
+                new_unit_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                new_unit_component.fid = save_data.get(f'{key_prefix}fid', '')
+                new_unit_component.unit_id = save_data.get(f'{key_prefix}id')
+                new_unit_component.qty = save_data.get(f'{key_prefix}qty', 1)
+                new_unit_component.options = save_data.get(f'{key_prefix}options', '')
                 db.session.add(new_unit_component)
-                db.session.commit()
 
+        # Save misc/custom components
         if save_data['misccount'] > 0:
-            for n in range(0,save_data['misccount']):
+            for n in range(save_data['misccount']):
                 new_misc_component = CustomComponent()
+                key_prefix = f'misc_{n+1}_'
                 new_misc_component.list_uuid = str(self.uuid)
-                new_misc_component.name = save_data[f'misc_{n+1}_name']
-                new_misc_component.fid = save_data[f'misc_{n+1}_fid']
-                new_misc_component.details = save_data[f'misc_{n+1}_details']
-                new_misc_component.points = save_data[f'misc_{n+1}_points']
-                new_misc_component.qty = save_data[f'misc_{n+1}_qty']
+                new_misc_component.name = save_data.get(f'{key_prefix}name', '')
+                new_misc_component.fid = save_data.get(f'{key_prefix}fid', '')
+                new_misc_component.details = save_data.get(f'{key_prefix}details', '')
+                new_misc_component.points = save_data.get(f'{key_prefix}points', 0)
+                new_misc_component.qty = save_data.get(f'{key_prefix}qty', 1)
                 db.session.add(new_misc_component)
-                db.session.commit()
 
-        return self.uuid
+        # Single commit for all changes
+        db.session.commit()
+        logging.debug(f"Successfully saved SavedList and components for UUID: {self.uuid}")
 
-    def pack_data(self):
-        """ Create a serialized data set for a saved force list. """
-        
-        saved_list_data = serialize(self)
+    except KeyError as e:
+        db.session.rollback()
+        logging.error(f"KeyError while saving list {self.uuid}: Missing key {e}")
+        raise
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Database error while saving list {self.uuid}: {e}")
+        raise
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Unexpected error while saving list {self.uuid}: {e}")
+        raise
 
-        if saved_list_data['artillerycount'] > 0:
-            artillerycomponent = serialize(list(self.artillerycomponent))
-            for index, component in enumerate(artillerycomponent):
-                for k, v in component.items():
-                    saved_list_data[f'artillery_{index + 1}_{k}'] = v
-                saved_list_data[f'artillery_{index + 1}_id'] = saved_list_data[f'artillery_{index + 1}_artillery_id']
-                saved_list_data.pop(f'artillery_{index + 1}_list_uuid')
-                saved_list_data.pop(f'artillery_{index + 1}_artillery_id')        
+    return self.uuid
 
-        if saved_list_data['charactercount'] > 0:
-            charactercomponent = serialize(list(self.charactercomponent))
-            for index, component in enumerate(charactercomponent):
-                for k, v in component.items():
-                    saved_list_data[f'character_{index + 1}_{k}'] = v
-                saved_list_data[f'character_{index + 1}_id'] = saved_list_data[f'character_{index + 1}_character_id']
-                saved_list_data.pop(f'character_{index + 1}_list_uuid')
-                saved_list_data.pop(f'character_{index + 1}_character_id')                
+def pack_data(self):
+    """Create a serialized data set for a saved force list with validation."""
+    saved_list_data = serialize(self)
+    logging.debug(f"Serialized base SavedList: {saved_list_data}")
 
-        if saved_list_data['shipcount'] > 0:
-            shipcomponent = serialize(list(self.shipcomponent)) 
-            for index, component in enumerate(shipcomponent):
-                for k, v in component.items():
-                    saved_list_data[f'ship_{index + 1}_{k}'] = v
-                saved_list_data[f'ship_{index + 1}_id'] = saved_list_data[f'ship_{index + 1}_ship_id']
-                saved_list_data.pop(f'ship_{index + 1}_list_uuid')
-                saved_list_data.pop(f'ship_{index + 1}_ship_id')        
+    # Artillery components
+    if saved_list_data['artillerycount'] > 0:
+        artillerycomponent = serialize(list(self.artillerycomponent))
+        if len(artillerycomponent) != saved_list_data['artillerycount']:
+            logging.warning(f"Artillery count mismatch for {self.uuid}: expected {saved_list_data['artillerycount']}, got {len(artillerycomponent)}")
+        for index, component in enumerate(artillerycomponent):
+            for k, v in component.items():
+                saved_list_data[f'artillery_{index + 1}_{k}'] = v
+            saved_list_data[f'artillery_{index + 1}_id'] = component.get('artillery_id')
+            saved_list_data.pop(f'artillery_{index + 1}_list_uuid', None)
+            saved_list_data.pop(f'artillery_{index + 1}_artillery_id', None)
 
-        if saved_list_data['unitcount'] > 0:
-            unitcomponent = serialize(list(self.unitcomponent))
-            for index, component in enumerate(unitcomponent):
-                for k, v in component.items():
-                    saved_list_data[f'unit_{index + 1}_{k}'] = v
-                saved_list_data[f'unit_{index + 1}_id'] = saved_list_data[f'unit_{index + 1}_unit_id']
-                saved_list_data.pop(f'unit_{index + 1}_list_uuid')
-                saved_list_data.pop(f'unit_{index + 1}_unit_id')        
+    # Character components
+    if saved_list_data['charactercount'] > 0:
+        charactercomponent = serialize(list(self.charactercomponent))
+        if len(charactercomponent) != saved_list_data['charactercount']:
+            logging.warning(f"Character count mismatch for {self.uuid}: expected {saved_list_data['charactercount']}, got {len(charactercomponent)}")
+        for index, component in enumerate(charactercomponent):
+            for k, v in component.items():
+                saved_list_data[f'character_{index + 1}_{k}'] = v
+            saved_list_data[f'character_{index + 1}_id'] = component.get('character_id')
+            saved_list_data.pop(f'character_{index + 1}_list_uuid', None)
+            saved_list_data.pop(f'character_{index + 1}_character_id', None)
 
-        if saved_list_data['misccount'] > 0:
-            customcomponent = serialize(list(self.customcomponent))
-            for index, component in enumerate(customcomponent):
-                for k, v in component.items():
-                    saved_list_data[f'misc_{index + 1}_{k}'] = v
+    # Ship components
+    if saved_list_data['shipcount'] > 0:
+        shipcomponent = serialize(list(self.shipcomponent))
+        if len(shipcomponent) != saved_list_data['shipcount']:
+            logging.warning(f"Ship count mismatch for {self.uuid}: expected {saved_list_data['shipcount']}, got {len(shipcomponent)}")
+        for index, component in enumerate(shipcomponent):
+            for k, v in component.items():
+                saved_list_data[f'ship_{index + 1}_{k}'] = v
+            saved_list_data[f'ship_{index + 1}_id'] = component.get('ship_id')
+            saved_list_data.pop(f'ship_{index + 1}_list_uuid', None)
+            saved_list_data.pop(f'ship_{index + 1}_ship_id', None)
 
-        return saved_list_data
+    # Unit components
+    if saved_list_data['unitcount'] > 0:
+        unitcomponent = serialize(list(self.unitcomponent))
+        if len(unitcomponent) != saved_list_data['unitcount']:
+            logging.warning(f"Unit count mismatch for {self.uuid}: expected {saved_list_data['unitcount']}, got {len(unitcomponent)}")
+        for index, component in enumerate(unitcomponent):
+            for k, v in component.items():
+                saved_list_data[f'unit_{index + 1}_{k}'] = v
+            saved_list_data[f'unit_{index + 1}_id'] = component.get('unit_id')
+            saved_list_data.pop(f'unit_{index + 1}_list_uuid', None)
+            saved_list_data.pop(f'unit_{index + 1}_unit_id', None)
 
-    def __repr__(self):
-        return f'<SavedList {self.uuid} {self.name}>'    
+    # Misc/custom components
+    if saved_list_data['misccount'] > 0:
+        customcomponent = serialize(list(self.customcomponent))
+        if len(customcomponent) != saved_list_data['misccount']:
+            logging.warning(f"Misc count mismatch for {self.uuid}: expected {saved_list_data['misccount']}, got {len(customcomponent)}")
+        for index, component in enumerate(customcomponent):
+            for k, v in component.items():
+                saved_list_data[f'misc_{index + 1}_{k}'] = v
+
+    logging.debug(f"Final packed data for {self.uuid}: {saved_list_data}")
+    return saved_list_data
+
+def __repr__(self):
+    return f'<SavedList {self.uuid} {self.name}>'
 
 class ArtilleryComponent(db.Model):
-    """ ArtilleryComponent Model """
-
+    """ArtilleryComponent Model"""
     __tablename__ = "artillerycomponent"
 
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
-        'savedlist.uuid', ondelete='CASCADE'))    
-    nickname = db.Column(db.VARCHAR)
-    fid = db.Column(db.VARCHAR)
-    artillery_id = db.Column(db.Integer, db.ForeignKey(
-        'artillery.id', ondelete='SET NULL'))
-    options = db.Column(db.VARCHAR)
-    qty = db.Column(db.Integer)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey('savedlist.uuid', ondelete='CASCADE'), nullable=False, index=True)
+    nickname = db.Column(db.VARCHAR, nullable=True)  # Optional nickname
+    fid = db.Column(db.VARCHAR, nullable=False)  # Unique force ID, required
+    artillery_id = db.Column(db.Integer, db.ForeignKey('artillery.id', ondelete='SET NULL'), nullable=False)
+    options = db.Column(db.VARCHAR, nullable=True)  # Optional, e.g., comma-separated IDs
+    qty = db.Column(db.Integer, nullable=False, default=1)  # Required, default to 1
 
     artillery = db.relationship('Artillery', backref='artillerycomponent')
 
-class CharacterComponent(db.Model):
-    """ CharacterComponent Model """
+    def __repr__(self):
+        return f'<ArtilleryComponent id={self.id} list_uuid={self.list_uuid} artillery_id={self.artillery_id}>'
 
+class CharacterComponent(db.Model):
+    """CharacterComponent Model"""
     __tablename__ = "charactercomponent"
 
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
-        'savedlist.uuid', ondelete='CASCADE'))    
-    nickname = db.Column(db.VARCHAR)
-    fid = db.Column(db.VARCHAR)
-    character_id = db.Column(db.Integer, db.ForeignKey(
-        'character.id', ondelete='SET NULL'))
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey('savedlist.uuid', ondelete='CASCADE'), nullable=False, index=True)
+    nickname = db.Column(db.VARCHAR, nullable=True)  # Optional nickname
+    fid = db.Column(db.VARCHAR, nullable=False)  # Unique force ID, required
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id', ondelete='SET NULL'), nullable=False)
 
     character = db.relationship('Character', backref='charactercomponent')
 
-class ShipComponent(db.Model):
-    """ ShipComponent Model """
+    def __repr__(self):
+        return f'<CharacterComponent id={self.id} list_uuid={self.list_uuid} character_id={self.character_id}>'
 
+class ShipComponent(db.Model):
+    """ShipComponent Model"""
     __tablename__ = "shipcomponent"
 
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
-        'savedlist.uuid', ondelete='CASCADE'))    
-    nickname = db.Column(db.VARCHAR)
-    fid = db.Column(db.VARCHAR)
-    ship_id = db.Column(db.Integer, db.ForeignKey(
-        'ship.id', ondelete='SET NULL'))
-    upgrades = db.Column(db.VARCHAR)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey('savedlist.uuid', ondelete='CASCADE'), nullable=False, index=True)
+    nickname = db.Column(db.VARCHAR, nullable=True)  # Optional nickname
+    fid = db.Column(db.VARCHAR, nullable=False)  # Unique force ID, required
+    ship_id = db.Column(db.Integer, db.ForeignKey('ship.id', ondelete='SET NULL'), nullable=False)
+    upgrades = db.Column(db.VARCHAR, nullable=True)  # Optional, e.g., comma-separated IDs
 
     ship = db.relationship('Ship', backref='shipcomponent')
 
-class UnitComponent(db.Model):
-    """ UnitComponent Model """
+    def __repr__(self):
+        return f'<ShipComponent id={self.id} list_uuid={self.list_uuid} ship_id={self.ship_id}>'
 
+class UnitComponent(db.Model):
+    """UnitComponent Model"""
     __tablename__ = "unitcomponent"
 
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
-        'savedlist.uuid', ondelete='CASCADE'))    
-    nickname = db.Column(db.VARCHAR)
-    fid = db.Column(db.VARCHAR)
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id', ondelete='SET NULL'))
-    options = db.Column(db.VARCHAR)
-    qty = db.Column(db.Integer)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey('savedlist.uuid', ondelete='CASCADE'), nullable=False, index=True)
+    nickname = db.Column(db.VARCHAR, nullable=True)  # Optional nickname
+    fid = db.Column(db.VARCHAR, nullable=False)  # Unique force ID, required
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='SET NULL'), nullable=False)
+    options = db.Column(db.VARCHAR, nullable=True)  # Optional, e.g., comma-separated IDs
+    qty = db.Column(db.Integer, nullable=False, default=1)  # Required, default to 1
 
     unit = db.relationship('Unit', backref='unitcomponent')
 
-class CustomComponent(db.Model):
-    """ CustomComponent Model """
+    def __repr__(self):
+        return f'<UnitComponent id={self.id} list_uuid={self.list_uuid} unit_id={self.unit_id}>'
 
+class CustomComponent(db.Model):
+    """CustomComponent Model"""
     __tablename__ = "customcomponent"
 
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    list_uuid = db.Column(db.VARCHAR, db.ForeignKey(
-        'savedlist.uuid', ondelete='CASCADE'))
-    fid = db.Column(db.VARCHAR)
-    name = db.Column(db.VARCHAR)
-    details = db.Column(db.Text)
-    points = db.Column(db.Integer)
-    qty = db.Column(db.Integer)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    list_uuid = db.Column(db.VARCHAR, db.ForeignKey('savedlist.uuid', ondelete='CASCADE'), nullable=False, index=True)
+    fid = db.Column(db.VARCHAR, nullable=False)  # Unique force ID, required
+    name = db.Column(db.VARCHAR, nullable=False)  # Required name for custom item
+    details = db.Column(db.Text, nullable=True)  # Optional detailed description
+    points = db.Column(db.Integer, nullable=False, default=0)  # Required, default to 0
+    qty = db.Column(db.Integer, nullable=False, default=1)  # Required, default to 1
+
+    def __repr__(self):
+        return f'<CustomComponent id={self.id} list_uuid={self.list_uuid} name={self.name}>'
 
 #################### FC Top Level Models ####################
 
@@ -385,6 +417,7 @@ class Nationality(db.Model):
                    primary_key=True,
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
+    details = db.Column(db.Text)
     
     characternationality = db.relationship('CharacterNationality', backref='nationality')
     commandernationality = db.relationship('CommanderNationality', backref='nationality')
@@ -595,7 +628,8 @@ class Character(db.Model):
     certainnations = db.Column(db.Integer)
     certainfactions = db.Column(db.Integer)
     certaincommanders = db.Column(db.Integer)
-
+    onlywithcommander = db.Column(db.Integer)
+    breaklimits = db.Column(db.Integer)
     characternationality = db.relationship('CharacterNationality', backref='character')
     characterfaction = db.relationship('CharacterFaction', backref='character')
     characterspecialrule = db.relationship('CharacterSpecialrule', backref='character')
@@ -790,23 +824,16 @@ class CommanderClass(db.Model):
 class CommanderEffect(db.Model):
     """ CommanderEffect Model.
         Effects changes to ForceList based on Commander selection."""
-
     __tablename__ = "commandereffect"
 
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    commander_id = db.Column(db.Integer, db.ForeignKey(
-        'commander.id', ondelete='SET NULL'))
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    commander_id = db.Column(db.Integer, db.ForeignKey('commander.id', ondelete='SET NULL'))
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
     addsubtract = db.Column(db.Integer)
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id'))
-    unitclass_id = db.Column(db.Integer, db.ForeignKey(
-        'unitclass.id'))
-    unitoption_id = db.Column(db.Integer, db.ForeignKey(
-        'unitoption.id'))
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id'))
+    unitclass_id = db.Column(db.Integer, db.ForeignKey('factionunitclass.id'))  # Fixed from 'unitclass.id'
+    unitoption_id = db.Column(db.Integer, db.ForeignKey('unitoption.id'))
 
     def __repr__(self):
         return f'<CommanderEffect {self.id}>'
@@ -828,28 +855,18 @@ class Experience(db.Model):
 class FactionEffect(db.Model):
     """ FactionEffect Model.
         Effects changes to ForceList based on Faction option selection."""
-
     __tablename__ = "factioneffect"
 
-    id = db.Column(db.Integer,
-                   primary_key=True,
-                   autoincrement=True)
-    forceoption_id = db.Column(db.Integer, db.ForeignKey(
-        'forceoption.id', ondelete='SET NULL'))
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    forceoption_id = db.Column(db.Integer, db.ForeignKey('forceoption.id', ondelete='SET NULL'))
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
     addsubtract = db.Column(db.Integer)
     applyall = db.Column(db.Integer)
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id'))
-    unitclass_id = db.Column(db.Integer, db.ForeignKey(
-        'unitclass.id'))
-    unitoption_id = db.Column(db.Integer, db.ForeignKey(
-        'unitoption.id'))
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id'))
+    unitclass_id = db.Column(db.Integer, db.ForeignKey('factionunitclass.id'))  # Fixed from 'unitclass.id'
+    unitoption_id = db.Column(db.Integer, db.ForeignKey('unitoption.id'))
     faction_id = db.Column(db.Integer, db.ForeignKey('faction.id'))
-
-    def __repr__(self):
-        return f'<CommanderEffect {self.id}>'
 
 class FactionUnitclass(db.Model):
     """ FactionUnitClass Model.
@@ -946,9 +963,9 @@ class CharacterFaction(db.Model):
                    primary_key=True,
                    autoincrement=True)
     character_id = db.Column(db.Integer, db.ForeignKey(
-        'character.id', ondelete='CASCADE'))
+        'character.id', ondelete='CASCADE'), nullable=False)
     faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'))
+        'faction.id', ondelete='CASCADE'), nullable=False)
 
     def __repr__(self):
         return f'<CharacterFaction {self.id}>'
@@ -963,9 +980,9 @@ class CharacterNationality(db.Model):
                    primary_key=True,
                    autoincrement=True)
     character_id = db.Column(db.Integer, db.ForeignKey(
-        'character.id', ondelete='CASCADE'))
+        'character.id', ondelete='CASCADE'), nullable=False)
     nationality_id = db.Column(db.Integer, db.ForeignKey(
-        'nationality.id', ondelete='CASCADE'))
+        'nationality.id', ondelete='CASCADE'), nullable=False)
 
     def __repr__(self):
         return f'<CharacterNationality {self.id}>'
@@ -980,9 +997,9 @@ class CharacterSpecialrule(db.Model):
                    primary_key=True,
                    autoincrement=True)
     character_id = db.Column(db.Integer, db.ForeignKey(
-        'character.id', ondelete='CASCADE'))
+        'character.id', ondelete='CASCADE'), nullable=False)
     specialrule_id = db.Column(db.Integer, db.ForeignKey(
-        'specialrule.id', ondelete='CASCADE'))
+        'specialrule.id', ondelete='CASCADE'), nullable=False)
 
     def __repr__(self):
         return f'<CharacterSpecialrule {self.id}>'
@@ -1013,11 +1030,9 @@ class CommanderNationality(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    commander_id = db.Column(db.Integer, db.ForeignKey(
-        'commander.id', ondelete='CASCADE'))
-    nationality_id = db.Column(db.Integer, db.ForeignKey(
-        'nationality.id', ondelete='CASCADE'))
-    primary_nationality = db.Column(db.Integer)
+    commander_id = db.Column(db.Integer, db.ForeignKey('commander.id', ondelete='CASCADE'), nullable=False)
+    nationality_id = db.Column(db.Integer, db.ForeignKey('nationality.id', ondelete='CASCADE'), nullable=False)
+    primary_nationality = db.Column(db.BOOLEAN)
 
     def __repr__(self):
         return f'<CommanderNationality {self.id}>'
@@ -1108,6 +1123,9 @@ class ForceOption(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='CASCADE'))
+    unit_qty_req = db.Column(db.Integer)
+    req_mounted_commander = db.Column(db.Integer)
     faction_id = db.Column(db.Integer, db.ForeignKey(
         'faction.id', ondelete='CASCADE'))
 

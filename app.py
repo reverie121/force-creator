@@ -7,11 +7,11 @@ import pdfkit
 import smtplib
 from email.mime.text import MIMEText
 import requests
-import models
 import config
 from helpers import prepPdfData
 import logging
 from psycopg2 import IntegrityError
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 
@@ -31,11 +31,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_conn_str
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
-models.connect_db(app)
-models.db.create_all()
+# Import models and db after app is configured
+import models
+from models import db  # Import db from models
 
-# Set up logging for debugging
-logging.basicConfig(level=logging.DEBUG)
+# Connect db to app
+models.connect_db(app)
+# models.db.create_all()
+
+# Initialize Flask-Migrate with app and db
+migrate = Migrate(app, db)
+
+# Logging setup
+logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
 ############### ***** ############### ROUTES ############### ***** ###############
 

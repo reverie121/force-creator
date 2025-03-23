@@ -25,6 +25,8 @@ static/assets/js/forceCreator/list-view.js
 
 config.py
 
+migrations/
+
 # cPanel-specific files
 .well-known.zip
 .well-known/
