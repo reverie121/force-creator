@@ -89,7 +89,7 @@ class Account(db.Model):
             return False
     
     def __repr__(self):
-        return f'<Account u: {self.username} e: {self.email} fn: {self.first_name} ln: {self.last_name}>'
+            return f'<Account username={self.username} email={self.email}>'
 
 
 ############################## Force Creator Models ##############################
@@ -102,8 +102,6 @@ class SavedList(db.Model):
     __tablename__ = "savedlist"
 
     uuid = db.Column(db.VARCHAR, primary_key=True)
-    username = db.Column(db.VARCHAR, db.ForeignKey(
-        'account.username', ondelete='SET NULL'))
     created_at = db.Column(db.DateTime, 
         default=db.func.now())
     last_modified = db.Column(db.DateTime, 
@@ -136,194 +134,192 @@ class SavedList(db.Model):
     misccount = db.Column(db.Integer)
 
     user = db.relationship('Account', backref='savedlist')
-
     nationality = db.relationship('Nationality', backref='savedlist')
     faction = db.relationship('Faction', backref='savedlist')
     forceoption = db.relationship('ForceOption', backref='savedlist')
     commander = db.relationship('Commander', backref='savedlist')
-
     artillerycomponent = db.relationship('ArtilleryComponent', backref='savedlist')
     charactercomponent = db.relationship('CharacterComponent', backref='savedlist')
     shipcomponent = db.relationship('ShipComponent', backref='savedlist')
     unitcomponent = db.relationship('UnitComponent', backref='savedlist')
     customcomponent = db.relationship('CustomComponent', backref='savedlist')
 
-def save_to_db(self, save_data):
-    """Create a new saved file instance from save data in a single transaction."""
-    try:
-        # Set SavedList fields
-        self.name = save_data['name']
-        self.maxpoints = save_data['maxpoints']
-        self.totalforcepoints = save_data['totalforcepoints']
-        self.nationality_id = save_data['nationality_id']
-        self.faction_id = save_data['faction_id']
-        if save_data.get('forceoption_id', 0) != 0:
-            self.forceoption_id = save_data['forceoption_id']
-        self.commander_id = save_data['commander_id']
-        self.commandernickname = save_data['commandernickname']
-        self.commanderhorseselected = save_data['commanderhorseselected']
-        if save_data.get('commandersr1_id', 0) >= 1:
-            self.commandersr1_id = save_data['commandersr1_id']
-        if save_data.get('commandersr2_id', 0) >= 1:
-            self.commandersr2_id = save_data['commandersr2_id']
-        self.idcounter = save_data['idcounter']
-        self.artillerycount = save_data['artillerycount']
-        self.charactercount = save_data['charactercount']
-        self.shipcount = save_data['shipcount']
-        self.unitcount = save_data['unitcount']
-        self.misccount = save_data['misccount']
+    def save_to_db(self, save_data):
+        """Create a new saved file instance from save data in a single transaction."""
+        try:
+            # Set SavedList fields
+            self.name = save_data['name']
+            self.maxpoints = save_data['maxpoints']
+            self.totalforcepoints = save_data['totalforcepoints']
+            self.nationality_id = save_data['nationality_id']
+            self.faction_id = save_data['faction_id']
+            if save_data.get('forceoption_id', 0) != 0:
+                self.forceoption_id = save_data['forceoption_id']
+            self.commander_id = save_data['commander_id']
+            self.commandernickname = save_data['commandernickname']
+            self.commanderhorseselected = save_data['commanderhorseselected']
+            if save_data.get('commandersr1_id', 0) >= 1:
+                self.commandersr1_id = save_data['commandersr1_id']
+            if save_data.get('commandersr2_id', 0) >= 1:
+                self.commandersr2_id = save_data['commandersr2_id']
+            self.idcounter = save_data['idcounter']
+            self.artillerycount = save_data['artillerycount']
+            self.charactercount = save_data['charactercount']
+            self.shipcount = save_data['shipcount']
+            self.unitcount = save_data['unitcount']
+            self.misccount = save_data['misccount']
 
-        # Add SavedList to session
-        db.session.add(self)
+            # Add SavedList to session
+            db.session.add(self)
 
-        # Save artillery components
-        if save_data['artillerycount'] > 0:
-            for n in range(save_data['artillerycount']):
-                new_artillery_component = ArtilleryComponent()
-                key_prefix = f'artillery_{n+1}_'
-                new_artillery_component.list_uuid = str(self.uuid)
-                new_artillery_component.nickname = save_data.get(f'{key_prefix}nickname', '')
-                new_artillery_component.fid = save_data.get(f'{key_prefix}fid', '')
-                new_artillery_component.artillery_id = save_data.get(f'{key_prefix}id')
-                new_artillery_component.qty = save_data.get(f'{key_prefix}qty', 1)
-                new_artillery_component.options = save_data.get(f'{key_prefix}options', '')
-                db.session.add(new_artillery_component)
+            # Save artillery components
+            if save_data['artillerycount'] > 0:
+                for n in range(save_data['artillerycount']):
+                    new_artillery_component = ArtilleryComponent()
+                    key_prefix = f'artillery_{n+1}_'
+                    new_artillery_component.list_uuid = str(self.uuid)
+                    new_artillery_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                    new_artillery_component.fid = save_data.get(f'{key_prefix}fid', '')
+                    new_artillery_component.artillery_id = save_data.get(f'{key_prefix}id')
+                    new_artillery_component.qty = save_data.get(f'{key_prefix}qty', 1)
+                    new_artillery_component.options = save_data.get(f'{key_prefix}options', '')
+                    db.session.add(new_artillery_component)
 
-        # Save character components
-        if save_data['charactercount'] > 0:
-            for n in range(save_data['charactercount']):
-                new_character_component = CharacterComponent()
-                key_prefix = f'character_{n+1}_'
-                new_character_component.list_uuid = str(self.uuid)
-                new_character_component.nickname = save_data.get(f'{key_prefix}nickname', '')
-                new_character_component.fid = save_data.get(f'{key_prefix}fid', '')
-                new_character_component.character_id = save_data.get(f'{key_prefix}id')
-                db.session.add(new_character_component)
+            # Save character components
+            if save_data['charactercount'] > 0:
+                for n in range(save_data['charactercount']):
+                    new_character_component = CharacterComponent()
+                    key_prefix = f'character_{n+1}_'
+                    new_character_component.list_uuid = str(self.uuid)
+                    new_character_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                    new_character_component.fid = save_data.get(f'{key_prefix}fid', '')
+                    new_character_component.character_id = save_data.get(f'{key_prefix}id')
+                    db.session.add(new_character_component)
 
-        # Save ship components
-        if save_data['shipcount'] > 0:
-            for n in range(save_data['shipcount']):
-                new_ship_component = ShipComponent()
-                key_prefix = f'ship_{n+1}_'
-                new_ship_component.list_uuid = str(self.uuid)
-                new_ship_component.nickname = save_data.get(f'{key_prefix}nickname', '')
-                new_ship_component.fid = save_data.get(f'{key_prefix}fid', '')
-                new_ship_component.ship_id = save_data.get(f'{key_prefix}id')
-                new_ship_component.upgrades = save_data.get(f'{key_prefix}upgrades', '')
-                db.session.add(new_ship_component)
+            # Save ship components
+            if save_data['shipcount'] > 0:
+                for n in range(save_data['shipcount']):
+                    new_ship_component = ShipComponent()
+                    key_prefix = f'ship_{n+1}_'
+                    new_ship_component.list_uuid = str(self.uuid)
+                    new_ship_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                    new_ship_component.fid = save_data.get(f'{key_prefix}fid', '')
+                    new_ship_component.ship_id = save_data.get(f'{key_prefix}id')
+                    new_ship_component.upgrades = save_data.get(f'{key_prefix}upgrades', '')
+                    db.session.add(new_ship_component)
 
-        # Save unit components
-        if save_data['unitcount'] > 0:
-            for n in range(save_data['unitcount']):
-                new_unit_component = UnitComponent()
-                key_prefix = f'unit_{n+1}_'
-                new_unit_component.list_uuid = str(self.uuid)
-                new_unit_component.nickname = save_data.get(f'{key_prefix}nickname', '')
-                new_unit_component.fid = save_data.get(f'{key_prefix}fid', '')
-                new_unit_component.unit_id = save_data.get(f'{key_prefix}id')
-                new_unit_component.qty = save_data.get(f'{key_prefix}qty', 1)
-                new_unit_component.options = save_data.get(f'{key_prefix}options', '')
-                db.session.add(new_unit_component)
+            # Save unit components
+            if save_data['unitcount'] > 0:
+                for n in range(save_data['unitcount']):
+                    new_unit_component = UnitComponent()
+                    key_prefix = f'unit_{n+1}_'
+                    new_unit_component.list_uuid = str(self.uuid)
+                    new_unit_component.nickname = save_data.get(f'{key_prefix}nickname', '')
+                    new_unit_component.fid = save_data.get(f'{key_prefix}fid', '')
+                    new_unit_component.unit_id = save_data.get(f'{key_prefix}id')
+                    new_unit_component.qty = save_data.get(f'{key_prefix}qty', 1)
+                    new_unit_component.options = save_data.get(f'{key_prefix}options', '')
+                    db.session.add(new_unit_component)
 
-        # Save misc/custom components
-        if save_data['misccount'] > 0:
-            for n in range(save_data['misccount']):
-                new_misc_component = CustomComponent()
-                key_prefix = f'misc_{n+1}_'
-                new_misc_component.list_uuid = str(self.uuid)
-                new_misc_component.name = save_data.get(f'{key_prefix}name', '')
-                new_misc_component.fid = save_data.get(f'{key_prefix}fid', '')
-                new_misc_component.details = save_data.get(f'{key_prefix}details', '')
-                new_misc_component.points = save_data.get(f'{key_prefix}points', 0)
-                new_misc_component.qty = save_data.get(f'{key_prefix}qty', 1)
-                db.session.add(new_misc_component)
+            # Save misc/custom components
+            if save_data['misccount'] > 0:
+                for n in range(save_data['misccount']):
+                    new_misc_component = CustomComponent()
+                    key_prefix = f'misc_{n+1}_'
+                    new_misc_component.list_uuid = str(self.uuid)
+                    new_misc_component.name = save_data.get(f'{key_prefix}name', '')
+                    new_misc_component.fid = save_data.get(f'{key_prefix}fid', '')
+                    new_misc_component.details = save_data.get(f'{key_prefix}details', '')
+                    new_misc_component.points = save_data.get(f'{key_prefix}points', 0)
+                    new_misc_component.qty = save_data.get(f'{key_prefix}qty', 1)
+                    db.session.add(new_misc_component)
 
-        # Single commit for all changes
-        db.session.commit()
-        logging.debug(f"Successfully saved SavedList and components for UUID: {self.uuid}")
+            # Single commit for all changes
+            db.session.commit()
+            logging.debug(f"Successfully saved SavedList and components for UUID: {self.uuid}")
 
-    except KeyError as e:
-        db.session.rollback()
-        logging.error(f"KeyError while saving list {self.uuid}: Missing key {e}")
-        raise
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logging.error(f"Database error while saving list {self.uuid}: {e}")
-        raise
-    except Exception as e:
-        db.session.rollback()
-        logging.error(f"Unexpected error while saving list {self.uuid}: {e}")
-        raise
+        except KeyError as e:
+            db.session.rollback()
+            logging.error(f"KeyError while saving list {self.uuid}: Missing key {e}")
+            raise
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            logging.error(f"Database error while saving list {self.uuid}: {e}")
+            raise
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Unexpected error while saving list {self.uuid}: {e}")
+            raise
 
-    return self.uuid
+        return self.uuid
 
-def pack_data(self):
-    """Create a serialized data set for a saved force list with validation."""
-    saved_list_data = serialize(self)
-    logging.debug(f"Serialized base SavedList: {saved_list_data}")
+    def pack_data(self):
+        """Create a serialized data set for a saved force list with validation."""
+        saved_list_data = serialize(self)
+        logging.debug(f"Serialized base SavedList: {saved_list_data}")
 
-    # Artillery components
-    if saved_list_data['artillerycount'] > 0:
-        artillerycomponent = serialize(list(self.artillerycomponent))
-        if len(artillerycomponent) != saved_list_data['artillerycount']:
-            logging.warning(f"Artillery count mismatch for {self.uuid}: expected {saved_list_data['artillerycount']}, got {len(artillerycomponent)}")
-        for index, component in enumerate(artillerycomponent):
-            for k, v in component.items():
-                saved_list_data[f'artillery_{index + 1}_{k}'] = v
-            saved_list_data[f'artillery_{index + 1}_id'] = component.get('artillery_id')
-            saved_list_data.pop(f'artillery_{index + 1}_list_uuid', None)
-            saved_list_data.pop(f'artillery_{index + 1}_artillery_id', None)
+        # Artillery components
+        if saved_list_data['artillerycount'] > 0:
+            artillerycomponent = serialize(list(self.artillerycomponent))
+            if len(artillerycomponent) != saved_list_data['artillerycount']:
+                logging.warning(f"Artillery count mismatch for {self.uuid}: expected {saved_list_data['artillerycount']}, got {len(artillerycomponent)}")
+            for index, component in enumerate(artillerycomponent):
+                for k, v in component.items():
+                    saved_list_data[f'artillery_{index + 1}_{k}'] = v
+                saved_list_data[f'artillery_{index + 1}_id'] = component.get('artillery_id')
+                saved_list_data.pop(f'artillery_{index + 1}_list_uuid', None)
+                saved_list_data.pop(f'artillery_{index + 1}_artillery_id', None)
 
-    # Character components
-    if saved_list_data['charactercount'] > 0:
-        charactercomponent = serialize(list(self.charactercomponent))
-        if len(charactercomponent) != saved_list_data['charactercount']:
-            logging.warning(f"Character count mismatch for {self.uuid}: expected {saved_list_data['charactercount']}, got {len(charactercomponent)}")
-        for index, component in enumerate(charactercomponent):
-            for k, v in component.items():
-                saved_list_data[f'character_{index + 1}_{k}'] = v
-            saved_list_data[f'character_{index + 1}_id'] = component.get('character_id')
-            saved_list_data.pop(f'character_{index + 1}_list_uuid', None)
-            saved_list_data.pop(f'character_{index + 1}_character_id', None)
+        # Character components
+        if saved_list_data['charactercount'] > 0:
+            charactercomponent = serialize(list(self.charactercomponent))
+            if len(charactercomponent) != saved_list_data['charactercount']:
+                logging.warning(f"Character count mismatch for {self.uuid}: expected {saved_list_data['charactercount']}, got {len(charactercomponent)}")
+            for index, component in enumerate(charactercomponent):
+                for k, v in component.items():
+                    saved_list_data[f'character_{index + 1}_{k}'] = v
+                saved_list_data[f'character_{index + 1}_id'] = component.get('character_id')
+                saved_list_data.pop(f'character_{index + 1}_list_uuid', None)
+                saved_list_data.pop(f'character_{index + 1}_character_id', None)
 
-    # Ship components
-    if saved_list_data['shipcount'] > 0:
-        shipcomponent = serialize(list(self.shipcomponent))
-        if len(shipcomponent) != saved_list_data['shipcount']:
-            logging.warning(f"Ship count mismatch for {self.uuid}: expected {saved_list_data['shipcount']}, got {len(shipcomponent)}")
-        for index, component in enumerate(shipcomponent):
-            for k, v in component.items():
-                saved_list_data[f'ship_{index + 1}_{k}'] = v
-            saved_list_data[f'ship_{index + 1}_id'] = component.get('ship_id')
-            saved_list_data.pop(f'ship_{index + 1}_list_uuid', None)
-            saved_list_data.pop(f'ship_{index + 1}_ship_id', None)
+        # Ship components
+        if saved_list_data['shipcount'] > 0:
+            shipcomponent = serialize(list(self.shipcomponent))
+            if len(shipcomponent) != saved_list_data['shipcount']:
+                logging.warning(f"Ship count mismatch for {self.uuid}: expected {saved_list_data['shipcount']}, got {len(shipcomponent)}")
+            for index, component in enumerate(shipcomponent):
+                for k, v in component.items():
+                    saved_list_data[f'ship_{index + 1}_{k}'] = v
+                saved_list_data[f'ship_{index + 1}_id'] = component.get('ship_id')
+                saved_list_data.pop(f'ship_{index + 1}_list_uuid', None)
+                saved_list_data.pop(f'ship_{index + 1}_ship_id', None)
 
-    # Unit components
-    if saved_list_data['unitcount'] > 0:
-        unitcomponent = serialize(list(self.unitcomponent))
-        if len(unitcomponent) != saved_list_data['unitcount']:
-            logging.warning(f"Unit count mismatch for {self.uuid}: expected {saved_list_data['unitcount']}, got {len(unitcomponent)}")
-        for index, component in enumerate(unitcomponent):
-            for k, v in component.items():
-                saved_list_data[f'unit_{index + 1}_{k}'] = v
-            saved_list_data[f'unit_{index + 1}_id'] = component.get('unit_id')
-            saved_list_data.pop(f'unit_{index + 1}_list_uuid', None)
-            saved_list_data.pop(f'unit_{index + 1}_unit_id', None)
+        # Unit components
+        if saved_list_data['unitcount'] > 0:
+            unitcomponent = serialize(list(self.unitcomponent))
+            if len(unitcomponent) != saved_list_data['unitcount']:
+                logging.warning(f"Unit count mismatch for {self.uuid}: expected {saved_list_data['unitcount']}, got {len(unitcomponent)}")
+            for index, component in enumerate(unitcomponent):
+                for k, v in component.items():
+                    saved_list_data[f'unit_{index + 1}_{k}'] = v
+                saved_list_data[f'unit_{index + 1}_id'] = component.get('unit_id')
+                saved_list_data.pop(f'unit_{index + 1}_list_uuid', None)
+                saved_list_data.pop(f'unit_{index + 1}_unit_id', None)
 
-    # Misc/custom components
-    if saved_list_data['misccount'] > 0:
-        customcomponent = serialize(list(self.customcomponent))
-        if len(customcomponent) != saved_list_data['misccount']:
-            logging.warning(f"Misc count mismatch for {self.uuid}: expected {saved_list_data['misccount']}, got {len(customcomponent)}")
-        for index, component in enumerate(customcomponent):
-            for k, v in component.items():
-                saved_list_data[f'misc_{index + 1}_{k}'] = v
+        # Misc/custom components
+        if saved_list_data['misccount'] > 0:
+            customcomponent = serialize(list(self.customcomponent))
+            if len(customcomponent) != saved_list_data['misccount']:
+                logging.warning(f"Misc count mismatch for {self.uuid}: expected {saved_list_data['misccount']}, got {len(customcomponent)}")
+            for index, component in enumerate(customcomponent):
+                for k, v in component.items():
+                    saved_list_data[f'misc_{index + 1}_{k}'] = v
 
-    logging.debug(f"Final packed data for {self.uuid}: {saved_list_data}")
-    return saved_list_data
+        logging.debug(f"Final packed data for {self.uuid}: {saved_list_data}")
+        return saved_list_data
 
-def __repr__(self):
-    return f'<SavedList {self.uuid} {self.name}>'
+    def __repr__(self):
+        return f'<SavedList {self.uuid} {self.name}>'
 
 class ArtilleryComponent(db.Model):
     """ArtilleryComponent Model"""
@@ -418,19 +414,12 @@ class Nationality(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    
-    characternationality = db.relationship('CharacterNationality', backref='nationality')
-    commandernationality = db.relationship('CommanderNationality', backref='nationality')
-    commanderfaction = db.relationship(
-        'CommanderFaction',
-        secondary = 'faction',
-        backref = 'nationality'
-    )
-    factionunit = db.relationship(
-        'FactionUnit',
-        secondary = 'faction',
-        backref = 'nationality'
-    )
+
+    faction = db.relationship('Faction', back_populates='nationality')
+    characternationality = db.relationship('CharacterNationality', back_populates='nationality')
+    commandernationality = db.relationship('CommanderNationality', back_populates='nationality')
+    commander = db.relationship('Commander', secondary='commandernationality', back_populates='nationalities')
+    characters = db.relationship('Character', secondary='characternationality', back_populates='nationality')
 
     def pack_data(self):
         """ Create a serialized data set for a specified Nationality.
@@ -439,11 +428,11 @@ class Nationality(db.Model):
         
         nationality_data = {
             'nationality': serialize(self),
-            'commander': serialize(list(self.commander)),
+            'commander': serialize([cn.commander for cn in self.commandernationality]),
             'faction': serialize(list(self.faction)),
-            'unit': serialize(list(self.unit)),
-            'commanderfaction': serialize(list(self.commanderfaction)),
-            'factionunit': serialize(list(self.factionunit))
+            'unit': serialize([u for u in Unit.query.filter_by(nationality_id=self.id).all()]),
+            'commanderfaction': serialize([f.commanderfaction for f in self.faction]),
+            'factionunit': serialize([f.factionunit for f in self.faction])
         }
 
         return nationality_data
@@ -473,41 +462,27 @@ class Faction(db.Model):
     artilleryallowed = db.Column(db.Integer)
     attackerrollbonus = db.Column(db.Integer)
 
-    nationality = db.relationship('Nationality', backref='faction')
-    characterfaction = db.relationship('CharacterFaction', backref='faction')
-    commanderfaction = db.relationship('CommanderFaction', backref='faction')
-    factionunit = db.relationship('FactionUnit', backref='faction')
-    factionupgrade = db.relationship('FactionUpgrade', backref='faction')
-    forceoption = db.relationship('ForceOption', backref='faction')
-    forcespecialrule = db.relationship('ForceSpecialrule', backref='faction')
-    factioneffect = db.relationship('FactionEffect', backref='faction')
-    commander = db.relationship(
-        'Commander',
-        secondary = 'commanderfaction',
-        backref = 'faction'
-    )
-    upgrade = db.relationship(
-        'Upgrade',
-        secondary = 'factionupgrade',
-        backref = 'faction'
-    )
-    factionunitclass = db.relationship(
-        'FactionUnitclass', 
-        secondary = 'factionunit', 
-        backref = 'faction'
-    )
-    source = db.relationship(
-        'Source',
-        secondary = 'componentsource',
-        backref = 'faction'
-    )
+    nationality = db.relationship('Nationality', back_populates='faction')
+    commanderfaction = db.relationship('CommanderFaction', back_populates='faction')
+    factionunit = db.relationship('FactionUnit', back_populates='faction')
+    characterfaction = db.relationship('CharacterFaction', back_populates='faction')
+    factionupgrade = db.relationship('FactionUpgrade', back_populates='faction')
+    forceoption = db.relationship('ForceOption', back_populates='faction')
+    forcespecialrule = db.relationship('ForceSpecialrule', back_populates='faction')
+    factioneffect = db.relationship('FactionEffect', back_populates='faction')
+    commander = db.relationship('Commander', secondary='commanderfaction', back_populates='faction')
+    upgrade = db.relationship('Upgrade', secondary='factionupgrade', back_populates='factions')
+    factionunitclass = db.relationship('FactionUnitclass', secondary='factionunit', back_populates='factions')
+    source = db.relationship('Source', secondary='componentsource', back_populates='faction')
+    componentsource = db.relationship('ComponentSource', back_populates='faction')
+    characters = db.relationship('Character', secondary='characterfaction', back_populates='faction')
 
     def pack_data(self):
         """ Create a serialized data set for a specified Faction.
             Returns a dict containing lists of dicts of that Factions' data. """
         
         faction_data = {
-            'faction': serialize(self),            
+            'faction': serialize(self),
             'forceoption': serialize(list(self.forceoption)),
             'forcespecialrule': serialize(list(self.forcespecialrule)),
             'commander': serialize(list(self.commander)),
@@ -518,7 +493,8 @@ class Faction(db.Model):
         return faction_data
 
     def __repr__(self):
-        return f'<Faction {self.id} {self.name} ({self.nationality.name})>'
+        nat_name = self.nationality.name if self.nationality else 'Unknown'
+        return f'<Faction id={self.id} name={self.name} nationality={nat_name}>'
 
 
 class Commander(db.Model):
@@ -545,30 +521,20 @@ class Commander(db.Model):
     horseoption = db.Column(db.Integer)
 
     commanderclass = db.relationship('CommanderClass', backref='commander')
-    commandernationality = db.relationship('CommanderNationality', backref='commander')
-    commanderfaction = db.relationship('CommanderFaction', backref='commander')
-    commanderspecialrule = db.relationship('CommanderSpecialrule', backref='commander')
-    nationality = db.relationship(
-        'Nationality',
-        secondary = 'commandernationality',
-        backref = 'commander'
-    )
-    specialrule = db.relationship(
-        'Specialrule',
-        secondary = 'commanderspecialrule',
-        backref = 'commander'
-    )
-    source = db.relationship(
-        'Source',
-        secondary = 'componentsource',
-        backref = 'commander'
-    )
+    commandernationality = db.relationship('CommanderNationality', back_populates='commander')
+    commanderfaction = db.relationship('CommanderFaction', back_populates='commander')
+    commanderspecialrule = db.relationship('CommanderSpecialrule', back_populates='commander')
+    componentsource = db.relationship('ComponentSource', back_populates='commander')
+    faction = db.relationship('Faction', secondary='commanderfaction', back_populates='commander')
+    specialrule = db.relationship('Specialrule', secondary='commanderspecialrule', back_populates='commander')
+    source = db.relationship('Source', secondary='componentsource', back_populates='commander')
+    nationalities = db.relationship('Nationality', secondary='commandernationality', back_populates='commander')
 
     def pack_data(self):
         """ Create a serialized data set for a specified Commander.
             Returns a dict containing lists of dicts of that Commander's data. """
         commander_data = {
-            'commander': serialize(self),            
+            'commander': serialize(self),
             'commanderspecialrule': serialize(list(self.commanderspecialrule)),
             'specialrule': serialize(list(self.specialrule)),
             'faction': serialize(list(self.faction))
@@ -576,7 +542,7 @@ class Commander(db.Model):
         return commander_data
 
     def __repr__(self):
-        return f'<Commander {self.id} {self.name} ({self.nationality.name})>'
+        return f'<Commander id={self.id} name={self.name}>'
 
 
 #################### FC Component Level Models ####################
@@ -630,24 +596,12 @@ class Character(db.Model):
     certaincommanders = db.Column(db.Integer)
     onlywithcommander = db.Column(db.Integer)
     breaklimits = db.Column(db.Integer)
-    characternationality = db.relationship('CharacterNationality', backref='character')
-    characterfaction = db.relationship('CharacterFaction', backref='character')
-    characterspecialrule = db.relationship('CharacterSpecialrule', backref='character')
-    nationality = db.relationship(
-        'Nationality',
-        secondary = 'characternationality',
-        backref = 'character'
-    )
-    faction = db.relationship(
-        'Faction',
-        secondary = 'characterfaction',
-        backref = 'character'
-    )
-    specialrule = db.relationship(
-        'Specialrule',
-        secondary = 'characterspecialrule',
-        backref = 'character'
-    )
+    characternationality = db.relationship('CharacterNationality', back_populates='character')
+    characterfaction = db.relationship('CharacterFaction', back_populates='character')
+    characterspecialrule = db.relationship('CharacterSpecialrule', back_populates='character')
+    nationality = db.relationship('Nationality', secondary='characternationality', back_populates='characters')
+    faction = db.relationship('Faction', secondary='characterfaction', back_populates='characters')    
+    specialrule = db.relationship('Specialrule', secondary='characterspecialrule', back_populates='character')
 
     def pack_data(self):
         """ Create a serialized data set for this Character. """
@@ -662,10 +616,7 @@ class Character(db.Model):
         return character_data
 
     def __repr__(self):
-        return f'<Unit {self.id} {self.name}>'
-
-    def __repr__(self):
-        return f'<Character {self.id} {self.name}>'
+        return f'<Character id={self.id} name={self.name}>'
 
 
 class Ship(db.Model):
@@ -696,13 +647,9 @@ class Ship(db.Model):
     traits = db.Column(db.VARCHAR)
     wcproduct_id = db.Column(db.Integer)
 
-    shipspecialrule = db.relationship('ShipSpecialrule', backref='ship')
-    shipupgrade = db.relationship('ShipUpgrade', backref='ship')
-    specialrule = db.relationship(
-        'Specialrule',
-        secondary = 'shipspecialrule',
-        backref = 'ship'
-    )
+    shipspecialrule = db.relationship('ShipSpecialrule', back_populates='ship')
+    shipupgrade = db.relationship('ShipUpgrade', back_populates='ship')
+    specialrule = db.relationship('Specialrule', secondary='shipspecialrule', back_populates='ship')
 
     def pack_data(self):
         """ Create a serialized data set for a Ship.
@@ -751,21 +698,14 @@ class Unit(db.Model):
 
     nationality = db.relationship('Nationality', backref='unit')
     experience = db.relationship('Experience', backref='unit')
-    factionunit = db.relationship('FactionUnit', backref='unit')
-    unitoption = db.relationship('UnitOption', backref='unit')
-    unitspecialrule = db.relationship('UnitSpecialrule', backref='unit')
+    factionunit = db.relationship('FactionUnit', back_populates='unit')
+    unitoption = db.relationship('UnitOption', back_populates='unit')
+    unitspecialrule = db.relationship('UnitSpecialrule', back_populates='unit')
+    forceoption = db.relationship('ForceOption', back_populates='unit')
+    factionunitclass = db.relationship('FactionUnitclass', secondary='factionunit', back_populates='units')    
+    specialrule = db.relationship('Specialrule', secondary='unitspecialrule', back_populates='unit')
     upgrade = db.relationship('Upgrade', backref='unit')
-    factionunitclass = db.relationship(
-        'FactionUnitclass', 
-        secondary = 'factionunit', 
-        backref='unit'
-    )
-    specialrule = db.relationship(
-        'Specialrule',
-        secondary = 'unitspecialrule',
-        backref = 'unit'
-    )
-    
+
     def pack_data(self):
         """ Create a serialized data set for a Unit.
             Returns a dict containing lists of dicts of the Unit's related data. """
@@ -832,11 +772,15 @@ class CommanderEffect(db.Model):
     details = db.Column(db.Text)
     addsubtract = db.Column(db.Integer)
     unit_id = db.Column(db.Integer, db.ForeignKey('unit.id'))
-    unitclass_id = db.Column(db.Integer, db.ForeignKey('factionunitclass.id'))  # Fixed from 'unitclass.id'
+    unitclass_id = db.Column(db.Integer, db.ForeignKey('factionunitclass.id'))
     unitoption_id = db.Column(db.Integer, db.ForeignKey('unitoption.id'))
+    commander = db.relationship('Commander', backref='commandereffect')
+    unit = db.relationship('Unit', backref='commandereffect')
+    factionunitclass = db.relationship('FactionUnitclass', backref='commandereffect')
+    unitoption = db.relationship('UnitOption', backref='commandereffect')
 
     def __repr__(self):
-        return f'<CommanderEffect {self.id}>'
+        return f'<CommanderEffect id={self.id} name={self.name}>'
 
 class Experience(db.Model):
     """ Experience Model. """
@@ -864,9 +808,17 @@ class FactionEffect(db.Model):
     addsubtract = db.Column(db.Integer)
     applyall = db.Column(db.Integer)
     unit_id = db.Column(db.Integer, db.ForeignKey('unit.id'))
-    unitclass_id = db.Column(db.Integer, db.ForeignKey('factionunitclass.id'))  # Fixed from 'unitclass.id'
+    unitclass_id = db.Column(db.Integer, db.ForeignKey('factionunitclass.id'))
     unitoption_id = db.Column(db.Integer, db.ForeignKey('unitoption.id'))
     faction_id = db.Column(db.Integer, db.ForeignKey('faction.id'))
+    faction = db.relationship('Faction', back_populates='factioneffect')
+    forceoption = db.relationship('ForceOption', backref='factioneffect')
+    unit = db.relationship('Unit', backref='factioneffect')
+    factionunitclass = db.relationship('FactionUnitclass', backref='factioneffect')
+    unitoption = db.relationship('UnitOption', backref='factioneffect')
+
+    def __repr__(self):
+        return f'<FactionEffect id={self.id} name={self.name}>'
 
 class FactionUnitclass(db.Model):
     """ FactionUnitClass Model.
@@ -879,6 +831,9 @@ class FactionUnitclass(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
+    factionunit = db.relationship('FactionUnit', back_populates='factionunitclass')
+    factions = db.relationship('Faction', secondary='factionunit', back_populates='factionunitclass')
+    units = db.relationship('Unit', secondary='factionunit', back_populates='factionunitclass')
 
     def __repr__(self):
         return f'<FactionUnitclass {self.id} {self.name} {self.details}>'
@@ -895,9 +850,13 @@ class Source(db.Model):
     year_of_publication = db.Column(db.Integer)
     print_url = db.Column(db.VARCHAR)
     digital_url = db.Column(db.VARCHAR)
+    componentsource = db.relationship('ComponentSource', back_populates='source')
+    commander = db.relationship('Commander', secondary='componentsource', back_populates='source')
+    faction = db.relationship('Faction', secondary='componentsource', back_populates='source')
 
-    componentsource = db.relationship('ComponentSource', backref='source')
-
+    def __repr__(self):
+        return f'<Source id={self.id} name={self.name}>'
+    
 class Specialrule(db.Model):
     """ Specialrule Model. """
 
@@ -909,11 +868,14 @@ class Specialrule(db.Model):
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
 
-    characterspecialrule = db.relationship('CharacterSpecialrule', backref='specialrule')
-    commanderspecialrule = db.relationship('CommanderSpecialrule', backref='specialrule')
-    shipspecialrule = db.relationship('ShipSpecialrule', backref='specialrule')
-    unitspecialrule = db.relationship('UnitSpecialrule', backref='specialrule')
-
+    characterspecialrule = db.relationship('CharacterSpecialrule', back_populates='specialrule')
+    commanderspecialrule = db.relationship('CommanderSpecialrule', back_populates='specialrule')
+    shipspecialrule = db.relationship('ShipSpecialrule', back_populates='specialrule')
+    unitspecialrule = db.relationship('UnitSpecialrule', back_populates='specialrule')
+    character = db.relationship('Character', secondary='characterspecialrule', back_populates='specialrule')
+    commander = db.relationship('Commander', secondary='commanderspecialrule', back_populates='specialrule')
+    ship = db.relationship('Ship', secondary='shipspecialrule', back_populates='specialrule')
+    unit = db.relationship('Unit', secondary='unitspecialrule', back_populates='specialrule')
     def __repr__(self):
         return f'<Specialrule {self.id} {self.name}>'
 
@@ -931,9 +893,9 @@ class Upgrade(db.Model):
     bonustext = db.Column(db.VARCHAR)
     pointcost = db.Column(db.Integer)
     experienceupg = db.Column(db.Integer)
-
-    factionupgrade = db.relationship('FactionUpgrade', backref='upgrade')
-
+    factionupgrade = db.relationship('FactionUpgrade', back_populates='upgrade')
+    factions = db.relationship('Faction', secondary='factionupgrade', back_populates='upgrade')
+    
     def __repr__(self):
         return f'<Upgrade {self.id} {self.name}>'
 
@@ -950,6 +912,10 @@ class WeaponEquipment(db.Model):
     rules = db.Column(db.VARCHAR)
     pointcost = db.Column(db.Integer)
     pointsperunit = db.Column(db.Integer)
+    unitoption = db.relationship('UnitOption', back_populates='weaponequipment')
+
+    def __repr__(self):
+        return f'<WeaponEquipment id={self.id} name={self.name}>'
 
 #################### FC Connective Table Models ####################
 
@@ -962,11 +928,10 @@ class CharacterFaction(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    character_id = db.Column(db.Integer, db.ForeignKey(
-        'character.id', ondelete='CASCADE'), nullable=False)
-    faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'), nullable=False)
-
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id', ondelete='CASCADE'), nullable=False)
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id', ondelete='CASCADE'), nullable=False)
+    faction = db.relationship('Faction', back_populates='characterfaction')
+    character = db.relationship('Character', back_populates='characterfaction')
     def __repr__(self):
         return f'<CharacterFaction {self.id}>'
 
@@ -979,10 +944,10 @@ class CharacterNationality(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    character_id = db.Column(db.Integer, db.ForeignKey(
-        'character.id', ondelete='CASCADE'), nullable=False)
-    nationality_id = db.Column(db.Integer, db.ForeignKey(
-        'nationality.id', ondelete='CASCADE'), nullable=False)
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id', ondelete='CASCADE'), nullable=False)
+    nationality_id = db.Column(db.Integer, db.ForeignKey('nationality.id', ondelete='CASCADE'), nullable=False)
+    character = db.relationship('Character', back_populates='characternationality')
+    nationality = db.relationship('Nationality', back_populates='characternationality')     
 
     def __repr__(self):
         return f'<CharacterNationality {self.id}>'
@@ -996,10 +961,10 @@ class CharacterSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    character_id = db.Column(db.Integer, db.ForeignKey(
-        'character.id', ondelete='CASCADE'), nullable=False)
-    specialrule_id = db.Column(db.Integer, db.ForeignKey(
-        'specialrule.id', ondelete='CASCADE'), nullable=False)
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id', ondelete='CASCADE'), nullable=False)
+    specialrule_id = db.Column(db.Integer, db.ForeignKey('specialrule.id', ondelete='CASCADE'), nullable=False)
+    character = db.relationship('Character', back_populates='characterspecialrule')
+    specialrule = db.relationship('Specialrule', back_populates='characterspecialrule')
 
     def __repr__(self):
         return f'<CharacterSpecialrule {self.id}>'
@@ -1013,10 +978,10 @@ class CommanderFaction(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    commander_id = db.Column(db.Integer, db.ForeignKey(
-        'commander.id', ondelete='CASCADE'))
-    faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'))
+    commander_id = db.Column(db.Integer, db.ForeignKey('commander.id', ondelete='CASCADE'), nullable=False)
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id', ondelete='CASCADE'), nullable=False)
+    faction = db.relationship('Faction', back_populates='commanderfaction')
+    commander = db.relationship('Commander', back_populates='commanderfaction')
 
     def __repr__(self):
         return f'<CommanderFaction {self.id}>'
@@ -1033,6 +998,8 @@ class CommanderNationality(db.Model):
     commander_id = db.Column(db.Integer, db.ForeignKey('commander.id', ondelete='CASCADE'), nullable=False)
     nationality_id = db.Column(db.Integer, db.ForeignKey('nationality.id', ondelete='CASCADE'), nullable=False)
     primary_nationality = db.Column(db.BOOLEAN)
+    commander = db.relationship('Commander', back_populates='commandernationality')
+    nationality = db.relationship('Nationality', back_populates='commandernationality')
 
     def __repr__(self):
         return f'<CommanderNationality {self.id}>'
@@ -1046,11 +1013,11 @@ class CommanderSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    commander_id = db.Column(db.Integer, db.ForeignKey(
-        'commander.id', ondelete='CASCADE'))
-    specialrule_id = db.Column(db.Integer, db.ForeignKey(
-        'specialrule.id', ondelete='CASCADE'))
+    commander_id = db.Column(db.Integer, db.ForeignKey('commander.id', ondelete='CASCADE'), nullable=False)
+    specialrule_id = db.Column(db.Integer, db.ForeignKey('specialrule.id', ondelete='CASCADE'), nullable=False)
     isoption = db.Column(db.Integer, default=0)
+    commander = db.relationship('Commander', back_populates='commanderspecialrule')
+    specialrule = db.relationship('Specialrule', back_populates='commanderspecialrule')
 
     def __repr__(self):
         return f'<CommanderSpecialrule {self.id}>'
@@ -1065,12 +1032,12 @@ class ComponentSource(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    source_id = db.Column(db.Integer, db.ForeignKey(
-        'source.id', ondelete='CASCADE'))
-    faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'))
-    commander_id = db.Column(db.Integer, db.ForeignKey(
-        'commander.id', ondelete='CASCADE'))
+    source_id = db.Column(db.Integer, db.ForeignKey('source.id', ondelete='CASCADE'), nullable=False)
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id', ondelete='CASCADE'), nullable=False)
+    commander_id = db.Column(db.Integer, db.ForeignKey('commander.id', ondelete='CASCADE'), nullable=False)
+    source = db.relationship('Source', back_populates='componentsource')
+    faction = db.relationship('Faction', back_populates='componentsource')
+    commander = db.relationship('Commander', back_populates='componentsource')
 
 
 class FactionUnit(db.Model):
@@ -1083,12 +1050,12 @@ class FactionUnit(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'))
-    factionunitclass_id = db.Column(db.Integer, db.ForeignKey(
-        'factionunitclass.id', ondelete='CASCADE'))
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id', ondelete='CASCADE'))
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id', ondelete='CASCADE'), nullable=False)
+    factionunitclass_id = db.Column(db.Integer, db.ForeignKey('factionunitclass.id', ondelete='CASCADE'), nullable=False)
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='CASCADE'), nullable=False)
+    faction = db.relationship('Faction', back_populates='factionunit')
+    unit = db.relationship('Unit', back_populates='factionunit')
+    factionunitclass = db.relationship('FactionUnitclass', back_populates='factionunit')
     details = db.Column(db.Text)
 
     def __repr__(self):
@@ -1104,11 +1071,10 @@ class FactionUpgrade(db.Model):
                    primary_key=True,
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
-    faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'))
-    upgrade_id = db.Column(db.Integer, db.ForeignKey(
-        'upgrade.id', ondelete='CASCADE'))
-
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id', ondelete='CASCADE'), nullable=False)
+    upgrade_id = db.Column(db.Integer, db.ForeignKey('upgrade.id', ondelete='CASCADE'), nullable=False)
+    faction = db.relationship('Faction', back_populates='factionupgrade')
+    upgrade = db.relationship('Upgrade', back_populates='factionupgrade')    
     def __repr__(self):
         return f'<FactionUpgrade {self.id} {self.name}>'
 
@@ -1123,11 +1089,12 @@ class ForceOption(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='CASCADE'))
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='CASCADE'), nullable=False)
     unit_qty_req = db.Column(db.Integer)
     req_mounted_commander = db.Column(db.Integer)
-    faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'))
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id', ondelete='CASCADE'), nullable=False)
+    unit = db.relationship('Unit', back_populates='forceoption')
+    faction = db.relationship('Faction', back_populates='forceoption')
 
     def __repr__(self):
         return f'<ForceOption {self.id} {self.name}>'
@@ -1141,10 +1108,10 @@ class ForceSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    faction_id = db.Column(db.Integer, db.ForeignKey(
-        'faction.id', ondelete='CASCADE'))
+    faction_id = db.Column(db.Integer, db.ForeignKey('faction.id', ondelete='CASCADE'), nullable=False)
     details = db.Column(db.Text)
     addsubtract = db.Column(db.Integer)
+    faction = db.relationship('Faction', back_populates='forcespecialrule')
 
     def __repr__(self):
         return f'<ForceSpecialrule {self.id}>'
@@ -1158,10 +1125,10 @@ class ShipSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    ship_id = db.Column(db.Integer, db.ForeignKey(
-        'ship.id', ondelete='SET NULL'))
-    specialrule_id = db.Column(db.Integer, db.ForeignKey(
-        'specialrule.id', ondelete='CASCADE'))
+    ship_id = db.Column(db.Integer, db.ForeignKey('ship.id', ondelete='SET NULL'), nullable=False)
+    specialrule_id = db.Column(db.Integer, db.ForeignKey('specialrule.id', ondelete='CASCADE'), nullable=False)
+    ship = db.relationship('Ship', back_populates='shipspecialrule')
+    specialrule = db.relationship('Specialrule', back_populates='shipspecialrule')
     namecustomadd = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
 
@@ -1179,10 +1146,10 @@ class ShipUpgrade(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    ship_id = db.Column(db.Integer, db.ForeignKey(
-        'ship.id', ondelete='SET NULL'))
+    ship_id = db.Column(db.Integer, db.ForeignKey('ship.id', ondelete='SET NULL'), nullable=False)
     pointcost = db.Column(db.Integer)
     post1700 = db.Column(db.Integer)
+    ship = db.relationship('Ship', back_populates='shipupgrade')
 
     def __repr__(self):
         return f'<ShipUpgrade {self.id}>'
@@ -1198,8 +1165,7 @@ class UnitOption(db.Model):
                    autoincrement=True)
     name = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id', ondelete='SET NULL'))
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='SET NULL'), nullable=False)
     pointcost = db.Column(db.Integer)
     perxmodels = db.Column(db.Integer)
     pointsperunit = db.Column(db.Integer)
@@ -1207,7 +1173,9 @@ class UnitOption(db.Model):
     applyall = db.Column(db.Integer)
     limited = db.Column(db.Integer)
     addsubtractweaponequipment = db.Column(db.Integer)
-    weaponequipment_id = db.Column(db.Integer)
+    weaponequipment_id = db.Column(db.Integer, db.ForeignKey('weaponequipment.id', ondelete='SET NULL'))
+    unit = db.relationship('Unit', back_populates='unitoption')
+    weaponequipment = db.relationship('WeaponEquipment', back_populates='unitoption')
 
     def __repr__(self):
         return f'<UnitOption {self.id} {self.name}>'
@@ -1221,12 +1189,12 @@ class UnitSpecialrule(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True,
                    autoincrement=True)
-    unit_id = db.Column(db.Integer, db.ForeignKey(
-        'unit.id', ondelete='CASCADE'))
-    specialrule_id = db.Column(db.Integer, db.ForeignKey(
-        'specialrule.id', ondelete='CASCADE'))
+    unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='CASCADE'), nullable=False)
+    specialrule_id = db.Column(db.Integer, db.ForeignKey('specialrule.id', ondelete='CASCADE'), nullable=False)
     namecustomadd = db.Column(db.VARCHAR)
     details = db.Column(db.Text)
+    unit = db.relationship('Unit', back_populates='unitspecialrule')
+    specialrule = db.relationship('Specialrule', back_populates='unitspecialrule')
 
     def __repr__(self):
         return f'<UnitSpecialrule {self.id}>'

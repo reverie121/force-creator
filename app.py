@@ -15,11 +15,11 @@ from flask_migrate import Migrate
 
 app = Flask(__name__)
 
-# debug = DebugToolbarExtension(app)
-
 # Set the SECRET_KEY from config.py (loaded from .env)
 app.config['SECRET_KEY'] = config.SECRET_KEY
 
+app.debug = False
+# debug = DebugToolbarExtension(app)
 # app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
 # If not local, then string replace postgres to postgresql
@@ -29,7 +29,7 @@ if config.IS_LOCAL == 0:
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_conn_str
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ECHO'] = True
+app.config['SQLALCHEMY_ECHO'] = False
 
 # Import models and db after app is configured
 import models
