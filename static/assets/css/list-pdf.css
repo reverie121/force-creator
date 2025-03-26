@@ -25,25 +25,43 @@ td.boxed {
 
 #units, #characters, #artillery, #ships, #misc {
     margin-top: 12pt;
-    overflow: hidden; /* Clear floats for proper layout */
     width: 100%;
+    overflow: hidden; /* Clear floats */
     page-break-inside: avoid !important;
 }
 
-#units > h3, #characters > h3, #artillery > h3, #ships > h3, #misc  > h3, #specialrules > h3, #shiptraits > h3 {
+#units > h3, #characters > h3, #artillery > h3, #ships > h3, #misc > h3, #specialrules > h3, #shiptraits > h3 {
     margin-bottom: 0px;
     margin-top: 0px;
+    width: 100%; /* Full width for headers */
+}
+
+.column {
+    width: 49%; /* Two columns with small gap */
+    float: left;
+    margin-right: 2%; /* Horizontal spacing between columns */
+    box-sizing: border-box;
+}
+
+.column.right {
+    margin-right: 0; /* No extra margin on right column */
 }
 
 div.unit, div.character, div.artillery, div.ship, div.misc {
     border: 1px solid gray;
     border-radius: 3px;
-    width: 46.5%;
-    float: left;
-    margin-right: 1%;
-    margin-bottom: 12pt;
+    width: 100%; /* Full width within column */
+    margin-bottom: 12pt; /* Vertical spacing within column */
     padding: 0.1in;
     page-break-inside: avoid !important;
+    box-sizing: border-box;
+}
+
+/* Clearfix for section end */
+#units::after, #characters::after, #artillery::after, #ships::after, #misc::after {
+    content: "";
+    display: block;
+    clear: both;
 }
 
 div.unit-mainweapons, div.character-commandpoints, div.character-unitrestrictions, div.character-extrarules, div.character-specialrules, table.artillery-stats, div.misc-cost, div.misc-details, div.specialrule {
@@ -59,15 +77,16 @@ div.unit-stats {
     border: 1px solid gray;
 }
 
- td.unit-stat-value {
+td.unit-stat-value {
     text-align: right;
- }
+    white-space: nowrap; /* Fix split stats */
+}
 
- td.unit-equipment {
+td.unit-equipment {
     padding: 3px;
     padding-left: 12px;
- }
+}
 
- #specialrules, #shiptraits {
+#specialrules, #shiptraits {
     page-break-inside: avoid !important;
- }
+}
