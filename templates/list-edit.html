@@ -79,17 +79,17 @@
                             </span>
                         </div>
                         <div class='col-auto mt-2'>
-                            <i  class='p-1 border border-primary rounded-2 text-info normal-text'>
+                            <i class='p-1 border border-primary rounded-2 text-info normal-text'>
                                 Models in Force: <span class='bigger-text' id='model-count'>0</span>
                             </i>
                         </div>                           
                         <div class='col-auto mt-2'>
-                            <span  class='p-1 border border-primary rounded-2 text-info normal-text' id='unit-size-range-display'>
+                            <span class='p-1 border border-primary rounded-2 text-info normal-text' id='unit-size-range-display'>
                                 <!-- filled by js -->
                             </span>
                         </div>                                             
                         <div class='col-auto mt-2'>
-                            <i  class='p-1 border border-primary rounded-2 text-info normal-text'>
+                            <i class='p-1 border border-primary rounded-2 text-info normal-text'>
                                 Strike Points at <span class='bigger-text' id='strike-points-1'>0</span> / <span class='bigger-text' id='strike-points-2'>0</span> / <span class='bigger-text' id='strike-points-3'>0</span> Casualties
                             </i>
                         </div>
@@ -110,7 +110,6 @@
                         </div>
                     </div>
                 </div>
-                
             </div>
         </div>
 
@@ -177,16 +176,44 @@
                 </div>
 
             </div>
+
+            <!-- Bootstrap Modal for PDF Options -->
+            <div class="modal fade" id="pdfOptionsModal" tabindex="-1" aria-labelledby="pdfOptionsModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="pdfOptionsModalLabel">PDF Options</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="pdfOptionsForm">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="includeSpecialRules" id="includeSpecialRules" checked>
+                                    <label class="form-check-label" for="includeSpecialRules">Include Special Rules</label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="includeShipTraits" id="includeShipTraits" checked>
+                                    <label class="form-check-label" for="includeShipTraits">Include Ship Traits</label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="generatePDFButton">Generate PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </div>
-
 
     <!-- FOOTER -->
     <!-- <div class='container-fluid bg-primary sticky-bottom mb-0' id='footer'>
         <div class='container p-0 pt-1 mb-0 bg-secondary border border-2 border-top-0 border-bottom-0 border-info text-info'>
             <div class='container-fluid border border-5 border-top-0 border-start-0 border-end-0 border-secondary bg-warning m-0'>
-                &nbsp;
+                 
             </div>
         </div>
     </div> -->

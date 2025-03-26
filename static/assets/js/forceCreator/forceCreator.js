@@ -97,21 +97,30 @@ $(window).ready(async function() {
             $selectNationality.append($('<option></option>').val(nation.id).text(nation.name)); 
         }
     });
+    // Event handlers for build-side tools
     $('#force-revert').on('click', () => {
         forceList.loadSave(forceList.save);
-    })
+    });
     $('#force-save').on('click', () => {
         forceList.saveList();
-    })
+    });
     $('#force-pdf').on('click', () => {
-        forceList.saveListToPDF();
-    })    
-    // Handle button for adding custom/misc to ForceList.
+        forceList.showPDFOptionsModal();
+    });
+    $('#generatePDFButton').on('click', () => {
+        const options = {
+            includeSpecialRules: $('#includeSpecialRules').is(':checked'),
+            includeShipTraits: $('#includeShipTraits').is(':checked')
+        };
+        $('#pdfOptionsModal').modal('hide');
+        forceList.saveListToPDF(options);
+    });
+    // Handle button for adding custom/misc to ForceList
     $(`#add-custom-button`).on('click', () => {
         const customToAdd = new Misc();
         forceList.addMisc(customToAdd);
     });
-    $('#main-area').show('slow','swing');
+    $('#main-area').show('slow', 'swing');
     if ($("#build-side").data("list-save") != '') {
         const saveData = $("#build-side").data("list-save");
         forceList.loadSave(saveData);
