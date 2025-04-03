@@ -212,7 +212,7 @@ class ForceList {
             includeSpecialRules: options.includeSpecialRules !== undefined ? options.includeSpecialRules : true,
             includeShipTraits: options.includeShipTraits !== undefined ? options.includeShipTraits : true
         };
-        console.log('ForceList.pdfOptions set to:', this.pdfOptions); // Debugging
+        console.debug('ForceList.pdfOptions set to:', this.pdfOptions); // Debugging
         
         // Send save data to back end for conversion to pdf
         const response = await axios.post('/lists/pdf', this, { responseType: 'blob' });
@@ -236,159 +236,201 @@ class ForceList {
     }
 
     async loadSave(saveData) {
-        console.debug('Loaded saveData:', saveData)            
-        $forceName.val(saveData.name).change();
-        $pointMax.val(saveData.maxpoints).change();
-        $selectNationality.val(saveData.nationality_id).change();
-        $selectFaction.val(saveData.faction_id).change();
-        if (saveData.forceoption_id != 0) {
-            setTimeout(() => {
-                $(`#faction-${saveData.faction_id}-option-${saveData.forceoption_id}`).prop( "checked", true );
-                setTimeout(() => { 
-                    this.handleFactionOption(1,saveData.forceoption_id)
-                },100)             
-            },100)             
-        }
-        $selectCommander.val(saveData.commander_id).change();
-        $('#fl-commander-nick-name').val(saveData.commandernickname).change();
-        if (saveData.commanderhorseselected == 1) {
-            setTimeout(() => {
-                $('#fl-commander-horseoption').prop( "checked", true );
-                this.commander.points ++;
-            }, 100)
-        }
-        if (saveData.commandersr1_id != 0) {
-            setTimeout(() => {
-                $(`#fl-commander-sr-choice-${saveData.commandersr1_id}`).prop( "checked", true );
-                setTimeout(() => { 
-                    this.handleCommanderSpecialruleChoice(1,saveData.commandersr1_id);
-                },100)             
-            },100)             
-        }
-        if (saveData.commandersr2_id != 0) {
-            setTimeout(() => {
-                $(`#fl-commander-sr-choice-${saveData.commandersr2_id}`).prop( "checked", true );
-                setTimeout(() => { 
-                    this.handleCommanderSpecialruleChoice(1,saveData.commandersr2_id);
-                },100)             
-            },100)            
-         }
-        this.uuid = saveData.uuid;
-        setTimeout(async () => {
-            if (saveData.artillerycount > 0) {
-                if (sessionStorage.getItem('artillery') == null) {
-                    const response = await axios.get('artillery');
-                    sessionStorage.setItem('artillery', JSON.stringify(response.data['artillery']));
+        const loadWhenVisible = async () => {
+            if (document.visibilityState === 'visible') {
+                console.debug('Tab visible, ensuring universal data');
+                await requestUniversalData(); // Ensure sessionStorage is populated
+                console.debug('Universal data loaded, loading saveData:', saveData);
+                $forceName.val(saveData.name).change();
+                $pointMax.val(saveData.maxpoints).change();
+                $selectNationality.val(saveData.nationality_id).change();
+    
+                setTimeout(() => {
+                    $selectFaction.val(saveData.faction_id).change();
+                }, 100);
+    
+                if (saveData.forceoption_id != 0) {
+                    setTimeout(() => {
+                        $(`#faction-${saveData.faction_id}-option-${saveData.forceoption_id}`).prop("checked", true);
+                        setTimeout(() => { 
+                            this.handleFactionOption(1, saveData.forceoption_id);
+                        }, 100);             
+                    }, 200);
                 }
-                const artilleryData = JSON.parse(sessionStorage.getItem('artillery'));
-                for (const artilleryItem of artilleryData) {
-                    for (let i = 1; i <= saveData.artillerycount; i++) {
-                        if (artilleryItem.id == saveData[`artillery_${i}_id`]) {
-                            const newArtillery = new Artillery(artilleryItem);
-                            newArtillery['nickname'] = saveData[`artillery_${i}_nickname`];
-                            newArtillery['f_id'] = saveData[`artillery_${i}_fid`];
-                            newArtillery['qty'] = saveData[`artillery_${i}_qty`];
-                            this.addArtillery(newArtillery);
-                            setTimeout(() => {
-                                for (const option of this.artillery[`${newArtillery['f_id']}`]['option']) {
-                                    if (saveData[`artillery_${i}_options`].includes(option.id)) {
-                                        $(`#fl-${newArtillery['f_id']}-option-${option.id}`).prop( "checked", true );
-                                        setTimeout(() => {
-                                            this.handleArtilleryOption(newArtillery['f_id'],option);
-                                        }, 100);
-                                    }
+    
+                setTimeout(() => {
+                    $selectCommander.val(saveData.commander_id).change();
+                    $('#fl-commander-nick-name').val(saveData.commandernickname).change();
+                }, 100);
+    
+                if (saveData.commanderhorseselected == 1) {
+                    setTimeout(() => {
+                        $('#fl-commander-horseoption').prop("checked", true);
+                        this.commander.points++;
+                    }, 200);
+                }
+                if (saveData.commandersr1_id != 0) {
+                    setTimeout(() => {
+                        $(`#fl-commander-sr-choice-${saveData.commandersr1_id}`).prop("checked", true);
+                        setTimeout(() => { 
+                            this.handleCommanderSpecialruleChoice(1, saveData.commandersr1_id);
+                        }, 100);             
+                    }, 200);
+                }
+                if (saveData.commandersr2_id != 0) {
+                    setTimeout(() => {
+                        $(`#fl-commander-sr-choice-${saveData.commandersr2_id}`).prop("checked", true);
+                        setTimeout(() => { 
+                            this.handleCommanderSpecialruleChoice(1, saveData.commandersr2_id);
+                        }, 100);             
+                    }, 200);
+                }
+                this.uuid = saveData.uuid;
+    
+                setTimeout(async () => {
+                    if (saveData.artillerycount > 0) {
+                        if (sessionStorage.getItem('artillery') == null) {
+                            const response = await axios.get('/artillery');
+                            sessionStorage.setItem('artillery', JSON.stringify(response.data['artillery']));
+                        }
+                        const artilleryData = JSON.parse(sessionStorage.getItem('artillery'));
+                        for (const artilleryItem of artilleryData) {
+                            for (let i = 1; i <= saveData.artillerycount; i++) {
+                                if (artilleryItem.id == saveData[`artillery_${i}_id`]) {
+                                    const newArtillery = new Artillery(artilleryItem);
+                                    newArtillery['nickname'] = saveData[`artillery_${i}_nickname`];
+                                    newArtillery['f_id'] = saveData[`artillery_${i}_fid`];
+                                    newArtillery['qty'] = saveData[`artillery_${i}_qty`];
+                                    this.addArtillery(newArtillery);
+                                    setTimeout(() => {
+                                        console.debug(`Artillery ${newArtillery['f_id']} in this.artillery:`, this.artillery[newArtillery['f_id']]);
+                                        const artilleryOptions = this.artillery[newArtillery['f_id']] && this.artillery[newArtillery['f_id']]['option'] ? this.artillery[newArtillery['f_id']]['option'] : [];
+                                        for (const option of artilleryOptions) {
+                                            if (saveData[`artillery_${i}_options`].includes(option.id)) {
+                                                $(`#fl-${newArtillery['f_id']}-option-${option.id}`).prop("checked", true);
+                                                setTimeout(() => {
+                                                    this.handleArtilleryOption(newArtillery['f_id'], option);
+                                                }, 100);
+                                            }
+                                        }
+                                    }, 100);
                                 }
-                            }, 100);
+                            }
                         }
                     }
-                }
-            }
-            if (saveData.charactercount > 0) {
-                if (sessionStorage.getItem('character') == null) {
-                    const response = await axios.get('character');
-                    sessionStorage.setItem('character', JSON.stringify(response.data['character']));
-                }
-                const characterData = JSON.parse(sessionStorage.getItem('character'));
-                for (const characterItem of characterData) {
-                    for (let i = 1; i <= saveData.charactercount; i++) {
-                        if (characterItem.id == saveData[`character_${i}_id`]) {
-                            const newCharacter = new Character(characterItem);
-                            newCharacter['nickname'] = saveData[`character_${i}_nickname`];
-                            newCharacter['f_id'] = saveData[`character_${i}_fid`];
-                            this.addCharacter(newCharacter);
+                    if (saveData.charactercount > 0) {
+                        if (sessionStorage.getItem('character') == null) {
+                            const response = await axios.get('/characters');
+                            sessionStorage.setItem('character', JSON.stringify(response.data['character']));
+                            sessionStorage.setItem('characternationality', JSON.stringify(response.data['characternationality']));
+                            sessionStorage.setItem('characterfaction', JSON.stringify(response.data['characterfaction']));
+                            sessionStorage.setItem('characterspecialrule', JSON.stringify(response.data['characterspecialrule']));
+                            sessionStorage.setItem('faction', JSON.stringify(response.data['faction']));
                         }
-                    }
-                }
-            }
-            if (saveData.shipcount > 0) {
-                if (sessionStorage.getItem('ship') == null) {
-                    const response = await axios.get('ship');
-                    sessionStorage.setItem('ship', JSON.stringify(response.data['ship']));
-                }
-                const shipData = JSON.parse(sessionStorage.getItem('ship'));
-                for (const shipItem of shipData) {
-                    for (let i = 1; i <= saveData.shipcount; i++) {
-                        if (shipItem.id == saveData[`ship_${i}_id`]) {
-                            const newShip = new Ship(shipItem);
-                            newShip['nickname'] = saveData[`ship_${i}_nickname`];
-                            newShip['f_id'] = saveData[`ship_${i}_fid`];
-                            this.addShip(newShip);
-                            setTimeout(() => {
-                                for (const upgrade of this.ships[`${newShip['f_id']}`]['upgrade']) {
-                                    if (saveData[`ship_${i}_upgrades`].includes(upgrade.id)) {
-                                        $(`#fl-${newShip['f_id']}-upgrade-${upgrade.id}`).prop( "checked", true );
-                                        setTimeout(() => {
-                                            this.handleShipUpgrade(newShip['f_id'],upgrade);
-                                        }, 100);
-                                    }
+                        const characterData = JSON.parse(sessionStorage.getItem('character'));
+                        for (const characterItem of characterData) {
+                            for (let i = 1; i <= saveData.charactercount; i++) {
+                                if (characterItem.id == saveData[`character_${i}_id`]) {
+                                    const newCharacter = new Character(characterItem);
+                                    newCharacter['nickname'] = saveData[`character_${i}_nickname`];
+                                    newCharacter['f_id'] = saveData[`character_${i}_fid`];
+                                    this.addCharacter(newCharacter);
                                 }
-                            }, 100);
+                            }
                         }
                     }
-                }
-            } 
-            if (saveData.unitcount > 0) {
-                for (const unitItem of this.faction.unitList) {
-                    for (let i = 1; i <= saveData.unitcount; i++) {
-                        if (unitItem.id == saveData[`unit_${i}_id`]) {
-                            const newUnit = new Unit(unitItem);
-                            newUnit['nickname'] = saveData[`unit_${i}_nickname`];
-                            newUnit['f_id'] = saveData[`unit_${i}_fid`];
-                            newUnit['qty'] = saveData[`unit_${i}_qty`];
-                            this.addUnit(newUnit);
-                            setTimeout(() => {
-                                for (const option of this.units[`${newUnit['f_id']}`]['option']) {
-                                    if (saveData[`unit_${i}_options`].includes(option.id)) {
-                                        $(`#fl-${newUnit['f_id']}-option-${option.id}`).prop( "checked", true );
-                                        setTimeout(() => {
-                                            this.handleUnitOption(newUnit['f_id'],option);
-                                        }, 100);
-                                    }
+                    if (saveData.shipcount > 0) {
+                        if (sessionStorage.getItem('ship') == null) {
+                            const response = await axios.get('/ships');
+                            sessionStorage.setItem('ship', JSON.stringify(response.data['ship']));
+                            sessionStorage.setItem('shipspecialrule', JSON.stringify(response.data['shipspecialrule']));
+                            sessionStorage.setItem('shipupgrade', JSON.stringify(response.data['shipupgrade']));
+                        }
+                        const shipData = JSON.parse(sessionStorage.getItem('ship'));
+                        for (const shipItem of shipData) {
+                            for (let i = 1; i <= saveData.shipcount; i++) {
+                                if (shipItem.id == saveData[`ship_${i}_id`]) {
+                                    const newShip = new Ship(shipItem);
+                                    newShip['nickname'] = saveData[`ship_${i}_nickname`];
+                                    newShip['f_id'] = saveData[`ship_${i}_fid`];
+                                    this.addShip(newShip);
+                                    setTimeout(() => {
+                                        console.debug(`Ship ${newShip['f_id']} in this.ships:`, this.ships[newShip['f_id']]);
+                                        const shipUpgrades = this.ships[newShip['f_id']] && this.ships[newShip['f_id']]['upgrade'] ? this.ships[newShip['f_id']]['upgrade'] : [];
+                                        for (const upgrade of shipUpgrades) {
+                                            if (saveData[`ship_${i}_upgrades`].includes(upgrade.id)) {
+                                                $(`#fl-${newShip['f_id']}-upgrade-${upgrade.id}`).prop("checked", true);
+                                                setTimeout(() => {
+                                                    this.handleShipUpgrade(newShip['f_id'], upgrade);
+                                                }, 100);
+                                            }
+                                        }
+                                    }, 100);
                                 }
-                            }, 100);
+                            }
                         }
                     }
-                }
-            }        
-            if (saveData.misccount > 0) {
-                for (let i = 1; i <= saveData.misccount; i++) {
-                    const newMisc = new Misc();
-                    newMisc['name'] = saveData[`misc_${i}_name`];
-                    newMisc['f_id'] = saveData[`misc_${i}_fid`];
-                    newMisc['qty'] = saveData[`misc_${i}_qty`];
-                    newMisc['points'] = saveData[`misc_${i}_points`];
-                    newMisc['details'] = saveData[`misc_${i}_details`];
-                    this.addMisc(newMisc);
-                }
+                    if (saveData.misccount > 0) {
+                        for (let i = 1; i <= saveData.misccount; i++) {
+                            const newMisc = new Misc();
+                            newMisc['name'] = saveData[`misc_${i}_name`];
+                            newMisc['f_id'] = saveData[`misc_${i}_fid`];
+                            newMisc['qty'] = saveData[`misc_${i}_qty`];
+                            newMisc['points'] = saveData[`misc_${i}_points`];
+                            newMisc['details'] = saveData[`misc_${i}_details`];
+                            this.addMisc(newMisc);
+                        }
+                    }
+                    if (saveData.username) {
+                        this.username = saveData.username;
+                    }
+                    this.updateTotalForcePoints();
+                    this.idCounter = saveData.idcounter;
+                    this.save = saveData;
+                    this.resetBuildSideTools();
+                    console.debug('Post-reset this.units:', this.units);
+                }, 900);
+    
+                setTimeout(async () => {
+                    if (saveData.unitcount > 0) {
+                        console.debug('unitList before load:', this.faction?.unitList || 'not set');
+                        for (const unitItem of this.faction.unitList) {
+                            for (let i = 1; i <= saveData.unitcount; i++) {
+                                if (unitItem.id == saveData[`unit_${i}_id`]) {
+                                    const newUnit = new Unit(unitItem);
+                                    newUnit['nickname'] = saveData[`unit_${i}_nickname`];
+                                    newUnit['f_id'] = saveData[`unit_${i}_fid`];
+                                    newUnit['qty'] = saveData[`unit_${i}_qty`];
+                                    this.addUnit(newUnit);
+                                    setTimeout(() => {
+                                        console.debug(`Unit ${newUnit['f_id']} in this.units:`, this.units[newUnit['f_id']]);
+                                        const unitOptions = this.units[newUnit['f_id']] && this.units[newUnit['f_id']]['option'] ? this.units[newUnit['f_id']]['option'] : [];
+                                        for (const option of unitOptions) {
+                                            if (saveData[`unit_${i}_options`].includes(option.id)) {
+                                                $(`#fl-${newUnit['f_id']}-option-${option.id}`).prop("checked", true);
+                                                setTimeout(() => {
+                                                    this.handleUnitOption(newUnit['f_id'], option);
+                                                }, 100);
+                                            }
+                                        }
+                                    }, 100);
+                                }
+                            }
+                        }
+                        console.debug('unitList after load:', this.faction.unitList);
+                    }
+                }, 1250);
+            } else {
+                console.debug('Tab not visible, waiting for focus');
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        loadWhenVisible();
+                    }
+                }, { once: true });
             }
-            if (saveData.username) {
-                this.username = saveData.username;
-            }
-            this.updateTotalForcePoints();
-            this.idCounter = saveData.idcounter;
-            this.save = saveData;
-            this.resetBuildSideTools();
-        }, 800)
+        };
+    
+        loadWhenVisible();
     }
 
     resetBuildSideTools() {
