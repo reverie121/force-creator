@@ -264,12 +264,26 @@ def show_forcelist(uuid):
 def del_forcelist(uuid):
     saved_list = models.SavedList.query.get_or_404(uuid)
     saved_list_dict = models.serialize(saved_list)
-    if saved_list_dict['username'] == session.get("username"):
-        models.db.session.delete(saved_list)
-        models.db.session.commit()
-        return redirect(f'/users/{session["username"]}')
-    else:
-        return redirect(f'/lists/{uuid}')
+    current_user = session.get("username")
+    if saved_list_dict['username'] == current_user:
+        try:
+            for comp in saved_list.artillerycomponent:
+                models.db.session.delete(comp)
+            for comp in saved_list.charactercomponent:
+                models.db.session.delete(comp)
+            for comp in saved_list.shipcomponent:
+                models.db.session.delete(comp)
+            for comp in saved_list.unitcomponent:
+                models.db.session.delete(comp)
+            for comp in saved_list.customcomponent:
+                models.db.session.delete(comp)
+            models.db.session.delete(saved_list)
+            models.db.session.commit()
+            return jsonify({"success": True, "redirect": f"/users/{current_user}"}), 200
+        except Exception as e:
+            models.db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 500
+    return jsonify({"success": False, "redirect": f"/lists/{uuid}"}), 403
 
 @app.route('/lists/pdf', methods=['POST'])
 def pdf_from_forcelist():
@@ -337,7 +351,8 @@ def get_all_character_data():
         'character': models.serialize(list(models.Character.query.all())),
         'characternationality': models.serialize(list(models.CharacterNationality.query.all())),
         'characterfaction': models.serialize(list(models.CharacterFaction.query.all())),
-        'characterspecialrule': models.serialize(list(models.CharacterSpecialrule.query.all()))
+        'characterspecialrule': models.serialize(list(models.CharacterSpecialrule.query.all())),
+        'faction': models.serialize(list(models.Faction.query.all()))
     }
     return jsonify(all_character_data)
 

@@ -5,7 +5,7 @@ function storeFactionsAndCommanders(axiosResponse) {
     const nationality = axiosResponse.data.nationality;
     const commanders = axiosResponse.data.commander;
     const factions = axiosResponse.data.faction;
-    console.debug(`Adding nation data to session storage for ${nationality.name}.`);
+//    console.log(`Adding nation data to session storage for ${nationality.name}.`);
     sessionStorage.setItem(nationality.name,JSON.stringify(axiosResponse.data));
     sessionStorage.setItem(`${nationality.name}_commanders`,JSON.stringify(commanders));
     sessionStorage.setItem(`${nationality.name}_factions`,JSON.stringify(factions));
@@ -42,7 +42,7 @@ $(window).ready(async function() {
 
     for (const list of savedListData) {
         const nationName = getNationName(list.nationality_id);
-        // If list Nation option is not already in sesstion storage,
+        // If list Nation option is not already in session storage,
         // send request for data and add to session storage.
         if (sessionStorage.getItem(nationName) == null) {
             const response = await axios.get(`/nationalities/${list.nationality_id}`);
@@ -56,12 +56,30 @@ $(window).ready(async function() {
         const nationalFactionList = JSON.parse(sessionStorage.getItem(`${nationName}_factions`));
         const selectedFaction = nationalFactionList.find(faction => faction.id == list.faction_id);
         $(`#list-${list.uuid}-faction`).html(`${selectedFaction.name}`);
-        // Handlers for removing saved list.
-        $(`#${list.uuid}-remove`).parent().on('click',async () => {
-            const response = await axios.get(`/lists/${list.uuid}/delete`);
-            $(`#${list.uuid}-remove`).parent().parent().parent().hide('medium','swing');
+        // Handler for showing delete modal
+        $(`#${list.uuid}-remove`).parent().on('click', (e) => {
+            e.preventDefault();
+            $('#deleteListUuid').val(list.uuid); // Set the uuid in the modal
+            $('#deleteListModal').modal('show');
         });
     }
+
+    // Handler for confirm delete button
+    $('#confirmDeleteButton').on('click', async () => {
+        const uuid = $('#deleteListUuid').val();
+        try {
+            const response = await axios.get(`/lists/${uuid}/delete`);
+            if (response.data.success) {
+                $(`#${uuid}-remove`).parent().parent().parent().hide('medium', 'swing');
+                $('#deleteListModal').modal('hide');
+            } else {
+                alert('You are not authorized to delete this list.');
+            }
+        } catch (error) {
+            console.error('Delete failed:', error.response?.data || error.message);
+            alert('Failed to delete list. Please try again.');
+        }
+    });
 
     $('#main-area').show('slow','swing');
 });
