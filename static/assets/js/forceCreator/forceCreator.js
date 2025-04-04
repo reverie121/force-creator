@@ -21,8 +21,7 @@ function resetComponentSelector() {
     if ('faction' in forceList) {
         if (forceList.faction.artilleryallowed == 0) {
             $("#component_selector option[value='artillery']").hide();
-        }
-        else {
+        } else {
             $("#component_selector option[value='artillery']").show();
         }
     }
@@ -30,24 +29,23 @@ function resetComponentSelector() {
     $('#menu').hide('medium', 'swing');
     setTimeout(() => {
         $('#menu').empty();
-    }, 500)    
-    // Hides and shows save/download options for build side.
+    }, 500);
+    // Show/hide save and revert options
     if (!forceList.faction || !forceList.commander) {
-        $('#component-instructions').show('slow', 'swing');
+        $('.instructions').show('slow', 'swing');
         $('#component_selector').hide('medium', 'swing');
         $('#add-custom-button').hide('medium', 'swing');
         if (!forceList.save) {
-            $('#force-revert').hide('fast', 'swing');            
+            $('#force-revert').hide('fast', 'swing');
         }
-        $('#force-revert').hide('fast', 'swing');
         $('#force-save').hide('fast', 'swing');
         $('#force-pdf').hide('fast', 'swing');
     } else {
-        $('#component-instructions').hide('fast', 'swing');
-        $('#add-custom-button').show('medium', 'swing');
+        $('.instructions').hide('fast', 'swing');
         $('#component_selector').show('medium', 'swing');
+        $('#add-custom-button').show('medium', 'swing');
         if (forceList.save) {
-            $('#force-revert').show('fast', 'swing');            
+            $('#force-revert').show('fast', 'swing');
         }
         $('#force-save').show('fast', 'swing');
         $('#force-pdf').show('fast', 'swing');
@@ -184,6 +182,14 @@ $selectCommander.on('change', function() {
     forceCommander.initialize(selectedCommander, forceList.nationality.name);
     forceList.setCommander(forceCommander);
     forceList.displayCommander();
+    // Toggle instructions based on faction and commander selection
+    if (forceList.faction && forceList.commander) {
+        $('.instructions').hide('fast', 'swing');
+        $('#component_selector').show('medium', 'swing');
+        $('#add-custom-button').show('medium', 'swing');
+    } else {
+        $('.instructions').show('slow', 'swing');
+    }
 });
 
 // Handle Faction Selector dropdown.
@@ -199,6 +205,14 @@ $selectFaction.on('change', async function() {
     forceList.setFaction(forceFaction);
     await forceList.faction.setFactionUnits();
     forceList.displayFaction();
+    // Toggle instructions based on faction and commander selection
+    if (forceList.faction && forceList.commander) {
+        $('.instructions').hide('fast', 'swing');
+        $('#component_selector').show('medium', 'swing');
+        $('#add-custom-button').show('medium', 'swing');
+    } else {
+        $('.instructions').show('slow', 'swing');
+    }
 });
 
 // Handle menu component (artillery, characters, units, etc) dropdown.
