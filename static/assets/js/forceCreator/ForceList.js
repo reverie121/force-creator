@@ -392,33 +392,50 @@ class ForceList {
                 }, 900);
     
                 setTimeout(async () => {
-                    if (saveData.unitcount > 0) {
-                        console.debug('unitList before load:', this.faction?.unitList || 'not set');
-                        for (const unitItem of this.faction.unitList) {
-                            for (let i = 1; i <= saveData.unitcount; i++) {
-                                if (unitItem.id == saveData[`unit_${i}_id`]) {
-                                    const newUnit = new Unit(unitItem);
-                                    newUnit['nickname'] = saveData[`unit_${i}_nickname`];
-                                    newUnit['f_id'] = saveData[`unit_${i}_fid`];
-                                    newUnit['qty'] = saveData[`unit_${i}_qty`];
-                                    this.addUnit(newUnit);
-                                    setTimeout(() => {
-                                        console.debug(`Unit ${newUnit['f_id']} in this.units:`, this.units[newUnit['f_id']]);
-                                        const unitOptions = this.units[newUnit['f_id']] && this.units[newUnit['f_id']]['option'] ? this.units[newUnit['f_id']]['option'] : [];
-                                        for (const option of unitOptions) {
-                                            if (saveData[`unit_${i}_options`].includes(option.id)) {
-                                                $(`#fl-${newUnit['f_id']}-option-${option.id}`).prop("checked", true);
-                                                setTimeout(() => {
-                                                    this.handleUnitOption(newUnit['f_id'], option);
-                                                }, 100);
+                    const checkUnitList = async () => {
+                        let attempts = 0;
+                        const maxAttempts = 10; // Adjust as needed
+                        const pollInterval = 900; // Adjust as needed
+            
+                        while (!this.faction?.unitList && attempts < maxAttempts) {
+                            console.debug('unitList not yet available, waiting...');
+                            await new Promise(resolve => setTimeout(resolve, pollInterval));
+                            attempts++;
+                        }
+            
+                        if (this.faction?.unitList) {
+                            console.debug('unitList available, loading units:', this.faction.unitList);
+                            for (const unitItem of this.faction.unitList) {
+                                for (let i = 1; i <= saveData.unitcount; i++) {
+                                    if (unitItem.id == saveData[`unit_${i}_id`]) {
+                                        const newUnit = new Unit(unitItem);
+                                        newUnit['nickname'] = saveData[`unit_${i}_nickname`];
+                                        newUnit['f_id'] = saveData[`unit_${i}_fid`];
+                                        newUnit['qty'] = saveData[`unit_${i}_qty`];
+                                        this.addUnit(newUnit);
+                                        setTimeout(() => {
+                                            console.debug(`Unit ${newUnit['f_id']} in this.units:`, this.units[newUnit['f_id']]);
+                                            const unitOptions = this.units[newUnit['f_id']] && this.units[newUnit['f_id']]['option'] ? this.units[newUnit['f_id']]['option'] : [];
+                                            for (const option of unitOptions) {
+                                                if (saveData[`unit_${i}_options`].includes(option.id)) {
+                                                    $(`#fl-${newUnit['f_id']}-option-${option.id}`).prop("checked", true);
+                                                    setTimeout(() => {
+                                                        this.handleUnitOption(newUnit['f_id'], option);
+                                                    }, 100);
+                                                }
                                             }
-                                        }
-                                    }, 100);
+                                        }, 100);
+                                    }
                                 }
                             }
+                            console.debug('unitList loaded:', this.faction.unitList);
+                        } else {
+                            console.error('unitList not available after maximum attempts.');
                         }
-                        console.debug('unitList after load:', this.faction.unitList);
-                    }
+                    };
+            
+                    /* Poll for unitList availability and load units */
+                    checkUnitList();
                 }, 1250);
             } else {
                 console.debug('Tab not visible, waiting for focus');

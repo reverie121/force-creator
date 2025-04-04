@@ -11,13 +11,13 @@ class AddUserForm(FlaskForm):
     email = StringField("Email", validators=[InputRequired(), Email(), Length(max=75)])
     first_name = StringField("First Name", validators=[InputRequired(), Length(max=50)])
     last_name = StringField("Last Name", validators=[InputRequired(), Length(max=50)])
-
+    recaptcha_response = StringField('reCAPTCHA', validators=[DataRequired()])
 
 class LogInForm(FlaskForm):
     """ Form for logging in users. """
     username = StringField("User Name", validators=[InputRequired(), Length(max=30)])
     password = PasswordField("Password", validators=[InputRequired()])
-
+    recaptcha_response = StringField('reCAPTCHA', validators=[DataRequired()])
 
 class EditUserForm(FlaskForm):
     """ Form for editing a user account. """
@@ -25,6 +25,10 @@ class EditUserForm(FlaskForm):
     first_name = StringField("First Name", validators=[InputRequired(), Length(max=50)])
     last_name = StringField("Last Name", validators=[InputRequired(), Length(max=50)])
     password = PasswordField("Password", validators=[InputRequired()])
+    recaptcha_response = StringField('reCAPTCHA', validators=[DataRequired()])
+
+class DeleteUserForm(FlaskForm):
+    recaptcha_response = StringField('reCAPTCHA', validators=[DataRequired()])
 
 class ContactForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])

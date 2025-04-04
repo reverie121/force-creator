@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, jsonify, session, request, json, make_response, url_for, flash
-from forms import AddToList, AddUserForm, LogInForm, EditUserForm, ContactForm
+from forms import AddToList, AddUserForm, LogInForm, EditUserForm, DeleteUserForm, ContactForm
 import uuid
 import os
 import pdfkit
@@ -32,7 +32,20 @@ migrate = Migrate(app, db)
 
 logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
-############### ROUTES ###############
+# Verify reCAPTCHA token with Google API
+def validate_recaptcha(response, remote_ip):
+    recaptcha_verify_url = 'https://www.google.com/recaptcha/api/siteverify'
+    recaptcha_data = {
+        'secret': config.RECAPTCHA_SECRET_KEY,
+        'response': response,
+        'remoteip': remote_ip
+    }
+    recaptcha_result = requests.post(recaptcha_verify_url, data=recaptcha_data).json()
+    logging.debug(f"reCAPTCHA validation result: {recaptcha_result}")
+    success = recaptcha_result.get('success', False)
+    if not success:
+        logging.debug(f"reCAPTCHA failed with error-codes: {recaptcha_result.get('error-codes', 'No error codes provided')}")
+    return success
 
 @app.route('/')
 def main():
@@ -53,26 +66,14 @@ def contact():
             email = form.email.data
             message = form.message.data
             recaptcha_response = form.recaptcha_response.data
-
-            recaptcha_verify_url = 'https://www.google.com/recaptcha/api/siteverify'
-            recaptcha_data = {
-                'secret': config.RECAPTCHA_SECRET_KEY,
-                'response': recaptcha_response,
-                'remoteip': request.remote_addr
-            }
-            recaptcha_result = requests.post(recaptcha_verify_url, data=recaptcha_data).json()
-            logging.debug("reCAPTCHA result: %s", recaptcha_result)
-
-            if not recaptcha_result.get('success'):
+            if not validate_recaptcha(recaptcha_response, request.remote_addr):
                 flash('reCAPTCHA verification failed. Please try again.', 'error')
                 return redirect(url_for('contact'))
-
             msg = MIMEText(f"Name: {name}\nEmail: {email}\nMessage: {message}")
             msg['Subject'] = 'New Contact Form Submission from ForceCreator'
             msg['From'] = config.EMAIL_ADDRESS
             msg['To'] = config.EMAIL_ADDRESS
             msg['Reply-To'] = email
-
             try:
                 with smtplib.SMTP('mi3-ts107.a2hosting.com', 587) as server:
                     server.starttls()
@@ -81,7 +82,6 @@ def contact():
                 flash('Your message has been sent successfully!', 'success')
             except Exception as e:
                 flash(f'Error sending message: {str(e)}', 'danger')
-
             return redirect(url_for('contact'))
         else:
             logging.debug("Form validation failed: %s", form.errors)
@@ -95,14 +95,19 @@ def contact():
 @app.route('/user/new', methods=['GET', 'POST'])
 def new_user():
     form = AddUserForm()
+    if request.method == 'POST':
+        logging.debug(f"Raw form data: {request.form}")
     if form.validate_on_submit():
+        recaptcha_response = form.recaptcha_response.data
+        logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
+        if not validate_recaptcha(recaptcha_response, request.remote_addr):
+            return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         username = form.username.data
         password = form.password.data
         email = form.email.data
         if models.Account.query.filter_by(email=email).first():
             flash('That email is already registered. Please use a different email or log in.', 'danger')
-            return render_template('user-new.html', form=form)
-        
+            return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         try:
             user = models.Account.register(username, password)
             user.email = email
@@ -121,12 +126,17 @@ def new_user():
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {field}: {error}", 'danger')
-    return render_template('user-new.html', form=form)
+    return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/user/login', methods=['GET', 'POST'])
 def log_in_user():
     form = LogInForm()
     if form.validate_on_submit():
+        recaptcha_response = form.recaptcha_response.data
+        logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
+        if not validate_recaptcha(recaptcha_response, request.remote_addr):
+            flash('reCAPTCHA verification failed. Please try again.', 'danger')
+            return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         usr = form.username.data
         pwd = form.password.data
         user = models.Account.authenticate(usr, pwd)
@@ -140,7 +150,7 @@ def log_in_user():
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {field}: {error}", 'danger')
-    return render_template('user-log-in.html', form=form)
+    return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/user/logout')
 def log_out_user():
@@ -153,19 +163,30 @@ def show_secrets(username):
     user = models.Account.query.get_or_404(username)
     savedListData = [save.pack_data() for save in user.savedlist]
     jsonListData = json.dumps(savedListData)
-    return render_template('user-info.html', user=user, savedlists=user.savedlist, listdata=jsonListData)
+    delete_form = DeleteUserForm()
+    return render_template('user-info.html', user=user, savedlists=user.savedlist, listdata=jsonListData, delete_form=delete_form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/users/<username>/delete', methods=['POST'])
 def delete_user(username):
-    if session.get('username') != username:
-        flash('You are not authorized to delete this account.', 'danger')
-        return redirect('/')
-    user = models.Account.query.get_or_404(username)
-    models.db.session.delete(user)
-    models.db.session.commit()
-    session.pop("username", None)
-    flash('Your account has been deleted successfully.', 'success')
-    return redirect('/user/new')
+    if 'username' not in session or session['username'] != username:
+        flash('You must be logged in to delete your account.', 'danger')
+        return redirect('/user/login')
+    form = DeleteUserForm()
+    if form.validate_on_submit():
+        recaptcha_response = form.recaptcha_response.data
+        logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
+        if not validate_recaptcha(recaptcha_response, request.remote_addr):
+            flash('reCAPTCHA verification failed. Please try again.', 'danger')
+            return redirect(f'/users/{username}')
+        user = models.Account.query.get_or_404(username)
+        models.db.session.delete(user)
+        models.db.session.commit()
+        session.pop("username", None)
+        flash('Your account has been deleted successfully.', 'success')
+        return redirect('/user/new')  # Changed from /user/login to /user/new
+    else:
+        flash('Form validation failed.', 'danger')
+        return redirect(f'/users/{username}')
 
 @app.route('/users/<username>/edit', methods=['GET', 'POST'])
 def edit_user(username):
@@ -180,6 +201,11 @@ def edit_user(username):
     user = models.Account.query.get_or_404(username)
     
     if form.validate_on_submit():
+        recaptcha_response = form.recaptcha_response.data
+        logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
+        if not validate_recaptcha(recaptcha_response, request.remote_addr):
+            flash('reCAPTCHA verification failed. Please try again.', 'danger')
+            return render_template('user-edit.html', form=form, user=user, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         usr = session['username']
         pwd = form.password.data
         user = models.Account.authenticate(usr, pwd)
@@ -197,7 +223,7 @@ def edit_user(username):
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {field}: {error}", 'danger')
-    return render_template('user-edit.html', form=form, user=user)
+    return render_template('user-edit.html', form=form, user=user, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 ############### FC USER ROUTES ###############
 

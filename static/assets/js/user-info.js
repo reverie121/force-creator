@@ -5,33 +5,27 @@ function storeFactionsAndCommanders(axiosResponse) {
     const nationality = axiosResponse.data.nationality;
     const commanders = axiosResponse.data.commander;
     const factions = axiosResponse.data.faction;
-//    console.log(`Adding nation data to session storage for ${nationality.name}.`);
-    sessionStorage.setItem(nationality.name,JSON.stringify(axiosResponse.data));
-    sessionStorage.setItem(`${nationality.name}_commanders`,JSON.stringify(commanders));
-    sessionStorage.setItem(`${nationality.name}_factions`,JSON.stringify(factions));
+    sessionStorage.setItem(nationality.name, JSON.stringify(axiosResponse.data));
+    sessionStorage.setItem(`${nationality.name}_commanders`, JSON.stringify(commanders));
+    sessionStorage.setItem(`${nationality.name}_factions`, JSON.stringify(factions));
 }
 
 function getNationName(id) {
     let nationalityName = 'Spain';
     if (id == 2) {
         nationalityName = 'England';
-    }
-    else if (id == 3) {
+    } else if (id == 3) {
         nationalityName = 'France';
-    }
-    else if (id == 4) {
+    } else if (id == 4) {
         nationalityName = 'Unaligned & Peripheral Powers';
-    }
-    else if (id == 5) {
+    } else if (id == 5) {
         nationalityName = 'Dutch';
-    }
-    else if (id == 6) {
+    } else if (id == 6) {
         nationalityName = 'Pirates';
-    }
-    else if (id == 8) {
+    } else if (id == 8) {
         nationalityName = 'Native Americans';
-    }    
-    return nationalityName
+    }
+    return nationalityName;
 }
 
 $(window).ready(async function() {
@@ -59,7 +53,7 @@ $(window).ready(async function() {
         // Handler for showing delete modal
         $(`#${list.uuid}-remove`).parent().on('click', (e) => {
             e.preventDefault();
-            $('#deleteListUuid').val(list.uuid); // Set the uuid in the modal
+            $('#deleteListUuid').val(list.uuid);
             $('#deleteListModal').modal('show');
         });
     }
@@ -81,5 +75,20 @@ $(window).ready(async function() {
         }
     });
 
-    $('#main-area').show('slow','swing');
+    $('#deleteAccountButton').on('click', function() {
+        $('#deleteAccountModal').modal('show');
+    });
+
+    $('#confirmDeleteAccountButton').on('click', function() {
+        var recaptchaResponse = grecaptcha.getResponse();
+        console.debug('reCAPTCHA response on submit:', recaptchaResponse);
+        if (!recaptchaResponse) {
+            alert('Please complete the reCAPTCHA.');
+            return;
+        }
+        document.getElementById('recaptcha_response_delete').value = recaptchaResponse;
+        document.getElementById('delete-user-form').submit();
+    });
+
+    $('#main-area').show('slow', 'swing');
 });

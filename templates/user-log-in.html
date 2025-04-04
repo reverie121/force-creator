@@ -21,15 +21,20 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
-                    <form id="add-user-form" method="POST">
+                    <!-- Login form with reCAPTCHA -->
+                    <form id="login-user-form" method="POST">
+                        {{ form.hidden_tag() }}
                         <div class="form-group text-info fell fs-5">
-                            {{ form.hidden_tag() }} <!--add type=hidden form fields -->
-                            {% for field in form if field.widget.input_type != 'hidden' %}
+                            {% for field in form if field.widget.input_type != 'hidden' and field.name != 'recaptcha_response' %}
                             <p>
                                 {{ field.label }}
-                                {{ field(class_='form-control bg-info text-primary') }}
+                                {{ field(class_='form-control bg-info text-primary', autocomplete='current-password' if field.name == 'password' else 'off') }}
                             </p>
                             {% endfor %}
+                            <div class="mb-3 mt-1">
+                                <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-type="checkbox" data-theme="dark"></div>
+                                <input type="hidden" name="recaptcha_response" id="recaptcha_response_login">
+                            </div>
                             <button type="submit" class="btn btn-success mt-1">Submit</button>
                         </div>
                     </form>
@@ -37,5 +42,18 @@
             </div>
         </div>
     </div>    
-    <script>$('#main-area').show('slow','swing');</script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script>
+        $('#main-area').show('slow', 'swing');
+        document.getElementById('login-user-form').addEventListener('submit', function(event) {
+            var recaptchaResponse = grecaptcha.getResponse();
+            console.debug('reCAPTCHA response on submit:', recaptchaResponse);
+            if (!recaptchaResponse) {
+                event.preventDefault();
+                alert('Please complete the reCAPTCHA.');
+                return;
+            }
+            document.getElementById('recaptcha_response_login').value = recaptchaResponse;
+        });
+    </script>
 {% endblock content %}

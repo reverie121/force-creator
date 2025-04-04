@@ -96,15 +96,41 @@
                                 <hr class='border border-2 border-primary rounded-2'>
                                 <div class='d-flex flex-row justify-content-evenly flex-wrap'>
                                     <div><form method="GET" action="/users/{{ user.username }}/edit"><button class="btn btn-success mt-1">Edit Account</button></form></div>
-                                    <div><form method="POST" action="/users/{{ user.username }}/delete"><button class="btn btn-danger mt-1">Delete Account</button></form></div>                                
+                                    <div><button class="btn btn-danger mt-1" id="deleteAccountButton" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">Delete Account</button></div>
                                 </div>
-                            {% endif %}                        
+                                <!-- Delete Account Confirmation Modal -->
+                                <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteAccountModalLabel">Delete Account</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete your account?
+                                                <form id="delete-user-form" method="POST" action="/users/{{ user.username }}/delete">
+                                                    {{ delete_form.hidden_tag() }}
+                                                    <div class="mb-3 mt-1">
+                                                        <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-type="checkbox" data-theme="dark"></div>
+                                                        <input type="hidden" name="recaptcha_response" id="recaptcha_response_delete">
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="button" class="btn btn-danger" id="confirmDeleteAccountButton">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>    
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script src="{{url_for('static', filename='assets/js/forceCreator/forceCreatorHelpers.js')}}"></script>      
     <script src="{{url_for('static', filename='assets/js/user-info.js')}}"></script>      
 {% endblock content %}
