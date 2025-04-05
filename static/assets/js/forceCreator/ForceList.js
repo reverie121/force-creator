@@ -471,8 +471,12 @@ class ForceList {
                 modelCount ++;
             }
         }
-        // Count Characters
-        modelCount += Object.keys(this.characters).length;
+        // Count Characters with charactertype == 2 only
+        for (const f_id in this.characters) {
+            if (this.characters[f_id].charactertype == 2) {
+                modelCount++;
+            }
+        }
         // Count Units
         for (const unit in this.units) {
             modelCount += this.units[`${unit}`]['qty'];
