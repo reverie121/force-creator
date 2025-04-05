@@ -19,6 +19,21 @@ class ForceList {
         $('#point-max-display').text(this.maxPoints);
     }
 
+    checkErrors() {
+        const errors = ListError.checkErrors(this);
+        if (errors.length > 0) {
+            console.warn("ForceList errors detected:");
+            errors.forEach(error => console.warn(error.toString()));
+            // Create a bulleted list of error messages
+            $('#error-display').html('<ul>' + errors.map(e => `<li>${e.message}</li>`).join('') + '</ul>').show();
+            $('#force-pdf a').hide(); // Hide the button inside #force-pdf
+        } else {
+            $('#error-display').hide();
+            $('#force-pdf a').show(); // Show the button inside #force-pdf
+        }
+        return errors;
+    }
+
     updateMaxPoints() {
         this.maxPoints = $pointMax.val();
         this.updateUnitSize();
@@ -41,6 +56,9 @@ class ForceList {
         this.updateModelCount();
         this.totalForcePoints = this.totalForcePoints + this.allUnitsCost + this.allArtilleryCost + this.allShipsCost + this.allCharactersCost + this.allMiscCost;
         $('#point-total-display').text(`${this.totalForcePoints}`);
+
+        // Check and log errors
+        const errors = this.checkErrors();
     }
 
     // Reset ForceList object.
@@ -573,6 +591,8 @@ class ForceList {
             }
         }
         this.commander.specialruleChosenIDs = chosenIDs;
+        // Check and log errors
+        const errors = this.checkErrors();
     }
 
     // Assign a faction object to the force list.

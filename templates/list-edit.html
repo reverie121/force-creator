@@ -142,6 +142,8 @@
                     </div>
 
                     <div id='force-info'>
+                        <div id="error-display" class="text-danger p-2 mb-2 border border-danger rounded" style="display: none;"></div>
+                        
                         <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-faction'></div>
                         <div class='collapse card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-commander'></div>
                         <div class='card m-1 p-1 border border-2 border-secondary rounded-2 bg-info' id='force-core-units'></div>
@@ -229,7 +231,8 @@
 <script src="{{url_for('static', filename='assets/js/forceCreator/Misc.js')}}"></script>      
 <script src="{{url_for('static', filename='assets/js/forceCreator/Nationality.js')}}"></script>   
 <script src="{{url_for('static', filename='assets/js/forceCreator/Faction.js')}}"></script>   
-<script src="{{url_for('static', filename='assets/js/forceCreator/Commander.js')}}"></script>   
+<script src="{{url_for('static', filename='assets/js/forceCreator/Commander.js')}}"></script>  
+<script src="{{url_for('static', filename='assets/js/forceCreator/ListError.js')}}"></script>   
 <script src="{{url_for('static', filename='assets/js/forceCreator/ForceList.js')}}"></script>   
 <script src="{{url_for('static', filename='assets/js/forceCreator/forceCreatorHelpers.js')}}"></script>  
 <script src="{{url_for('static', filename='assets/js/forceCreator/forceCreator.js')}}"></script>      
