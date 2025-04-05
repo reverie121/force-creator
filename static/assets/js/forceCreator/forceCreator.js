@@ -7,9 +7,17 @@ function getNationData() {
     const nationalityData = JSON.parse(sessionStorage.getItem('nationality'));
     const nationList = [{'id': 0, 'name': 'Who Do You Fight For...'}];
     for (const nation of nationalityData) {
-        const newNation = { 'id': nation.id, 'name': nation.name };
+        const newNation = { 'id': nation.id, 'name': nation.name || '' };
         nationList.push(newNation);
     }
+    console.debug('Nation list before sorting:', nationList);
+    nationList.sort((a, b) => {
+        if (a.id === 0) return -1;
+        if (b.id === 0) return 1;
+        const nameA = a.name || '';
+        const nameB = b.name || '';
+        return nameA.localeCompare(nameB) || a.id - b.id;
+    });
     return nationList;
 }
 
@@ -65,18 +73,40 @@ function storeFactionsAndCommanders(axiosResponse) {
 
 // Empty Faction dropdown and refill with options from input variable.
 function populateFactionDropdown(factionList) {
+    const currentFactionId = $selectFaction.val(); // Capture current selection
     $selectFaction.empty();
-    factionList.forEach(function(e, i){
-        $selectFaction.append($('<option></option>').val(e.id).text(e.name)); 
-     });
+    const placeholder = factionList.find(e => e.id === 0) || {'id': 0, 'name': 'Be More Specific...'};
+    const sortableFactions = factionList.filter(e => e.id !== 0)
+        .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+    const sortedFactionList = [placeholder, ...sortableFactions];
+    sortedFactionList.forEach(function(e) {
+        $selectFaction.append($('<option></option>').val(e.id).text(e.name));
+    });
+    // Restore current selection if still valid, otherwise leave unselected
+    if (currentFactionId && sortedFactionList.some(f => f.id == currentFactionId)) {
+        $selectFaction.val(currentFactionId);
+    } else if (!forceList.faction) {
+        $selectFaction.val(0);
+    }
 }
 
 // Empty Commander dropdown and refill with options from input variable.
 function populateCommanderDropdown(commanderList) {
+    const currentCommanderId = $selectCommander.val(); // Capture current selection
     $selectCommander.empty();
-    commanderList.forEach(function(e, i){
-        $selectCommander.append($('<option></option>').val(e.id).text(e.name)); 
-     });
+    const placeholder = commanderList.find(e => e.id === 0) || {'id': 0, 'name': 'Who Leads Your Force...'};
+    const sortableCommanders = commanderList.filter(e => e.id !== 0)
+        .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+    const sortedCommanderList = [placeholder, ...sortableCommanders];
+    sortedCommanderList.forEach(function(e) {
+        $selectCommander.append($('<option></option>').val(e.id).text(e.name));
+    });
+    // Restore current selection if still valid, otherwise leave unselected
+    if (currentCommanderId && sortedCommanderList.some(c => c.id == currentCommanderId)) {
+        $selectCommander.val(currentCommanderId);
+    } else if (!forceList.commander) {
+        $selectCommander.val(0);
+    }
 }
 
 
@@ -182,7 +212,9 @@ $selectCommander.on('change', function() {
     forceCommander.initialize(selectedCommander, forceList.nationality.name);
     forceList.setCommander(forceCommander);
     forceList.displayCommander();
-    // Toggle instructions based on faction and commander selection
+    // Filter faction dropdown based on commander’s factions
+    populateFactionDropdown(forceList.commander.factionList);
+    // Toggle instructions
     if (forceList.faction && forceList.commander) {
         $('.instructions').hide('fast', 'swing');
         $('#component_selector').show('medium', 'swing');
@@ -205,7 +237,9 @@ $selectFaction.on('change', async function() {
     forceList.setFaction(forceFaction);
     await forceList.faction.setFactionUnits();
     forceList.displayFaction();
-    // Toggle instructions based on faction and commander selection
+    // Filter commander dropdown based on faction’s commanders
+    populateCommanderDropdown(forceList.faction.commanderList);
+    // Toggle instructions
     if (forceList.faction && forceList.commander) {
         $('.instructions').hide('fast', 'swing');
         $('#component_selector').show('medium', 'swing');
@@ -226,8 +260,7 @@ $componentSelector.on('change', async function() {
     if (sessionStorage.getItem(`${selected}`) == null) {
         if (selected == 'artillery' || selected == 'misc') {
             var response = await axios.get(`/${selected}`);
-        }
-        else {
+        } else {
             var response = await axios.get(`/${selected}s`);
         }
         if (selected == 'character') {
@@ -235,8 +268,7 @@ $componentSelector.on('change', async function() {
             sessionStorage.setItem(`characternationality`, JSON.stringify(response.data['characternationality']));
             sessionStorage.setItem(`characterfaction`, JSON.stringify(response.data['characterfaction']));
             sessionStorage.setItem(`characterspecialrule`, JSON.stringify(response.data['characterspecialrule']));
-        }
-        else if (selected == 'ship') {
+        } else if (selected == 'ship') {
             sessionStorage.setItem(`shipspecialrule`, JSON.stringify(response.data['shipspecialrule']));
             sessionStorage.setItem(`shipupgrade`, JSON.stringify(response.data['shipupgrade']));
         }
@@ -244,20 +276,87 @@ $componentSelector.on('change', async function() {
     }
     if ($selectFaction.val() > 0 && selected == 'unit') {
         var componentData = forceList.faction.unitList;
-    }
-    else {
+    } else {
         var componentData = JSON.parse(sessionStorage.getItem(`${selected}`));
     }
     $('#menu').show().empty();
-    if (selected == 'character') {
-        const fightingMan = $('<div>').addClass(['collapse rounded-2', 'force-selector-field','p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'fighting-man-characters').html(`<span class='fell bigger-text'>Fighting Men & Women</span>`);
+
+    if (selected == 'artillery') {
+        // Sort artillery by name (asc), then id (asc)
+        componentData.sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+        const menuItemContainer = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'menu-item-container');
+        $('#menu').append(menuItemContainer);
+        menuItemContainer.show('medium', 'swing');
+        for (const item of componentData) {
+            var menuItem = new Artillery(item);
+            menuItem.display();
+        }
+    } else if (selected == 'character') {
+        // Split and sort characters by charactertype
+        const fightingMen = componentData.filter(item => item.charactertype == 1)
+            .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+        const hostagesAdvisors = componentData.filter(item => item.charactertype == 2)
+            .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+
+        const fightingMan = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'fighting-man-characters').html(`<span class='fell bigger-text'>Fighting Men & Women</span>`);
         const hostageAdvisor = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'hostage-advisor-characters').html(`<span class='fell bigger-text'>Hostages & Advisors</span>`);
-        $('#menu').append(fightingMan,hostageAdvisor);
+        $('#menu').append(fightingMan, hostageAdvisor);
         fightingMan.show('medium', 'swing');
         hostageAdvisor.show('medium', 'swing');
-    }
-    else if (selected == 'ship') {
-        const canoa = $('<div>').addClass(['collapse rounded-2', 'force-selector-field','p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'canoa-container').html(`<span class='fell bigger-text'>Canoa</span>`);
+
+        // Display sorted Fighting Men & Women
+        for (const item of fightingMen) {
+            var menuItem = new Character(item);
+            if (menuItem.certainnations == 1 && menuItem.certainfactions == 1 && forceList.faction) {
+                if (menuItem.nationalityIDs.includes(forceList.nationality.id) || menuItem.factionIDs.includes(forceList.faction.id)) {
+                    menuItem.display();
+                }
+            } else if (menuItem.certainnations == 1) {
+                if (menuItem.nationalityIDs.includes(forceList.nationality.id)) {
+                    menuItem.display();
+                }
+            } else if (menuItem.certainfactions == 1) {
+                if (forceList.faction) {
+                    if (menuItem.factionIDs.includes(forceList.faction.id)) {
+                        menuItem.display();
+                    }
+                }
+            } else if (forceList.nationality.id == 8) {
+                if (menuItem.nonatives == 0) {
+                    menuItem.display();
+                }
+            } else {
+                menuItem.display();
+            }
+        }
+        // Display sorted Hostages & Advisors
+        for (const item of hostagesAdvisors) {
+            var menuItem = new Character(item);
+            if (menuItem.certainnations == 1 && menuItem.certainfactions == 1 && forceList.faction) {
+                if (menuItem.nationalityIDs.includes(forceList.nationality.id) || menuItem.factionIDs.includes(forceList.faction.id)) {
+                    menuItem.display();
+                }
+            } else if (menuItem.certainnations == 1) {
+                if (menuItem.nationalityIDs.includes(forceList.nationality.id)) {
+                    menuItem.display();
+                }
+            } else if (menuItem.certainfactions == 1) {
+                if (forceList.faction) {
+                    if (menuItem.factionIDs.includes(forceList.faction.id)) {
+                        menuItem.display();
+                    }
+                }
+            } else if (forceList.nationality.id == 8) {
+                if (menuItem.nonatives == 0) {
+                    menuItem.display();
+                }
+            } else {
+                menuItem.display();
+            }
+        }
+    } else if (selected == 'ship') {
+        // No sorting for ships - retain original order
+        const canoa = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'canoa-container').html(`<span class='fell bigger-text'>Canoa</span>`);
         const longboat = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'longboat-container').html(`<span class='fell bigger-text'>Longboat</span>`);
         const piragua = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'piragua-container').html(`<span class='fell bigger-text'>Piragua</span>`);
         const bark = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'bark-container').html(`<span class='fell bigger-text'>Bark</span>`);
@@ -270,7 +369,7 @@ $componentSelector.on('change', async function() {
         const lightFrigate = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'lightfrigate-container').html(`<span class='fell bigger-text'>Light Frigate</span>`);
         const galleon = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'galleon-container').html(`<span class='fell bigger-text'>Galleon</span>`);
         const sixthRateFrigate = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', '6thratefrigate-container').html(`<span class='fell bigger-text'>6th Rate Frigate</span>`);
-        $('#menu').append(canoa,longboat,piragua,bark,bermudaSloop,tartana,sloop,corvette,fluyt,brigantine,lightFrigate,galleon,sixthRateFrigate);
+        $('#menu').append(canoa, longboat, piragua, bark, bermudaSloop, tartana, sloop, corvette, fluyt, brigantine, lightFrigate, galleon, sixthRateFrigate);
         canoa.show('medium', 'swing');
         longboat.show('medium', 'swing');
         piragua.show('medium', 'swing');
@@ -290,65 +389,42 @@ $componentSelector.on('change', async function() {
                 }
             }
         }
-    }
-    else if (selected == 'unit') {
-        const core = $('<div>').addClass(['collapse rounded-2', 'force-selector-field','p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'core-units').html(`<span class='fell bigger-text'>Core Units</span>`);
-        const support = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'support-units').html(`<span class='fell bigger-text'>Support Units</span>`);
-        $('#menu').append(core,support);
-        core.show('medium', 'swing');
-        support.show('medium', 'swing');
-    }
-    else {
-        const menuItemContainer = $('<div>').addClass(['collapse rounded-2', 'force-selector-field','p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'menu-item-container');
-        $('#menu').append(menuItemContainer);
-        menuItemContainer.show('medium', 'swing');
-    }
-    for (const item of componentData) {
-        if (selected == 'artillery') {
-            var menuItem = new Artillery(item);
-        }
-        else if (selected == 'character') {
-            var menuItem = new Character(item);
-        }
-        else if (selected == 'ship') {
+        for (const item of componentData) {
             var menuItem = new Ship(item);
-        }
-        else if (selected == 'unit') {
-            var menuItem = new Unit(item);
-        }
-        // else if (selected == 'misc') {
-        //     var menuItem = new Misc(item);
-        // }
-        if (selected == 'character') {
-            if (menuItem.certainnations == 1 && menuItem.certainfactions == 1 && forceList.faction) {
-                if (menuItem.nationalityIDs.includes(forceList.nationality.id) || menuItem.factionIDs.includes(forceList.faction.id)) {
-                    menuItem.display();
-                }
-            }
-            else if (menuItem.certainnations == 1) {
-                if (menuItem.nationalityIDs.includes(forceList.nationality.id)) {
-                    menuItem.display();
-                }
-            }
-            else if (menuItem.certainfactions == 1) {
-                if (forceList.faction) {
-                    if (menuItem.factionIDs.includes(forceList.faction.id)) {
-                        menuItem.display();
-                    }
-                }
-            }
-            else if (forceList.nationality.id == 8) {
-                if (menuItem.nonatives == 0) {
-                    menuItem.display();
-                }
-            }
-            else {
-                menuItem.display();
-            }
-        }
-        else {
             menuItem.display();
         }
-    }
+    } else if (selected == 'unit') {
+        // Split and sort units by class
+        const coreUnits = componentData.filter(item => forceList.faction.unitClass[item.id] == 1)
+            .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+        const supportUnits = componentData.filter(item => forceList.faction.unitClass[item.id] == 2)
+            .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
 
+        const core = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'core-units').html(`<span class='fell bigger-text'>Core Units</span>`);
+        const support = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'support-units').html(`<span class='fell bigger-text'>Support Units</span>`);
+        $('#menu').append(core, support);
+        core.show('medium', 'swing');
+        support.show('medium', 'swing');
+
+        // Display sorted core units
+        for (const item of coreUnits) {
+            var menuItem = new Unit(item);
+            menuItem.display();
+        }
+        // Display sorted support units
+        for (const item of supportUnits) {
+            var menuItem = new Unit(item);
+            menuItem.display();
+        }
+    } else {
+        // Misc - no sorting required
+        const menuItemContainer = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'menu-item-container');
+        $('#menu').append(menuItemContainer);
+        menuItemContainer.show('medium', 'swing');
+        for (const item of componentData) {
+            // Uncomment if Misc class is implemented
+            // var menuItem = new Misc(item);
+            // menuItem.display();
+        }
+    }
 });
