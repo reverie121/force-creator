@@ -56,6 +56,10 @@ def show_creator():
     add_to_list = AddToList()
     return render_template('fc.html', add_to_list=add_to_list)
 
+@app.route('/known-issues')
+def known_issues():
+    return render_template('known-issues.html')
+
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     form = ContactForm()

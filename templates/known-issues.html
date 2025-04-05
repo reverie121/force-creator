@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Known Issues - ForceCreator{% endblock %}
+{% block content %}
+<div class='container-fluid border border-5 border-start-0 border-end-0 border-secondary bg-warning'>
+    <h1 class='main_header p-1 text-center text-info'><i>Known Issues</i></h1>
+</div>
+<div class='container-fluid pb-2 vh-100'>
+    <div class='container mt-1 bg-warning rounded-2'>
+        <div class="row align-items-center p-5 text-info">
+                <h2>Current Known Issues</h2>
+                <ul>
+                    <li><strong>Clicking Too Fast on Expander Icons</strong>: Rapid clicks on expander icons (e.g., in the build area) can cause them to get out of sync, showing incorrect states. <em>Status: Investigating event handling in JavaScript—consider avoiding rapid clicks for now.</em></li>
+                    <li><strong>Opening a Save in a New Window/Tab</strong>: Saved force lists sometimes load incompletely in new tabs or windows, though refreshing the page often resolves it. We’re monitoring how often this happens (>50% frequency is a concern) and checking for lists that fail to load fully even after refresh. <em>Workaround: Open lists in the same tab or refresh the new tab. Status: Partially fixed remotely, investigating local failures (branch: feature/fix-saved-list-new-tab).</em></li>
+                    <li><strong>Faction Rules Adding Special Rules</strong>: Faction special rules that grant additional special rules (e.g., “All units in this Force gain the Poorly Equipped and War Cry Special Rules”) don’t add those rules to the PDF summary or apply them to units in-game. Example: “When a shooting attack is declared against any unit in this Force that is not prone, before the attack is rolled, the targeted unit may gain a -1 bonus to its Shoot Save for that attack. After the attack is resolved, this unit goes prone.” <em>Status: Under review for back-end logic enhancement.</em></li>
+                </ul>
+
+                <h2>Known Issues with Workarounds</h2>
+                <p>These issues can be mitigated using custom components until a better fix is implemented:</p>
+                <ul>
+                    <li><strong>Climbing Gear Cost with Explosives</strong>: Adding Climbing Gear to a unit with Explosives access incorrectly adds +2 points instead of being free. <em>Workaround: Add a custom component with a -2 point cost to offset this. Status: On hold pending higher-priority fixes.</em></li>
+                </ul>
+
+                <h2>Not Yet Implemented</h2>
+                <p>These features are planned but not yet available—they are being tracked for future updates:</p>
+                <ul>
+                    <li>Individualized selection of explosives (e.g., per-model choice of Grenades vs. Firepots).</li>
+                    <li>Add years active and/or sourcebook info to the faction selector for historical context.</li>
+                    <li>Option to show/hide Climbing Gear and Torch unit options in the UI.</li>
+                    <li>Force-reset button to clear the current list and start fresh.</li>
+                    <li>Default build-side interior expanders to open for easier access.</li>
+                </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#main-area').show('slow', 'swing');
+    });
+</script>
+{% endblock %}
