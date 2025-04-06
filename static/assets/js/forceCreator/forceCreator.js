@@ -135,13 +135,18 @@ $(window).ready(async function() {
     $('#force-pdf').on('click', () => {
         forceList.showPDFOptionsModal();
     });
-    $('#generatePDFButton').on('click', () => {
-        const options = {
-            includeSpecialRules: $('#includeSpecialRules').is(':checked'),
-            includeShipTraits: $('#includeShipTraits').is(':checked')
-        };
-        $('#pdfOptionsModal').modal('hide');
-        forceList.saveListToPDF(options);
+    $('#generatePDFButton').on('click', async () => {
+        try {
+            const options = {
+                includeSpecialRules: $('#includeSpecialRules').is(':checked'),
+                includeShipTraits: $('#includeShipTraits').is(':checked')
+            };
+            $('#pdfOptionsModal').modal('hide');
+            await forceList.saveListToPDF(options);
+        } catch (error) {
+            console.error('Unexpected error during PDF generation:', error);
+            alert('An unexpected error occurred while generating the PDF. Please try again.');
+        }
     });
     // Handle button for adding custom/misc to ForceList
     $(`#add-custom-button`).on('click', () => {

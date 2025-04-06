@@ -558,8 +558,7 @@ class ForceList {
     }
 
     handleCommanderSpecialruleChoice(plusOrMinusOne, specialrule_id) {
-        let chosenIDs = []
-        // When checking/selecting a Special Rule...
+        let chosenIDs = [];
         if (plusOrMinusOne == 1) {
             console.debug('Adding Special Rule to Commander.');
             for (const sr of this.commander.specialruleChoice) {
@@ -571,28 +570,26 @@ class ForceList {
                     newRule.show('medium','swing');
                 }
                 if (sr.selected == 1) {
-                    chosenIDs.push(sr.id)
+                    chosenIDs.push(sr.id);
                 }
             }
-        // When unchecking/unselecting an option...
         } else if (plusOrMinusOne == -1) {
             console.debug('Removing Special Rule from Commander.');
             for (const sr of this.commander.specialruleChoice) {
                 if (sr.id == specialrule_id) {
                     sr['selected'] = 0;
-                    $(`#fl-commander-sr-${sr.id}`).hide('medium','swing')
+                    $(`#fl-commander-sr-${sr.id}`).hide('medium','swing');
                     setTimeout(() => {
                         $(`#fl-commander-sr-${sr.id}`).remove();
-                    }, 500)
+                    }, 500);
                 }
                 if (sr.selected == 1) {
-                    chosenIDs.push(sr.id)
+                    chosenIDs.push(sr.id);
                 }
             }
         }
         this.commander.specialruleChosenIDs = chosenIDs;
-        // Check and log errors
-        const errors = this.checkErrors();
+        this.updateTotalForcePoints();
     }
 
     // Assign a faction object to the force list.
@@ -601,7 +598,6 @@ class ForceList {
         if (!this.commander || !this.commander.factionIDs.includes(faction.id)) {
             delete this.commander;
             this.resetForceUnits();
-            this.updateTotalForcePoints();
             $('#force-commander').hide('medium', 'swing');
             populateCommanderDropdown(this.faction.commanderList);
         }
@@ -635,8 +631,7 @@ class ForceList {
                     }
                 }
             }
-        }
-        else {
+        } else {
             this.faction['forceoption_id'] = 0;
         }
         // Change unit classes where needed for faction option.
@@ -649,8 +644,7 @@ class ForceList {
         for (const o of this.faction.option) {
             if ($(`#faction-${this.faction.id}-option-${o.id}`).prop('checked')) {
                 o.selected = 1;
-            }
-            else {
+            } else {
                 o.selected = 0;
             }
         }
