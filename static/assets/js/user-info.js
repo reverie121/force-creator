@@ -62,16 +62,27 @@ $(window).ready(async function() {
     $('#confirmDeleteButton').on('click', async () => {
         const uuid = $('#deleteListUuid').val();
         try {
-            const response = await axios.get(`/lists/${uuid}/delete`);
+            const response = await axios.post(`/lists/${uuid}/delete`); // Changed from axios.get to axios.post
             if (response.data.success) {
                 $(`#${uuid}-remove`).parent().parent().parent().hide('medium', 'swing');
                 $('#deleteListModal').modal('hide');
+                // Optional: Redirect to the user page if a redirect URL is provided
+                if (response.data.redirect) {
+                    window.location.href = response.data.redirect;
+                }
             } else {
                 alert('You are not authorized to delete this list.');
             }
         } catch (error) {
             console.error('Delete failed:', error.response?.data || error.message);
-            alert('Failed to delete list. Please try again.');
+            // Provide more specific error messages based on the response
+            if (error.response?.status === 403) {
+                alert('You are not authorized to delete this list.');
+            } else if (error.response?.data?.error) {
+                alert(`Failed to delete list: ${error.response.data.error}`);
+            } else {
+                alert('Failed to delete list. Please try again.');
+            }
         }
     });
 
