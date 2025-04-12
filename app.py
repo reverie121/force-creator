@@ -49,7 +49,7 @@ def validate_recaptcha(response, remote_ip):
         logging.debug(f"reCAPTCHA failed with error-codes: {recaptcha_result.get('error-codes', 'No error codes provided')}")
     return success
 
-def log_to_db(level, message, user_id=None, request_path=None, details=None, ip_address=None, user_agent=None):
+def log_to_db(level, message, user_id=None, request_path=None, details=None, ip_address=None, user_agent=None, list_uuid=None):
     """Log a message to the log_entry table without committing the transaction."""
     def convert_datetime(obj):
         if isinstance(obj, datetime.datetime):
@@ -64,6 +64,7 @@ def log_to_db(level, message, user_id=None, request_path=None, details=None, ip_
         log_entry = models.LogEntry(
             log_level=level,
             message=message,
+            list_uuid=list_uuid,
             user_id=user_id,
             request_path=request_path,
             log_details=details,
@@ -105,7 +106,7 @@ def contact():
             user_agent = request.headers.get('User-Agent')
             if not validate_recaptcha(recaptcha_response, ip_address):
                 flash('reCAPTCHA verification failed. Please try again.', 'error')
-                log_to_db('WARNING', 'reCAPTCHA verification failed', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+                log_to_db('WARNING', 'reCAPTCHA verification failed', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
                 return redirect(url_for('contact'))
             msg = MIMEText(f"Name: {name}\nEmail: {email}\nMessage: {message}")
             msg['Subject'] = 'New Contact Form Submission from ForceCreator'
@@ -118,10 +119,10 @@ def contact():
                     server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
                     server.send_message(msg)
                 flash('Your message has been sent successfully!', 'success')
-                log_to_db('INFO', 'Contact form submitted successfully', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+                log_to_db('INFO', 'Contact form submitted successfully', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             except Exception as e:
                 flash(f'Error sending message: {str(e)}', 'danger')
-                log_to_db('ERROR', f"Error sending contact form message: {e}", user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+                log_to_db('ERROR', f"Error sending contact form message: {e}", user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(url_for('contact'))
         else:
             logging.debug("Form validation failed: %s", form.errors)
@@ -132,7 +133,7 @@ def contact():
             for field, errors in form.errors.items():
                 for error in errors:
                     flash(f"Error in {field}: {error}", 'danger')
-            log_to_db('WARNING', 'Contact form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'Contact form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return render_template('contact.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 ############### USER ROUTES ###############
@@ -146,19 +147,19 @@ def new_user():
     user_agent = request.headers.get('User-Agent')
     if request.method == 'POST':
         logging.debug(f"Raw form data: {request.form}")
-        log_to_db('DEBUG', 'User registration form submitted', user_id=None, request_path=request.path, details={'form_data': request.form.to_dict()}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('DEBUG', 'User registration form submitted', user_id=None, request_path=request.path, details={'form_data': request.form.to_dict()}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     if form.validate_on_submit():
         recaptcha_response = form.recaptcha_response.data
         logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
         if not validate_recaptcha(recaptcha_response, ip_address):
-            log_to_db('WARNING', 'reCAPTCHA verification failed during user registration', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'reCAPTCHA verification failed during user registration', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         username = form.username.data
         password = form.password.data
         email = form.email.data
         if models.Account.query.filter_by(email=email).first():
             flash('That email is already registered. Please use a different email or log in.', 'danger')
-            log_to_db('WARNING', 'Email already registered during user registration', user_id=None, request_path=request.path, details={'email': email}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'Email already registered during user registration', user_id=None, request_path=request.path, details={'email': email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         try:
             user = models.Account.register(username, password)
@@ -178,18 +179,18 @@ def new_user():
             models.db.session.commit()
             session["username"] = user.username
             flash('User registered successfully!', 'success')
-            log_to_db('INFO', 'User registered successfully', user_id=username, request_path=request.path, details={'username': username, 'email': email}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('INFO', 'User registered successfully', user_id=username, request_path=request.path, details={'username': username, 'email': email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(f'/users/{user.username}')
         except IntegrityError as e:
             models.db.session.rollback()
             flash('An error occurred. The username might already be taken. Please try a different username.', 'danger')
-            log_to_db('ERROR', f"IntegrityError during user registration: {e}", user_id=None, request_path=request.path, details={'username': username, 'error_type': str(type(e))}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('ERROR', f"IntegrityError during user registration: {e}", user_id=None, request_path=request.path, details={'username': username, 'error_type': str(type(e))}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             models.db.session.commit()
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {field}: {error}", 'danger')
-        log_to_db('WARNING', 'User registration form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'User registration form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/user/login', methods=['GET', 'POST'])
@@ -204,7 +205,7 @@ def log_in_user():
         logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
         if not validate_recaptcha(recaptcha_response, ip_address):
             flash('reCAPTCHA verification failed. Please try again.', 'danger')
-            log_to_db('WARNING', 'reCAPTCHA verification failed during login', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'reCAPTCHA verification failed during login', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         usr = form.username.data
         pwd = form.password.data
@@ -222,16 +223,16 @@ def log_in_user():
             models.db.session.add(usage_event)
             models.db.session.commit()
             flash('Login successful!', 'success')
-            log_to_db('INFO', 'User logged in successfully', user_id=user.username, request_path=request.path, details={'username': user.username}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('INFO', 'User logged in successfully', user_id=user.username, request_path=request.path, details={'username': user.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(f'/users/{user.username}')
         else:
             flash("* Username or Password is incorrect *", 'danger')
-            log_to_db('WARNING', 'Login failed: incorrect username or password', user_id=None, request_path=request.path, details={'username': usr}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'Login failed: incorrect username or password', user_id=None, request_path=request.path, details={'username': usr}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {field}: {error}", 'danger')
-        log_to_db('WARNING', 'Login form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'Login form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/user/logout')
@@ -253,7 +254,7 @@ def log_out_user():
     models.db.session.add(usage_event)
     models.db.session.commit()
     flash('You have been logged out successfully.', 'success')
-    log_to_db('INFO', 'User logged out successfully', user_id=username, request_path=request.path, details={'username': username}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'User logged out successfully', user_id=username, request_path=request.path, details={'username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return redirect('/user/login')
 
 @app.route('/users/<username>')
@@ -263,7 +264,7 @@ def show_secrets(username):
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
     if 'username' not in session or session['username'] != username:
-        log_to_db('WARNING', 'Unauthorized access to user profile', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'Unauthorized access to user profile', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
         return redirect('/')
     user = models.Account.query.get_or_404(username)
     # Filter saved lists to exclude list_status='deleted' or 'pdf'
@@ -271,7 +272,7 @@ def show_secrets(username):
     saved_list_data = [save.pack_data() for save in saved_lists]
     json_list_data = json.dumps(saved_list_data)
     delete_form = DeleteUserForm()
-    log_to_db('INFO', 'User profile accessed', user_id=username, request_path=request.path, details={'username': username, 'list_count': len(saved_lists)}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'User profile accessed', user_id=username, request_path=request.path, details={'username': username, 'list_count': len(saved_lists)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return render_template('user-info.html', user=user, savedlists=saved_lists, listdata=json_list_data, delete_form=delete_form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/users/<username>/delete', methods=['POST'])
@@ -282,7 +283,7 @@ def delete_user(username):
     user_agent = request.headers.get('User-Agent')
     if 'username' not in session or session['username'] != username:
         flash('You must be logged in to delete your account.', 'danger')
-        log_to_db('WARNING', 'Unauthorized attempt to delete user account', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'Unauthorized attempt to delete user account', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
         return redirect('/user/login')
     form = DeleteUserForm()
     if form.validate_on_submit():
@@ -290,7 +291,7 @@ def delete_user(username):
         logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
         if not validate_recaptcha(recaptcha_response, ip_address):
             flash('reCAPTCHA verification failed. Please try again.', 'danger')
-            log_to_db('WARNING', 'reCAPTCHA verification failed during user deletion', user_id=username, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'reCAPTCHA verification failed during user deletion', user_id=username, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(f'/users/{username}')
         user = models.Account.query.get_or_404(username)
         # Log usage event
@@ -306,11 +307,11 @@ def delete_user(username):
         models.db.session.commit()
         session.pop("username", None)
         flash('Your account has been deleted successfully.', 'success')
-        log_to_db('INFO', 'User account deleted successfully', user_id=username, request_path=request.path, details={'username': username}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('INFO', 'User account deleted successfully', user_id=username, request_path=request.path, details={'username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
         return redirect('/user/new')
     else:
         flash('Form validation failed.', 'danger')
-        log_to_db('WARNING', 'User deletion form validation failed', user_id=username, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'User deletion form validation failed', user_id=username, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
         return redirect(f'/users/{username}')
 
 @app.route('/users/<username>/edit', methods=['GET', 'POST'])
@@ -321,11 +322,11 @@ def edit_user(username):
     user_agent = request.headers.get('User-Agent')
     if 'username' not in session:
         flash('Please log in to edit your account.', 'danger')
-        log_to_db('WARNING', 'Unauthorized attempt to edit user account: not logged in', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'Unauthorized attempt to edit user account: not logged in', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
         return redirect('/user/login')
     if session['username'] != username:
         flash('You are not authorized to edit this account.', 'danger')
-        log_to_db('WARNING', 'Unauthorized attempt to edit user account: wrong user', user_id=session.get('username'), request_path=request.path, details={'attempted_username': username}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'Unauthorized attempt to edit user account: wrong user', user_id=session.get('username'), request_path=request.path, details={'attempted_username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
         return redirect(f'/users/{session["username"]}')
     
     form = EditUserForm()
@@ -336,7 +337,7 @@ def edit_user(username):
         logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
         if not validate_recaptcha(recaptcha_response, ip_address):
             flash('reCAPTCHA verification failed. Please try again.', 'danger')
-            log_to_db('WARNING', 'reCAPTCHA verification failed during user edit', user_id=username, request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'reCAPTCHA verification failed during user edit', user_id=username, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return render_template('user-edit.html', form=form, user=user, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         usr = session['username']
         pwd = form.password.data
@@ -361,16 +362,16 @@ def edit_user(username):
             models.db.session.add(usage_event)
             models.db.session.commit()
             flash('Account updated successfully!', 'success')
-            log_to_db('INFO', 'User account updated successfully', user_id=user.username, request_path=request.path, details={'username': user.username, 'email': user.email}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('INFO', 'User account updated successfully', user_id=user.username, request_path=request.path, details={'username': user.username, 'email': user.email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(f'/users/{usr}')
         else:
             flash("* Password is incorrect *", 'danger')
-            log_to_db('WARNING', 'User edit failed: incorrect password', user_id=usr, request_path=request.path, details={'username': usr}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('WARNING', 'User edit failed: incorrect password', user_id=usr, request_path=request.path, details={'username': usr}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {field}: {error}", 'danger')
-        log_to_db('WARNING', 'User edit form validation failed', user_id=username, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'User edit form validation failed', user_id=username, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return render_template('user-edit.html', form=form, user=user, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 ############### FC USER ROUTES ###############
@@ -378,22 +379,21 @@ def edit_user(username):
 @app.route('/lists/save', methods=['POST'])
 def save_forcelist():
     save_data = request.get_json()
-    list_id = None  # Renamed from list_uuid to list_id for clarity
+    list_id = save_data.get('uuid')
     current_username = session.get("username")
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
 
-    # Log to database
-    log_to_db('DEBUG', 'Save data received', current_username, request.path, {
+    log_to_db('DEBUG', 'Save data received', user_id=current_username, request_path=request.path, details={
         'uuid': save_data.get('uuid'),
         'force_name': save_data.get('name', 'Unknown')
-    }, ip_address=ip_address, user_agent=user_agent)
+    }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
 
     try:
         if 'username' not in session:
-            log_to_db('DEBUG', 'User not logged in, creating new save', current_username, request.path, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'User not logged in, creating new save', user_id=current_username, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             new_save = models.SavedList()
             new_uuid = uuid.uuid4()
             new_save.uuid = str(new_uuid)
@@ -402,10 +402,10 @@ def save_forcelist():
             event_type = 'list_created'
             event_details = {'force_name': save_data.get('name', 'Unknown')}
         else:
-            log_to_db('DEBUG', 'User logged in, checking conditions', current_username, request.path, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'User logged in, checking conditions', user_id=current_username, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             current_username = session["username"]
             if 'uuid' in save_data and save_data.get('username') == current_username:
-                log_to_db('DEBUG', 'Updating existing save for logged-in user', current_username, request.path, {'uuid': save_data['uuid']}, ip_address=ip_address, user_agent=user_agent)
+                log_to_db('DEBUG', 'Updating existing save for logged-in user', user_id=current_username, request_path=request.path, details={'uuid': save_data['uuid']}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
                 saved_list = models.SavedList.query.get_or_404(save_data['uuid'])
                 saved_list_dict = models.serialize(saved_list)
 
@@ -745,7 +745,7 @@ def save_forcelist():
                     'component_changes': changes
                 }
             else:
-                log_to_db('DEBUG', 'Creating new save for logged-in user', current_username, request.path, ip_address=ip_address, user_agent=user_agent)
+                log_to_db('DEBUG', 'Creating new save for logged-in user', user_id=current_username, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
                 new_save = models.SavedList()
                 new_uuid = uuid.uuid4()
                 new_save.uuid = str(new_uuid)
@@ -767,11 +767,11 @@ def save_forcelist():
         models.db.session.add(usage_event)
         models.db.session.commit()
 
-        log_to_db('INFO', 'List saved successfully', current_username, request.path, {'uuid': list_id, 'event_type': event_type}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('INFO', 'List saved successfully', user_id=current_username, request_path=request.path, details={'uuid': list_id, 'event_type': event_type}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         return list_id, 200
     except Exception as e:
         models.db.session.rollback()
-        log_to_db('ERROR', f"Save failed: {e}", current_username, request.path, {'uuid': save_data.get('uuid'), 'error_type': str(type(e)), 'force_name': save_data.get('name', 'Unknown')}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('ERROR', f"Save failed: {e}", user_id=current_username, request_path=request.path, details={'uuid': save_data.get('uuid'), 'error_type': str(type(e)), 'force_name': save_data.get('name', 'Unknown')}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         models.db.session.commit()
         return jsonify({"error": "An error occurred while saving the list. Please try again later."}), 500
     
@@ -785,10 +785,10 @@ def show_forcelist(uuid):
     response = models.SavedList.query.filter_by(uuid=uuid).filter(models.SavedList.list_status == 'saved').first()
     if not response:
         flash('The requested list is not available. It may have been deleted or is a temporary list.', 'warning')
-        log_to_db('WARNING', 'List not found or unavailable', user_id=session.get('username'), request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('WARNING', 'List not found or unavailable', user_id=session.get('username'), request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent, list_uuid=uuid)
         return redirect(url_for('main'))
     data = json.dumps(response.pack_data())
-    log_to_db('INFO', 'Force list accessed', user_id=session.get('username'), request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Force list accessed', user_id=session.get('username'), request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent, list_uuid=uuid)
     return render_template('list-edit.html', add_to_list=add_to_list, data=data)
 
 @app.route('/lists/<uuid>/delete', methods=['POST'])
@@ -803,7 +803,7 @@ def del_forcelist(uuid):
     if saved_list_dict['username'] == current_user:
         try:
             if saved_list.list_status == 'deleted':
-                log_to_db('INFO', 'List already deleted', user_id=current_user, request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent)
+                log_to_db('INFO', 'List already deleted', user_id=current_user, request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent, list_uuid=uuid)
                 return jsonify({"success": True, "redirect": f"/users/{current_user}"}), 200
             saved_list.list_status = 'deleted'
             
@@ -817,16 +817,16 @@ def del_forcelist(uuid):
             )
             models.db.session.add(usage_event)
             
-            log_to_db('INFO', 'Soft deleting force list', current_user, request.path, {'uuid': uuid, 'force_name': saved_list_dict.get('name', 'Unknown')}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('INFO', 'Soft deleting force list', user_id=current_user, request_path=request.path, details={'uuid': uuid, 'force_name': saved_list_dict.get('name', 'Unknown')}, ip_address=ip_address, user_agent=user_agent, list_uuid=uuid)
             
             models.db.session.commit()
             return jsonify({"success": True, "redirect": f"/users/{current_user}"}), 200
         except Exception as e:
             models.db.session.rollback()
-            log_to_db('ERROR', f"Soft delete failed: {e}", current_user, request.path, {'uuid': uuid, 'error_type': str(type(e))}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('ERROR', f"Soft delete failed: {e}", user_id=current_user, request_path=request.path, details={'uuid': uuid, 'error_type': str(type(e))}, ip_address=ip_address, user_agent=user_agent, list_uuid=uuid)
             models.db.session.commit()
             return jsonify({"success": False, "error": "An error occurred while deleting the list. Please try again later."}), 500
-    log_to_db('WARNING', 'Unauthorized attempt to delete list', user_id=current_user, request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('WARNING', 'Unauthorized attempt to delete list', user_id=current_user, request_path=request.path, details={'uuid': uuid}, ip_address=ip_address, user_agent=user_agent, list_uuid=uuid)
     return jsonify({"success": False, "redirect": f"/lists/{uuid}"}), 403
 
 @app.route('/lists/pdf', methods=['POST'])
@@ -841,27 +841,27 @@ def pdf_from_forcelist():
         config = pdfkit.configuration(wkhtmltopdf=cpanel_path) if os.path.exists(cpanel_path) else None
         force_list_data = request.get_json()
         print(f"force_list_data: {force_list_data}")
-        log_to_db('DEBUG', 'Received force_list_data', session.get('username'), request.path, {
-            'uuid': force_list_data.get('uuid'),
+        list_id = force_list_data.get('uuid')
+        log_to_db('DEBUG', 'Received force_list_data', user_id=session.get('username'), request_path=request.path, details={
+            'uuid': list_id,
             'force_name': force_list_data.get('name', 'Unknown'),
             'unit_count': len(force_list_data.get('units', {}))
-        }, ip_address=ip_address, user_agent=user_agent)
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
+        pdf_data = prepPdfData(force_list_data)
+        print(f"pdf_data: {pdf_data}")
+        log_to_db('DEBUG', 'Processed pdf_data', user_id=session.get('username'), request_path=request.path, details={'force_name': pdf_data.get('name', 'Unknown'), 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
 
         if not force_list_data.get('nationality', {}).get('id'):
             raise ValueError("Nationality ID is required for PDF generation")
 
-        pdf_data = prepPdfData(force_list_data)
-        print(f"pdf_data: {pdf_data}")
-        log_to_db('DEBUG', 'Processed pdf_data', session.get('username'), request.path, {'force_name': pdf_data.get('name', 'Unknown')}, ip_address=ip_address, user_agent=user_agent)
-
-        list_id = force_list_data.get('uuid')  # Renamed from list_uuid to list_id
         user_id = session.get("username")
         metadata = {
             'include_special_rules': force_list_data.get('pdfOptions', {}).get('includeSpecialRules', True),
             'include_ship_traits': force_list_data.get('pdfOptions', {}).get('includeShipTraits', True)
         }
         print(f"Metadata: {metadata}")
-        log_to_db('DEBUG', 'Metadata prepared', user_id, request.path, {'metadata': metadata, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('DEBUG', 'Metadata prepared', user_id=user_id, request_path=request.path, details={'metadata': metadata, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
                 
         # Check if the list is saved
         saved_list = models.SavedList.query.filter_by(uuid=list_id, list_status='saved').first()
@@ -945,27 +945,26 @@ def pdf_from_forcelist():
             # List is saved; compare with the PDF data to track changes
             saved_list_dict = saved_list.pack_data()
             print(f"Saved list data: {saved_list_dict}")
-            log_to_db('DEBUG', 'Saved list data', user_id, request.path, {'saved_list_dict': saved_list_dict, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'Saved list data', user_id=user_id, request_path=request.path, details={'saved_list_dict': saved_list_dict, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             changes = {}
             print(f"Comparing name: saved={saved_list_dict.get('name')}, pdf={pdf_data.get('name')}")
-            log_to_db('DEBUG', 'Comparing name', user_id, request.path, {'saved_name': saved_list_dict.get('name'), 'pdf_name': pdf_data.get('name'), 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'Comparing name', user_id=user_id, request_path=request.path, details={'saved_name': saved_list_dict.get('name'), 'pdf_name': pdf_data.get('name'), 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             if saved_list_dict.get('name') != pdf_data.get('name'):
                 changes['name'] = {'old': saved_list_dict.get('name'), 'new': pdf_data.get('name')}
             saved_maxpoints = saved_list_dict.get('maxpoints', 0)
             pdf_maxpoints = pdf_data.get('maxpoints', 0)
             print(f"Comparing maxpoints: saved={saved_maxpoints}, pdf={pdf_maxpoints}")
-            log_to_db('DEBUG', 'Comparing maxpoints', user_id, request.path, {'saved_maxpoints': saved_maxpoints, 'pdf_maxpoints': pdf_maxpoints, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'Comparing maxpoints', user_id=user_id, request_path=request.path, details={'saved_maxpoints': saved_maxpoints, 'pdf_maxpoints': pdf_maxpoints, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             if saved_maxpoints != pdf_maxpoints:
                 changes['maxpoints'] = {'old': saved_maxpoints, 'new': pdf_maxpoints}
             saved_totalforcepoints = saved_list_dict.get('totalforcepoints', 0)
             pdf_totalforcepoints = pdf_data.get('totalforcepoints', 0)
             print(f"Comparing totalforcepoints: saved={saved_totalforcepoints}, pdf={pdf_totalforcepoints}")
-            log_to_db('DEBUG', 'Comparing totalforcepoints', user_id, request.path, {'saved_totalforcepoints': saved_totalforcepoints, 'pdf_totalforcepoints': pdf_totalforcepoints, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'Comparing totalforcepoints', user_id=user_id, request_path=request.path, details={'saved_totalforcepoints': saved_totalforcepoints, 'pdf_totalforcepoints': pdf_totalforcepoints, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             if saved_totalforcepoints != pdf_totalforcepoints:
                 changes['totalforcepoints'] = {'old': saved_totalforcepoints, 'new': pdf_totalforcepoints}
             # Compare components
             print(f"Processing units: saved_units={saved_list_dict.get('units', [])} pdf_units={pdf_data.get('units', [])}")
-            log_to_db('DEBUG', 'Processing units for comparison', user_id, request.path, {'saved_units': saved_list_dict.get('units', []), 'pdf_units': pdf_data.get('units', []), 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
             saved_units = {unit['fid']: unit for unit in saved_list_dict.get('units', [])}
             pdf_units = {unit['fid']: unit for unit in pdf_data.get('units', [])}
             component_changes = {'added': [], 'removed': [], 'updated': []}
@@ -984,7 +983,7 @@ def pdf_from_forcelist():
                 if fid not in pdf_units:
                     component_changes['removed'].append({'fid': fid, 'name': saved_units[fid].get('nickname')})
             print(f"Component changes: {component_changes}")
-            log_to_db('DEBUG', 'Component changes', user_id, request.path, {'component_changes': component_changes, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'Component changes', user_id=user_id, request_path=request.path, details={'component_changes': component_changes, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             
             event_type = 'pdf_generated'
             event_details = {
@@ -993,7 +992,7 @@ def pdf_from_forcelist():
                 'component_changes': component_changes
             }
             print(f"Event details: {event_details}")
-            log_to_db('DEBUG', 'Event details prepared', user_id, request.path, {'event_details': event_details, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+            log_to_db('DEBUG', 'Event details prepared', user_id=user_id, request_path=request.path, details={'event_details': event_details, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         
         pdf_generation = models.PdfGeneration(
             list_uuid=list_id,
@@ -1005,7 +1004,7 @@ def pdf_from_forcelist():
         )
         models.db.session.add(pdf_generation)
         print("Added pdf_generation to session")
-        log_to_db('DEBUG', 'Added pdf_generation to session', user_id, request.path, {'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('DEBUG', 'Added pdf_generation to session', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         
         # Log usage event
         usage_event = models.UsageEvent(
@@ -1018,14 +1017,14 @@ def pdf_from_forcelist():
         )
         models.db.session.add(usage_event)
         print("Added usage_event to session")
-        log_to_db('DEBUG', 'Added usage_event to session', user_id, request.path, {'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('DEBUG', 'Added usage_event to session', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         
         print(f"Generating PDF: uuid={list_id}, force_name={pdf_data.get('name', 'Unknown')}")
-        log_to_db('INFO', 'Generating PDF', user_id, request.path, {'uuid': list_id, 'force_name': pdf_data.get('name', 'Unknown'), 'options': metadata}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('INFO', 'Generating PDF', user_id=user_id, request_path=request.path, details={'uuid': list_id, 'force_name': pdf_data.get('name', 'Unknown'), 'options': metadata}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         
         rendered = render_template('list-pdf.html', data=pdf_data)
         print("Template rendered")
-        log_to_db('DEBUG', 'Template rendered', user_id, request.path, {'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('DEBUG', 'Template rendered', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         css = "static/assets/css/list-pdf.css"
         pdf = pdfkit.from_string(
             rendered,
@@ -1035,7 +1034,7 @@ def pdf_from_forcelist():
             css=css
         )
         print("PDF generated")
-        log_to_db('DEBUG', 'PDF generated', user_id, request.path, {'uuid': list_id}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('DEBUG', 'PDF generated', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
 
         # Update pdf_generation success to True after successful generation
         pdf_generation.success = True
@@ -1048,7 +1047,7 @@ def pdf_from_forcelist():
     except Exception as e:
         models.db.session.rollback()
         print(f"Error in pdf_from_forcelist: {e}")
-        log_to_db('ERROR', f"Error in pdf_from_forcelist: {e}", user_id, request.path, {'uuid': list_id, 'error_type': str(type(e)), 'force_name': pdf_data.get('name', 'Unknown') if 'pdf_data' in locals() else 'Unknown'}, ip_address=ip_address, user_agent=user_agent)
+        log_to_db('ERROR', f"Error in pdf_from_forcelist: {e}", user_id=user_id, request_path=request.path, details={'uuid': list_id, 'error_type': str(type(e)), 'force_name': pdf_data.get('name', 'Unknown') if 'pdf_data' in locals() else 'Unknown'}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         models.db.session.commit()
         return "An error occurred while generating the PDF. Please try again later.", 500
 
@@ -1067,7 +1066,8 @@ def handle_exception(e):
         request_path=request.path,
         details={'error_type': str(type(e)), 'error_message': str(e)},
         ip_address=ip_address,
-        user_agent=user_agent
+        user_agent=user_agent,
+        list_uuid=None
     )
     models.db.session.commit()
     return jsonify({"success": False, "error": "An unexpected error occurred"}), 500
@@ -1086,7 +1086,8 @@ def handle_method_not_allowed(e):
         request_path=request.path,
         details={'error_type': str(type(e)), 'error_message': str(e)},
         ip_address=ip_address,
-        user_agent=user_agent
+        user_agent=user_agent,
+        list_uuid=None
     )
     models.db.session.commit()
     return jsonify({"success": False, "error": "Method not allowed for this endpoint"}), 405
@@ -1123,7 +1124,7 @@ def get_generic_data():
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
     data = pack_universal_data()
-    log_to_db('INFO', 'Universal data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Universal data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(data)
 
 @app.route('/artillery')
@@ -1133,7 +1134,7 @@ def get_all_artillery_data():
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
     all_artillery_data = {'artillery': models.serialize(list(models.Artillery.query.all()))}
-    log_to_db('INFO', 'Artillery data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Artillery data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(all_artillery_data)
 
 @app.route('/characters')
@@ -1149,7 +1150,7 @@ def get_all_character_data():
         'characterspecialrule': models.serialize(list(models.CharacterSpecialrule.query.all())),
         'faction': models.serialize(list(models.Faction.query.all()))
     }
-    log_to_db('INFO', 'Character data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Character data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(all_character_data)
 
 @app.route('/commanders/<id>')
@@ -1160,7 +1161,7 @@ def get_commander_data(id):
     user_agent = request.headers.get('User-Agent')
     response = models.Commander.query.get_or_404(id)
     data = response.pack_data()
-    log_to_db('INFO', 'Commander data accessed', user_id=session.get('username'), request_path=request.path, details={'commander_id': id}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Commander data accessed', user_id=session.get('username'), request_path=request.path, details={'commander_id': id}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(data)
 
 @app.route('/factions/<id>')
@@ -1171,7 +1172,7 @@ def get_faction_data(id):
     user_agent = request.headers.get('User-Agent')
     response = models.Faction.query.get_or_404(id)
     data = response.pack_data()
-    log_to_db('INFO', 'Faction data accessed', user_id=session.get('username'), request_path=request.path, details={'faction_id': id}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Faction data accessed', user_id=session.get('username'), request_path=request.path, details={'faction_id': id}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(data)
 
 @app.route('/misc')
@@ -1181,7 +1182,7 @@ def get_all_misc_data():
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
     all_misc_data = {'misc': models.serialize(list(models.Misc.query.all()))}
-    log_to_db('INFO', 'Misc data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Misc data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(all_misc_data)
 
 @app.route('/nationalities')
@@ -1191,7 +1192,7 @@ def get_all_nationality_data():
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
     all_nationality_data = {'nationality': models.serialize(list(models.Nationality.query.all()))}
-    log_to_db('INFO', 'Nationality data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Nationality data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(all_nationality_data)
 
 @app.route('/nationalities/<id>')
@@ -1202,7 +1203,7 @@ def get_nation_data(id):
     user_agent = request.headers.get('User-Agent')
     response = models.Nationality.query.get_or_404(id)
     data = response.pack_data()
-    log_to_db('INFO', 'Nationality data accessed', user_id=session.get('username'), request_path=request.path, details={'nationality_id': id}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Nationality data accessed', user_id=session.get('username'), request_path=request.path, details={'nationality_id': id}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(data)
 
 @app.route('/ships')
@@ -1216,7 +1217,7 @@ def get_all_ship_data():
         'shipspecialrule': models.serialize(list(models.ShipSpecialrule.query.all())),
         'shipupgrade': models.serialize(list(models.ShipUpgrade.query.all()))
     }
-    log_to_db('INFO', 'Ship data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Ship data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(all_ship_data)
 
 @app.route('/ships/<id>')
@@ -1227,7 +1228,7 @@ def get_ship_data(id):
     user_agent = request.headers.get('User-Agent')
     response = models.Ship.query.get_or_404(id)
     data = response.pack_data()
-    log_to_db('INFO', 'Ship data accessed', user_id=session.get('username'), request_path=request.path, details={'ship_id': id}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Ship data accessed', user_id=session.get('username'), request_path=request.path, details={'ship_id': id}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(data)
 
 @app.route('/units')
@@ -1237,7 +1238,7 @@ def get_all_unit_data():
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
     all_unit_data = {'unit': models.serialize(list(models.Unit.query.all()))}
-    log_to_db('INFO', 'Unit data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Unit data accessed', user_id=session.get('username'), request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(all_unit_data)
 
 @app.route('/units/<id>')
@@ -1248,5 +1249,5 @@ def get_unit_data(id):
     user_agent = request.headers.get('User-Agent')
     response = models.Unit.query.get_or_404(id)
     data = response.pack_data()
-    log_to_db('INFO', 'Unit data accessed', user_id=session.get('username'), request_path=request.path, details={'unit_id': id}, ip_address=ip_address, user_agent=user_agent)
+    log_to_db('INFO', 'Unit data accessed', user_id=session.get('username'), request_path=request.path, details={'unit_id': id}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return jsonify(data)

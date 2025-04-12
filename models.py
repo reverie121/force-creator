@@ -88,7 +88,7 @@ class SavedList(db.Model):
     uuid = db.Column(db.VARCHAR, primary_key=True)
     created_at = db.Column(db.DateTime, default=db.func.now())
     last_modified = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
-    username = db.Column(db.VARCHAR, db.ForeignKey('account.username', ondelete='CASCADE'), nullable=True, index=True)
+    username = db.Column(db.VARCHAR, db.ForeignKey('account.username', ondelete='SET NULL'), nullable=True, index=True)
     list_status = db.Column(db.String(20), nullable=False, server_default='saved', index=True)
     name = db.Column(db.VARCHAR)
     maxpoints = db.Column(db.Integer)
@@ -118,6 +118,9 @@ class SavedList(db.Model):
     shipcomponent = db.relationship('ShipComponent', backref='savedlist')
     unitcomponent = db.relationship('UnitComponent', backref='savedlist')
     customcomponent = db.relationship('CustomComponent', backref='savedlist')
+    pdf_generations = db.relationship('PdfGeneration', foreign_keys='PdfGeneration.list_uuid', backref='savedlist')
+    usage_events = db.relationship('UsageEvent', foreign_keys='UsageEvent.list_uuid', backref='savedlist')
+    log_entries = db.relationship('LogEntry', foreign_keys='LogEntry.list_uuid', backref='savedlist')
 
     def save_to_db(self, save_data):
         """Create a new saved file instance from save data in a single transaction."""
@@ -1033,7 +1036,7 @@ class PdfGeneration(db.Model):
     __tablename__ = "pdf_generation"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    list_uuid = db.Column(db.String(36), db.ForeignKey('savedlist.uuid'), nullable=False, index=True)
+    list_uuid = db.Column(db.String(36), db.ForeignKey('savedlist.uuid', ondelete='SET NULL'), nullable=False, index=True)
     timestamp = db.Column(db.DateTime, nullable=False, default=db.func.now())
     success = db.Column(db.Boolean, nullable=False)
     ip_address = db.Column(db.String(45), nullable=True)
@@ -1051,7 +1054,7 @@ class UsageEvent(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     event_type = db.Column(db.String(50), nullable=False, index=True)
-    list_uuid = db.Column(db.String(36), nullable=True, index=True)
+    list_uuid = db.Column(db.String(36), db.ForeignKey('savedlist.uuid', ondelete='SET NULL'), nullable=True, index=True)
     user_id = db.Column(db.String(30), db.ForeignKey('account.username', ondelete='SET NULL'), nullable=True, index=True)
     timestamp = db.Column(db.DateTime, nullable=False, default=db.func.now())
     ip_address = db.Column(db.String(45), nullable=True)
@@ -1075,6 +1078,7 @@ class LogEntry(db.Model):
     user_id = db.Column(db.String(80), db.ForeignKey('account.username', ondelete='SET NULL'))
     request_path = db.Column(db.String(255))
     log_details = db.Column(JSONB)
+    list_uuid = db.Column(db.String(36), db.ForeignKey('savedlist.uuid', ondelete='SET NULL'), nullable=True, index=True)
 
     def __repr__(self):
         return f'<LogEntry id={self.id} log_level={self.log_level}>'
