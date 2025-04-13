@@ -17,7 +17,13 @@
         
         <!-- MAIN SELECT  -->
         <div class='container-fluid rounded-3 bg-warning p-0 fell bigger-text'>
-
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
             <div class='row px-3'>
                 
                 <!-- MAIN SELECT RIGHT SIDE -->
@@ -223,6 +229,7 @@
 {% endblock content %}
 
 {% block scripts %}    
+<script src="{{url_for('static', filename='assets/js/utils.js')}}"></script>   
 <script src="{{url_for('static', filename='assets/js/forceCreator/creatorElements.js')}}"></script>   
 <script src="{{url_for('static', filename='assets/js/forceCreator/Artillery.js')}}"></script>   
 <script src="{{url_for('static', filename='assets/js/forceCreator/Character.js')}}"></script>   

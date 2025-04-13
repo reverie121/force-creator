@@ -13,12 +13,30 @@ from psycopg2 import IntegrityError
 from flask_migrate import Migrate
 import json
 import datetime
-from werkzeug.exceptions import MethodNotAllowed
+from werkzeug.exceptions import MethodNotAllowed, Forbidden
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = config.SECRET_KEY
 app.debug = False
+
+# Session security configurations
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to cookies
+app.config['SESSION_COOKIE_SECURE'] = True    # Cookies only sent over HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax' # Protect against CSRF
+app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(minutes=60)  # Timeout after 60 min
+
+csrf = CSRFProtect(app)
+
+# Exempt form routes (already protected by WTForms)
+csrf.exempt('user.new')
+csrf.exempt('user.login')
+csrf.exempt('contact')
+csrf.exempt('users.edit')
+csrf.exempt('users.delete')
 
 db_conn_str = config.DATABASE_URI
 if config.IS_LOCAL == 0:
@@ -26,6 +44,14 @@ if config.IS_LOCAL == 0:
 app.config['SQLALCHEMY_DATABASE_URI'] = db_conn_str
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
+
+# Initialize Flask-Limiter with in-memory storage
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 import models
 from models import db
@@ -35,32 +61,17 @@ migrate = Migrate(app, db)
 
 logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
-# Verify reCAPTCHA token with Google API
-def validate_recaptcha(response, remote_ip):
-    secret_key = config.RECAPTCHA_SECRET_KEY
-    payload = {
-        'secret': secret_key,
-        'response': response,
-        'remoteip': remote_ip
-    }
-    recaptcha_result = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload).json()
-    success = recaptcha_result.get('success', False)
-    if not success:
-        logging.debug(f"reCAPTCHA failed with error-codes: {recaptcha_result.get('error-codes', 'No error codes provided')}")
-    return success
-
+# Existing log_to_db function (unchanged)
 def log_to_db(level, message, user_id=None, request_path=None, details=None, ip_address=None, user_agent=None, list_uuid=None):
     """Log a message to the log_entry table without committing the transaction."""
     def convert_datetime(obj):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
         return str(obj)
-
     try:
         # Convert any datetime objects in details to strings
         if details:
             details = json.loads(json.dumps(details, default=convert_datetime))
-        
         log_entry = models.LogEntry(
             log_level=level,
             message=message,
@@ -76,6 +87,105 @@ def log_to_db(level, message, user_id=None, request_path=None, details=None, ip_
     except Exception as e:
         logging.error(f"Failed to log to DB: {e}")
 
+# Log session timeouts
+@app.before_request
+def check_session_timeout():
+    session.permanent = True  # Enable timeout
+    if 'username' in session:
+        last_activity = session.get('last_activity')
+        now = datetime.datetime.utcnow()
+        if last_activity:
+            last_activity = datetime.datetime.fromisoformat(last_activity)
+            if (now - last_activity) > app.config['PERMANENT_SESSION_LIFETIME']:
+                username = session['username']
+                ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+                if ip_address:
+                    ip_address = ip_address.split(',')[0].strip()
+                user_agent = request.headers.get('User-Agent')
+                session.pop('username', None)
+                log_to_db(
+                    'INFO',
+                    'Session timed out',
+                    user_id=username,
+                    request_path=request.path,
+                    details={'username': username},
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    list_uuid=None
+                )
+                flash('Your session has timed out. Please log in again.', 'warning')
+                return redirect(url_for('log_in_user'))
+        session['last_activity'] = now.isoformat()
+
+# CSRF Failure error handler
+@app.errorhandler(403)
+def csrf_error(e):
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    user_agent = request.headers.get('User-Agent')
+    user_id = session.get('username')
+    log_to_db(
+        'WARNING',
+        'CSRF token validation failed',
+        user_id=user_id,
+        request_path=request.path,
+        details={'error': str(e)},
+        ip_address=ip_address,
+        user_agent=user_agent,
+        list_uuid=None
+    )
+    usage_event = models.UsageEvent(
+        event_type='csrf_failure',
+        user_id=user_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        event_details={
+            'request_path': request.path,
+            'error': str(e)
+        }
+    )
+    models.db.session.add(usage_event)
+    models.db.session.commit()
+    flash('Invalid request. Please refresh the page.', 'danger')
+    return render_template('error.html', error="Invalid request. Please refresh the page."), 403
+
+# Rate limit error handler
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    user_agent = request.headers.get('User-Agent')
+    user_id = session.get('username')
+    log_to_db(
+        'WARNING',
+        f"Rate limit exceeded: {e.description}",
+        user_id=user_id,
+        request_path=request.path,
+        details={'limit': e.description},
+        ip_address=ip_address,
+        user_agent=user_agent,
+        list_uuid=None
+    )
+    models.db.session.commit()
+    flash('Too many requests. Please try again later.', 'danger')
+    return render_template('error.html', error="Too many requests. Please try again later."), 429
+
+# Verify reCAPTCHA token with Google API
+def validate_recaptcha(response, remote_ip):
+    secret_key = config.RECAPTCHA_SECRET_KEY
+    payload = {
+        'secret': secret_key,
+        'response': response,
+        'remoteip': remote_ip
+    }
+    recaptcha_result = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload).json()
+    success = recaptcha_result.get('success', False)
+    if not success:
+        logging.debug(f"reCAPTCHA failed with error-codes: {recaptcha_result.get('error-codes', 'No error codes provided')}")
+    return success
+
 @app.route('/')
 def main():
     return redirect('/new')
@@ -90,6 +200,7 @@ def known_issues():
     return render_template('known-issues.html')
 
 @app.route('/contact', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
 def contact():
     form = ContactForm()
     if request.method == 'POST':
@@ -138,6 +249,7 @@ def contact():
 ############### USER ROUTES ###############
 
 @app.route('/user/new', methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def new_user():
     form = AddUserForm()
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
@@ -193,6 +305,7 @@ def new_user():
     return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/user/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def log_in_user():
     form = LogInForm()
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
@@ -275,6 +388,7 @@ def show_secrets(username):
     return render_template('user-info.html', user=user, savedlists=saved_lists, listdata=json_list_data, delete_form=delete_form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/users/<username>/delete', methods=['POST'])
+@limiter.limit("5 per minute")
 def delete_user(username):
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
@@ -314,6 +428,7 @@ def delete_user(username):
         return redirect(f'/users/{username}')
 
 @app.route('/users/<username>/edit', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def edit_user(username):
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
@@ -376,6 +491,7 @@ def edit_user(username):
 ############### FC USER ROUTES ###############
 
 @app.route('/lists/save', methods=['POST'])
+@limiter.limit("20 per hour")
 def save_forcelist():
     save_data = request.get_json()
     list_id = save_data.get('uuid')
@@ -791,6 +907,7 @@ def show_forcelist(uuid):
     return render_template('list-edit.html', add_to_list=add_to_list, data=data)
 
 @app.route('/lists/<uuid>/delete', methods=['POST'])
+@limiter.limit("5 per minute")
 def del_forcelist(uuid):
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
@@ -829,6 +946,7 @@ def del_forcelist(uuid):
     return jsonify({"success": False, "redirect": f"/lists/{uuid}"}), 403
 
 @app.route('/lists/pdf', methods=['POST'])
+@limiter.limit("20 per hour")
 def pdf_from_forcelist():
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:

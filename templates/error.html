@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+    <div class='container-fluid border border-5 border-start-0 border-end-0 border-secondary bg-warning'>
+        <h1 class='main_header p-1 text-center'>
+            <i>Error</i>
+        </h1>
+    </div>
+    <div class='container-fluid pb-2 vh-100'>
+        <div class='container mt-1 bg-warning rounded-2'>
+            <div class="row align-items-center p-3">
+                <div class="text-info fell fs-5 mb-3 text-center">
+                    <!-- Commented flash block retained for reference -->
+                    <!-- {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    {% endwith %} -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    <p class="text-info fell fs-5">{{ error }}</p>
+                    <a href="{{ url_for('main') }}" class="btn btn-success">Return to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>    
+{% endblock content %}

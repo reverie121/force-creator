@@ -211,19 +211,38 @@ class ForceList {
         return newSave;
     }
 
-    async saveList() {
-        const newSave = this.prepareSave();
-        // Send save data to back end.
-        const response = await axios.post('/lists/save', newSave);
-        // Take uuid response and add to ForceList and to save data.
+// Save list
+async saveList() {
+    const newSave = this.prepareSave();
+    try {
+        // Send save data to back end
+        const response = await axios.post('/lists/save', newSave, {
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        });
+        // Take uuid response and add to ForceList and to save data
         this.uuid = response.data;
         newSave.uuid = response.data;
-        // Add save data to ForceList. Save data is used for 'revert' feature and to update future saves.
+        // Add save data to ForceList. Save data is used for 'revert' feature and to update future saves
         this.save = newSave;
         this.resetBuildSideTools();
         window.location.href = `/lists/${this.save.uuid}`;
+    } catch (error) {
+        console.error('Save failed:', error.response?.data || error.message);
+        if (error.response?.status === 403) {
+            alert('Session expired or invalid request. Please refresh the page and try again.');
+        } else if (error.response?.status === 429) {
+            alert('Too many requests. Please wait a moment and try again.');
+        } else if (error.response?.data?.error) {
+            alert(`Failed to save list: ${error.response.data.error}`);
+        } else {
+            alert('Failed to save list. Please try again.');
+        }
     }
+}
 
+    // Generate PDF
     async saveListToPDF(options = {}) {
         // Add PDF options to the ForceList data
         this.pdfOptions = {
@@ -232,21 +251,39 @@ class ForceList {
         };
         console.debug('ForceList.pdfOptions set to:', this.pdfOptions); // Debugging
         
-        // Send save data to back end for conversion to pdf
-        const response = await axios.post('/lists/pdf', this, { responseType: 'blob' });
-        // Get list data from response. List name will be used for file name
-        const listData = JSON.parse(response.config.data);
-        // Create a URL for the PDF and a link to the URL
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        // Link is set to download a PDF file
-        link.setAttribute('download', `${listData.name || 'force_list'}.pdf`);
-        document.body.appendChild(link);
-        // Click the link
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        try {
+            // Send save data to back end for conversion to pdf
+            const response = await axios.post('/lists/pdf', this, {
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                },
+                responseType: 'blob'
+            });
+            // Get list data from response. List name will be used for file name
+            const listData = JSON.parse(response.config.data);
+            // Create a URL for the PDF and a link to the URL
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            // Link is set to download a PDF file
+            link.setAttribute('download', `${listData.name || 'force_list'}.pdf`);
+            document.body.appendChild(link);
+            // Click the link
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('PDF failed:', error.response?.data || error.message);
+            if (error.response?.status === 403) {
+                alert('Session expired or invalid request. Please refresh the page and try again.');
+            } else if (error.response?.status === 429) {
+                alert('Too many requests. Please wait a moment and try again.');
+            } else if (error.response?.data?.error) {
+                alert(`Failed to generate PDF: ${error.response.data.error}`);
+            } else {
+                alert('Failed to generate PDF. Please try again.');
+            }
+        }
     }
 
     showPDFOptionsModal() {

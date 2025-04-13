@@ -1,9 +1,6 @@
 {% extends 'base.html' %}
-
-{% block title %}
-    Force Creator Contact Form
-{% endblock title %}
-
+{% block title %}Force Creator Contact Form{% endblock %}
+{% block flashes %}{% endblock %}
 {% block content %}
     <div class='container-fluid border border-5 border-start-0 border-end-0 border-secondary bg-warning'>
         <h1 class='main_header p-1 text-center'>
@@ -26,23 +23,17 @@
                     {% endwith %}
                     <form id="contact-form" method="POST">
                         <div class="form-group text-info fell fs-5">
-                            {{ form.hidden_tag() }} <!-- Add CSRF token -->
-
+                            {{ form.hidden_tag() }}
                             <label for="name" class='mt-1'>Name</label>
                             <input type="text" maxlength='50' class="form-control bg-info text-primary" name="name" id="name" value="{{ form.name.data or '' }}">
-
                             <label for="email" class='mt-1'>Email</label>
                             <input type="email" maxlength='75' class="form-control bg-info text-primary" name="email" id="email" value="{{ form.email.data or '' }}">
-
                             <label for="message" class='mt-1'>Message</label>
                             <textarea class="form-control bg-info text-primary" name="message" id="message" rows="5">{{ form.message.data or '' }}</textarea>
-
-                            <!-- Add reCAPTCHA widget -->
                             <div class="mb-3 mt-1">
                                 <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-type="checkbox" data-theme="dark"></div>
                                 <input type="hidden" name="recaptcha_response" id="recaptcha_response">
                             </div>
-
                             <div class='container-fluid mt-2 p-1'>
                                 <button class="btn btn-success" type="submit">Send Message</button>
                             </div>
@@ -51,18 +42,17 @@
                     <div class="text-info fell fs-5 mb-3 mt-3">
                         <p>Report a Bug</p>
                         <ul class="fs-6">
-                          <li><strong>List Name or ID</strong>: If related to a force list (e.g., saving or generating a PDF), include the list name or ID from the URL (e.g., /lists/095aad36...).</li>
-                          <li><strong>When It Happened</strong>: Share the date and approximate time (e.g., April 12 around 7 PM EST).</li>
-                          <li><strong>What You Did</strong>: Describe your steps (e.g., "I edited a list named Blackbeard's Revenge, added a unit, then clicked Generate PDF").</li>
-                          <li><strong>What Went Wrong</strong>: Note what happened (e.g., "I got an error saying 'An error occurred'").</li>
-                          <li><strong>Browser/Device (Optional)</strong>: Mention your browser or device if relevant (e.g., Chrome on Windows).</li>
+                            <li><strong>List Name or ID</strong>: If related to a force list (e.g., saving or generating a PDF), include the list name or ID from the URL (e.g., /lists/095aad36...).</li>
+                            <li><strong>When It Happened</strong>: Share the date and approximate time (e.g., April 12 around 7 PM EST).</li>
+                            <li><strong>What You Did</strong>: Describe your steps (e.g., "I edited a list named Blackbeard's Revenge, added a unit, then clicked Generate PDF").</li>
+                            <li><strong>What Went Wrong</strong>: Note what happened (e.g., "I got an error saying 'An error occurred'").</li>
+                            <li><strong>Browser/Device (Optional)</strong>: Mention your browser or device if relevant (e.g., Chrome on Windows).</li>
                         </ul>
-                        
                         <p>Suggest a Feature</p>
                         <ul class="fs-6">
-                          <li><strong>What’s the Feature?</strong>: Tell us what you’d like (e.g., "Export lists as CSV files").</li>
-                          <li><strong>How Would It Help?</strong>: Explain why it’s useful (e.g., "CSV export would let me analyze lists in Excel").</li>
-                          <li><strong>Related List/Action (Optional)</strong>: If tied to a list or action, mention it (e.g., "For my list Blackbeard's Revenge, I’d like PDF formatting options").</li>
+                            <li><strong>What’s the Feature?</strong>: Tell us what you’d like (e.g., "Export lists as CSV files").</li>
+                            <li><strong>How Would It Help?</strong>: Explain why it’s useful (e.g., "CSV export would let me analyze lists in Excel").</li>
+                            <li><strong>Related List/Action (Optional)</strong>: If tied to a list or action, mention it (e.g., "For my list Blackbeard's Revenge, I’d like PDF formatting options").</li>
                         </ul>
                     </div>
                 </div>
@@ -72,7 +62,6 @@
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
         $('#main-area').show('slow','swing');
-        // Set the hidden recaptcha_response field with the token on form submission
         document.getElementById('contact-form').addEventListener('submit', function(event) {
             var recaptchaResponse = grecaptcha.getResponse();
             if (!recaptchaResponse) {
@@ -83,4 +72,4 @@
             document.getElementById('recaptcha_response').value = recaptchaResponse;
         });
     </script>
-{% endblock content %}
+{% endblock %}

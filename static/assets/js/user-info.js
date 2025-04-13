@@ -62,7 +62,11 @@ $(window).ready(async function() {
     $('#confirmDeleteButton').on('click', async () => {
         const uuid = $('#deleteListUuid').val();
         try {
-            const response = await axios.post(`/lists/${uuid}/delete`); // Changed from axios.get to axios.post
+            const response = await axios.post(`/lists/${uuid}/delete`, {}, {
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                }
+            });
             if (response.data.success) {
                 $(`#${uuid}-remove`).parent().parent().parent().hide('medium', 'swing');
                 $('#deleteListModal').modal('hide');
@@ -75,11 +79,11 @@ $(window).ready(async function() {
             }
         } catch (error) {
             console.error('Delete failed:', error.response?.data || error.message);
-            // Provide more specific error messages based on the response
+            // Provide specific error messages based on the response
             if (error.response?.status === 403) {
-                alert('You are not authorized to delete this list.');
-            } else if (error.response?.data?.error) {
-                alert(`Failed to delete list: ${error.response.data.error}`);
+                alert('Session expired or invalid request. Please refresh the page and try again.');
+            } else if (error.response?.status === 429) {
+                alert('Too many requests. Please wait a moment and try again.');
             } else {
                 alert('Failed to delete list. Please try again.');
             }
