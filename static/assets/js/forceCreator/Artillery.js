@@ -6,8 +6,20 @@ class Artillery {
     }
 
     setArtilleryOptions() {
-        const weaponEquipment = JSON.parse(sessionStorage.weaponequipment);
-        this.option = [weaponEquipment[6],weaponEquipment[7]];
+        const weaponEquipment = JSON.parse(sessionStorage.weaponequipment || '[]');
+        console.debug('weaponEquipment:', weaponEquipment);
+        const grapeshot = weaponEquipment.find(item => item && item.id === 6);
+        const chainshot = weaponEquipment.find(item => item && item.id === 7);
+        if (!grapeshot || !chainshot) {
+            console.error('Failed to find artillery options:', {
+                grapeshot: grapeshot || null,
+                chainshot: chainshot || null
+            });
+            this.option = [];
+            return;
+        }
+        this.option = [grapeshot, chainshot];
+        console.debug('Artillery options set:', this.option);
     }
 
     display() {

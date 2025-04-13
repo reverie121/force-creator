@@ -13,6 +13,9 @@
     <div class='container-fluid pb-2 vh-100'>
         <div class='container mt-1 bg-warning rounded-2'>
             <div class="row align-items-center p-3">
+                <div class="text-info fell fs-5 mb-3 text-center">
+                    <p>Use this form to report bugs or suggest features for Force Creator. Your feedback helps us improve!</p>
+                </div>
                 <div class="col-12 col-sm-10 offset-sm-1 col-md-8 offset-md-2 col-lg-6 offset-lg-3">
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
@@ -45,6 +48,23 @@
                             </div>
                         </div>
                     </form>
+                    <div class="text-info fell fs-5 mb-3 mt-3">
+                        <p>Report a Bug</p>
+                        <ul class="fs-6">
+                          <li><strong>List Name or ID</strong>: If related to a force list (e.g., saving or generating a PDF), include the list name or ID from the URL (e.g., /lists/095aad36...).</li>
+                          <li><strong>When It Happened</strong>: Share the date and approximate time (e.g., April 12 around 7 PM EST).</li>
+                          <li><strong>What You Did</strong>: Describe your steps (e.g., "I edited a list named Blackbeard's Revenge, added a unit, then clicked Generate PDF").</li>
+                          <li><strong>What Went Wrong</strong>: Note what happened (e.g., "I got an error saying 'An error occurred'").</li>
+                          <li><strong>Browser/Device (Optional)</strong>: Mention your browser or device if relevant (e.g., Chrome on Windows).</li>
+                        </ul>
+                        
+                        <p>Suggest a Feature</p>
+                        <ul class="fs-6">
+                          <li><strong>What’s the Feature?</strong>: Tell us what you’d like (e.g., "Export lists as CSV files").</li>
+                          <li><strong>How Would It Help?</strong>: Explain why it’s useful (e.g., "CSV export would let me analyze lists in Excel").</li>
+                          <li><strong>Related List/Action (Optional)</strong>: If tied to a list or action, mention it (e.g., "For my list Blackbeard's Revenge, I’d like PDF formatting options").</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
