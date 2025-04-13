@@ -74,7 +74,6 @@ def log_to_db(level, message, user_id=None, request_path=None, details=None, ip_
         models.db.session.add(log_entry)
         # Do not commit here; let the calling route handle the commit
     except Exception as e:
-        print(f"Failed to log to DB: {e}")
         logging.error(f"Failed to log to DB: {e}")
 
 @app.route('/')
@@ -831,38 +830,40 @@ def del_forcelist(uuid):
 
 @app.route('/lists/pdf', methods=['POST'])
 def pdf_from_forcelist():
-    print("Using updated pdf_from_forcelist route")
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
+    user_id = session.get("username", None)  # Initialize early
     try:
         cpanel_path = os.path.expanduser('~/bin/wkhtmltopdf')
         config = pdfkit.configuration(wkhtmltopdf=cpanel_path) if os.path.exists(cpanel_path) else None
         force_list_data = request.get_json()
-        print(f"force_list_data: {force_list_data}")
         list_id = force_list_data.get('uuid')
-        log_to_db('DEBUG', 'Received force_list_data', user_id=session.get('username'), request_path=request.path, details={
+        log_to_db('DEBUG', 'Received force_list_data', user_id=user_id, request_path=request.path, details={
             'uuid': list_id,
             'force_name': force_list_data.get('name', 'Unknown'),
             'unit_count': len(force_list_data.get('units', {}))
         }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
 
-        pdf_data = prepPdfData(force_list_data)
-        print(f"pdf_data: {pdf_data}")
-        log_to_db('DEBUG', 'Processed pdf_data', user_id=session.get('username'), request_path=request.path, details={'force_name': pdf_data.get('name', 'Unknown'), 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
-
         if not force_list_data.get('nationality', {}).get('id'):
             raise ValueError("Nationality ID is required for PDF generation")
 
-        user_id = session.get("username")
+        pdf_data = prepPdfData(force_list_data)
+        log_to_db('DEBUG', 'Processed pdf_data', user_id=user_id, request_path=request.path, details={
+            'force_name': pdf_data.get('name', 'Unknown'),
+            'uuid': list_id
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
         metadata = {
             'include_special_rules': force_list_data.get('pdfOptions', {}).get('includeSpecialRules', True),
             'include_ship_traits': force_list_data.get('pdfOptions', {}).get('includeShipTraits', True)
         }
-        print(f"Metadata: {metadata}")
-        log_to_db('DEBUG', 'Metadata prepared', user_id=user_id, request_path=request.path, details={'metadata': metadata, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
-                
+        log_to_db('DEBUG', 'Metadata prepared', user_id=user_id, request_path=request.path, details={
+            'metadata': metadata,
+            'uuid': list_id
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
         # Check if the list is saved
         saved_list = models.SavedList.query.filter_by(uuid=list_id, list_status='saved').first()
         if not saved_list:
@@ -874,7 +875,7 @@ def pdf_from_forcelist():
             new_save.uuid = list_id
             new_save.username = user_id
             new_save.list_status = 'pdf'
-            
+
             # Transform force_list_data into the flattened format expected by save_to_db
             save_data = {
                 'name': force_list_data.get('name', 'A Force Without A Name'),
@@ -896,7 +897,7 @@ def pdf_from_forcelist():
                 'shipcount': len(force_list_data.get('ships', {})),
                 'misccount': len(force_list_data.get('misc', {}))
             }
-            
+
             # Add unit components
             for i, (fid, unit) in enumerate(force_list_data.get('units', {}).items(), 1):
                 save_data[f'unit_{i}_id'] = unit.get('id')
@@ -904,13 +905,13 @@ def pdf_from_forcelist():
                 save_data[f'unit_{i}_nickname'] = unit.get('nickname')
                 save_data[f'unit_{i}_qty'] = unit.get('qty')
                 save_data[f'unit_{i}_options'] = ''
-            
+
             # Add character components
             for i, (fid, character) in enumerate(force_list_data.get('characters', {}).items(), 1):
                 save_data[f'character_{i}_id'] = character.get('id')
                 save_data[f'character_{i}_fid'] = character.get('f_id')
                 save_data[f'character_{i}_nickname'] = character.get('nickname')
-            
+
             # Add artillery components
             for i, (fid, artillery) in enumerate(force_list_data.get('artillery', {}).items(), 1):
                 save_data[f'artillery_{i}_id'] = artillery.get('id')
@@ -918,21 +919,21 @@ def pdf_from_forcelist():
                 save_data[f'artillery_{i}_nickname'] = artillery.get('nickname')
                 save_data[f'artillery_{i}_qty'] = artillery.get('qty')
                 save_data[f'artillery_{i}_options'] = ''
-            
+
             # Add ship components
             for i, (fid, ship) in enumerate(force_list_data.get('ships', {}).items(), 1):
                 save_data[f'ship_{i}_id'] = ship.get('id')
                 save_data[f'ship_{i}_fid'] = ship.get('f_id')
                 save_data[f'ship_{i}_nickname'] = ship.get('nickname')
                 save_data[f'ship_{i}_upgrades'] = ''
-            
+
             # Add misc components
             for i, (fid, misc) in enumerate(force_list_data.get('misc', {}).items(), 1):
                 save_data[f'misc_{i}_name'] = misc.get('name')
                 save_data[f'misc_{i}_details'] = misc.get('details')
                 save_data[f'misc_{i}_points'] = misc.get('points')
                 save_data[f'misc_{i}_qty'] = misc.get('qty')
-            
+
             new_save.save_to_db(save_data)
             metadata['unsaved_list_data'] = {
                 'uuid': list_id,
@@ -944,27 +945,37 @@ def pdf_from_forcelist():
         else:
             # List is saved; compare with the PDF data to track changes
             saved_list_dict = saved_list.pack_data()
-            print(f"Saved list data: {saved_list_dict}")
-            log_to_db('DEBUG', 'Saved list data', user_id=user_id, request_path=request.path, details={'saved_list_dict': saved_list_dict, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+            log_to_db('DEBUG', 'Saved list data', user_id=user_id, request_path=request.path, details={
+                'saved_list_dict': saved_list_dict,
+                'uuid': list_id
+            }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             changes = {}
-            print(f"Comparing name: saved={saved_list_dict.get('name')}, pdf={pdf_data.get('name')}")
-            log_to_db('DEBUG', 'Comparing name', user_id=user_id, request_path=request.path, details={'saved_name': saved_list_dict.get('name'), 'pdf_name': pdf_data.get('name'), 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+            log_to_db('DEBUG', 'Comparing name', user_id=user_id, request_path=request.path, details={
+                'saved_name': saved_list_dict.get('name'),
+                'pdf_name': pdf_data.get('name'),
+                'uuid': list_id
+            }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             if saved_list_dict.get('name') != pdf_data.get('name'):
                 changes['name'] = {'old': saved_list_dict.get('name'), 'new': pdf_data.get('name')}
             saved_maxpoints = saved_list_dict.get('maxpoints', 0)
             pdf_maxpoints = pdf_data.get('maxpoints', 0)
-            print(f"Comparing maxpoints: saved={saved_maxpoints}, pdf={pdf_maxpoints}")
-            log_to_db('DEBUG', 'Comparing maxpoints', user_id=user_id, request_path=request.path, details={'saved_maxpoints': saved_maxpoints, 'pdf_maxpoints': pdf_maxpoints, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+            log_to_db('DEBUG', 'Comparing maxpoints', user_id=user_id, request_path=request.path, details={
+                'saved_maxpoints': saved_maxpoints,
+                'pdf_maxpoints': pdf_maxpoints,
+                'uuid': list_id
+            }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             if saved_maxpoints != pdf_maxpoints:
                 changes['maxpoints'] = {'old': saved_maxpoints, 'new': pdf_maxpoints}
             saved_totalforcepoints = saved_list_dict.get('totalforcepoints', 0)
             pdf_totalforcepoints = pdf_data.get('totalforcepoints', 0)
-            print(f"Comparing totalforcepoints: saved={saved_totalforcepoints}, pdf={pdf_totalforcepoints}")
-            log_to_db('DEBUG', 'Comparing totalforcepoints', user_id=user_id, request_path=request.path, details={'saved_totalforcepoints': saved_totalforcepoints, 'pdf_totalforcepoints': pdf_totalforcepoints, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+            log_to_db('DEBUG', 'Comparing totalforcepoints', user_id=user_id, request_path=request.path, details={
+                'saved_totalforcepoints': saved_totalforcepoints,
+                'pdf_totalforcepoints': pdf_totalforcepoints,
+                'uuid': list_id
+            }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
             if saved_totalforcepoints != pdf_totalforcepoints:
                 changes['totalforcepoints'] = {'old': saved_totalforcepoints, 'new': pdf_totalforcepoints}
             # Compare components
-            print(f"Processing units: saved_units={saved_list_dict.get('units', [])} pdf_units={pdf_data.get('units', [])}")
             saved_units = {unit['fid']: unit for unit in saved_list_dict.get('units', [])}
             pdf_units = {unit['fid']: unit for unit in pdf_data.get('units', [])}
             component_changes = {'added': [], 'removed': [], 'updated': []}
@@ -982,18 +993,22 @@ def pdf_from_forcelist():
             for fid in saved_units:
                 if fid not in pdf_units:
                     component_changes['removed'].append({'fid': fid, 'name': saved_units[fid].get('nickname')})
-            print(f"Component changes: {component_changes}")
-            log_to_db('DEBUG', 'Component changes', user_id=user_id, request_path=request.path, details={'component_changes': component_changes, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
-            
+            log_to_db('DEBUG', 'Component changes', user_id=user_id, request_path=request.path, details={
+                'component_changes': component_changes,
+                'uuid': list_id
+            }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
             event_type = 'pdf_generated'
             event_details = {
                 'force_name': pdf_data.get('name', 'Unknown'),
                 'field_changes': changes,
                 'component_changes': component_changes
             }
-            print(f"Event details: {event_details}")
-            log_to_db('DEBUG', 'Event details prepared', user_id=user_id, request_path=request.path, details={'event_details': event_details, 'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
-        
+            log_to_db('DEBUG', 'Event details prepared', user_id=user_id, request_path=request.path, details={
+                'event_details': event_details,
+                'uuid': list_id
+            }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
         pdf_generation = models.PdfGeneration(
             list_uuid=list_id,
             user_id=user_id,
@@ -1003,9 +1018,10 @@ def pdf_from_forcelist():
             success=False  # Initially set to False
         )
         models.db.session.add(pdf_generation)
-        print("Added pdf_generation to session")
-        log_to_db('DEBUG', 'Added pdf_generation to session', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
-        
+        log_to_db('DEBUG', 'Added pdf_generation to session', user_id=user_id, request_path=request.path, details={
+            'uuid': list_id
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
         # Log usage event
         usage_event = models.UsageEvent(
             event_type=event_type,
@@ -1016,15 +1032,20 @@ def pdf_from_forcelist():
             event_details=event_details
         )
         models.db.session.add(usage_event)
-        print("Added usage_event to session")
-        log_to_db('DEBUG', 'Added usage_event to session', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
-        
-        print(f"Generating PDF: uuid={list_id}, force_name={pdf_data.get('name', 'Unknown')}")
-        log_to_db('INFO', 'Generating PDF', user_id=user_id, request_path=request.path, details={'uuid': list_id, 'force_name': pdf_data.get('name', 'Unknown'), 'options': metadata}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
-        
+        log_to_db('DEBUG', 'Added usage_event to session', user_id=user_id, request_path=request.path, details={
+            'uuid': list_id
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
+        log_to_db('INFO', 'Generating PDF', user_id=user_id, request_path=request.path, details={
+            'uuid': list_id,
+            'force_name': pdf_data.get('name', 'Unknown'),
+            'options': metadata
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+
         rendered = render_template('list-pdf.html', data=pdf_data)
-        print("Template rendered")
-        log_to_db('DEBUG', 'Template rendered', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+        log_to_db('DEBUG', 'Template rendered', user_id=user_id, request_path=request.path, details={
+            'uuid': list_id
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
         css = "static/assets/css/list-pdf.css"
         pdf = pdfkit.from_string(
             rendered,
@@ -1033,8 +1054,9 @@ def pdf_from_forcelist():
             options={"enable-local-file-access": "", "page-size": "Letter"},
             css=css
         )
-        print("PDF generated")
-        log_to_db('DEBUG', 'PDF generated', user_id=user_id, request_path=request.path, details={'uuid': list_id}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+        log_to_db('DEBUG', 'PDF generated', user_id=user_id, request_path=request.path, details={
+            'uuid': list_id
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
 
         # Update pdf_generation success to True after successful generation
         pdf_generation.success = True
@@ -1046,8 +1068,11 @@ def pdf_from_forcelist():
         return response
     except Exception as e:
         models.db.session.rollback()
-        print(f"Error in pdf_from_forcelist: {e}")
-        log_to_db('ERROR', f"Error in pdf_from_forcelist: {e}", user_id=user_id, request_path=request.path, details={'uuid': list_id, 'error_type': str(type(e)), 'force_name': pdf_data.get('name', 'Unknown') if 'pdf_data' in locals() else 'Unknown'}, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id)
+        log_to_db('ERROR', f"Error in pdf_from_forcelist: {e}", user_id=user_id, request_path=request.path, details={
+            'uuid': list_id if 'list_id' in locals() else 'Unknown',
+            'error_type': str(type(e)),
+            'force_name': pdf_data.get('name', 'Unknown') if 'pdf_data' in locals() else 'Unknown'
+        }, ip_address=ip_address, user_agent=user_agent, list_uuid=list_id if 'list_id' in locals() else None)
         models.db.session.commit()
         return "An error occurred while generating the PDF. Please try again later.", 500
 
