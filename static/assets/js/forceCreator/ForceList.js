@@ -1076,7 +1076,7 @@ async saveList() {
         cardHeader.append([topRow, secondRow]);
         const cardDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${artillery.f_id}-details`).html(`
             <hr class='border border-2 border-primary rounded-2'>
-            <div>${artillery.name}</div>
+            <div>${artillery.name} (${artillery.mounting})</div>
             <div class='row'>
                 <div class='col-7'>
                     <b>Dice:</b> ${artillery.d10}

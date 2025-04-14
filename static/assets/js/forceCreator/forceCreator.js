@@ -288,7 +288,7 @@ $componentSelector.on('change', async function() {
 
     if (selected == 'artillery') {
         // Sort artillery by name (asc), then id (asc)
-        componentData.sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+        componentData.sort((a, b) => a.mounting.localeCompare(b.mounting) || a.name.localeCompare(b.name));
         const menuItemContainer = $('<div>').addClass(['collapse rounded-2', 'force-selector-field', 'p-1', 'm-1', 'border', 'border-2', 'border-secondary']).attr('id', 'menu-item-container');
         $('#menu').append(menuItemContainer);
         menuItemContainer.show('medium', 'swing');

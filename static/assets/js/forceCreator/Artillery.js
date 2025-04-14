@@ -2,7 +2,7 @@ class Artillery {
     constructor(item) {
         Object.assign(this, item);
         this.setArtilleryOptions();
-        this.nickname = this.name
+        this.nickname = `${this.name} (${this.mounting})`;
     }
 
     setArtilleryOptions() {
@@ -27,7 +27,7 @@ class Artillery {
         const cardBody = $('<div>').addClass(['card-body display-card-body']);
         const cardHeader = $('<div>').addClass(['row']);
         const nameColumn = $('<div>').addClass(['col']);
-        const itemName = $('<h5>').addClass(['card-title']).text(this.name);    
+        const itemName = $('<h5>').addClass(['card-title']).text(`${this.name} (${this.mounting})`);
         nameColumn.append(itemName);
         const pointColumn = $('<div>').addClass(['col-auto']).html(`${this.points} pts`);
         const expandColumn = $('<div>').addClass(['col-auto']);
