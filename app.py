@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, jsonify, session, request, json, make_response, url_for, flash
-from forms import AddToList, AddUserForm, LogInForm, EditUserForm, DeleteUserForm, ContactForm
+from forms import AddToList, AddUserForm, LogInForm, EditUserForm, DeleteUserForm, ContactForm, ResetPasswordRequestForm, ResetPasswordForm
 import uuid
 import os
 import pdfkit
@@ -17,6 +17,8 @@ from werkzeug.exceptions import MethodNotAllowed, Forbidden
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
+import models
+from models import db
 
 app = Flask(__name__)
 
@@ -37,6 +39,8 @@ csrf.exempt('user.login')
 csrf.exempt('contact')
 csrf.exempt('users.edit')
 csrf.exempt('users.delete')
+csrf.exempt('user.reset-password.request')
+csrf.exempt('user.reset-password')
 
 db_conn_str = config.DATABASE_URI
 if config.IS_LOCAL == 0:
@@ -52,9 +56,6 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
 )
-
-import models
-from models import db
 
 models.connect_db(app)
 migrate = Migrate(app, db)
@@ -249,54 +250,74 @@ def contact():
 ############### USER ROUTES ###############
 
 @app.route('/user/new', methods=['GET', 'POST'])
-@limiter.limit("3 per minute")
+@limiter.limit("5 per minute")
 def new_user():
+    """Register new user."""
     form = AddUserForm()
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
     if request.method == 'POST':
-        logging.debug(f"Raw form data: {request.form}")
-        log_to_db('DEBUG', 'User registration form submitted', user_id=None, request_path=request.path, details={'form_data': request.form.to_dict()}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        log_to_db(
+            'DEBUG',
+            'User registration form submitted',
+            user_id=None,
+            request_path=request.path,
+            details={'form_data': request.form.to_dict()},
+            ip_address=ip_address,
+            user_agent=user_agent,
+            list_uuid=None
+        )
     if form.validate_on_submit():
         recaptcha_response = form.recaptcha_response.data
         logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
         if not validate_recaptcha(recaptcha_response, ip_address):
+            flash('reCAPTCHA verification failed. Please try again.', 'danger')
             log_to_db('WARNING', 'reCAPTCHA verification failed during user registration', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+
         username = form.username.data
         password = form.password.data
         email = form.email.data
+        # Check for duplicate username
+        if models.Account.query.filter_by(username=username).first():
+            flash('That username is already taken. Please choose a different one.', 'danger')
+            log_to_db('WARNING', 'Username already taken during user registration', user_id=None, request_path=request.path, details={'username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+        # Check for duplicate email
         if models.Account.query.filter_by(email=email).first():
             flash('That email is already registered. Please use a different email or log in.', 'danger')
             log_to_db('WARNING', 'Email already registered during user registration', user_id=None, request_path=request.path, details={'email': email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+
+        user = models.Account(
+            username=username,
+            password=models.bcrypt.generate_password_hash(password).decode("utf8"),
+            email=email,
+            first_name=form.first_name.data,
+            last_name=form.last_name.data
+        )
+        models.db.session.add(user)
+        usage_event = models.UsageEvent(
+            event_type='user_registration',
+            user_id=username,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            event_details={'username': username, 'email': email}
+        )
+        models.db.session.add(usage_event)
         try:
-            user = models.Account.register(username, password)
-            user.email = email
-            user.first_name = form.first_name.data
-            user.last_name = form.last_name.data
-            models.db.session.add(user)
-            # Log usage event
-            usage_event = models.UsageEvent(
-                event_type='user_registered',
-                user_id=username,
-                ip_address=ip_address,
-                user_agent=user_agent,
-                event_details={'email': email}
-            )
-            models.db.session.add(usage_event)
             models.db.session.commit()
             session["username"] = user.username
-            flash('User registered successfully!', 'success')
-            log_to_db('INFO', 'User registered successfully', user_id=username, request_path=request.path, details={'username': username, 'email': email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            flash('Registration successful! Welcome!', 'success')
+            log_to_db('INFO', 'User registered successfully', user_id=user.username, request_path=request.path, details={'username': user.username, 'email': user.email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(f'/users/{user.username}')
         except IntegrityError as e:
             models.db.session.rollback()
-            flash('An error occurred. The username might already be taken. Please try a different username.', 'danger')
+            flash('Registration failed. Username or email may be taken.', 'danger')
             log_to_db('ERROR', f"IntegrityError during user registration: {e}", user_id=None, request_path=request.path, details={'username': username, 'error_type': str(type(e))}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
-            models.db.session.commit()
+            return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
     else:
         for field, errors in form.errors.items():
             for error in errors:
@@ -305,13 +326,35 @@ def new_user():
     return render_template('user-new.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/user/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("10 per minute" if config.IS_LOCAL else "5 per minute")
 def log_in_user():
-    form = LogInForm()
+    """Handle user login."""
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
+
+    # Redirect if already logged in
+    if 'username' in session:
+        username = session['username']
+        flash('You are already logged in.', 'info')
+        log_to_db(
+            'INFO',
+            'Attempted login while already logged in',
+            user_id=username,
+            request_path=request.path,
+            details={'username': username},
+            ip_address=ip_address,
+            user_agent=user_agent,
+            list_uuid=None
+        )
+        return redirect(url_for('show_user', username=username))
+
+    form = LogInForm()
+    if request.method == 'POST':
+        logging.debug(f"Login form data: {request.form}")
+        logging.debug(f"Form errors before validation: {form.errors}")
+
     if form.validate_on_submit():
         recaptcha_response = form.recaptcha_response.data
         logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
@@ -319,12 +362,14 @@ def log_in_user():
             flash('reCAPTCHA verification failed. Please try again.', 'danger')
             log_to_db('WARNING', 'reCAPTCHA verification failed during login', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+        
         usr = form.username.data
         pwd = form.password.data
+        logging.debug(f"Attempting login for username: {usr}")
         user = models.Account.authenticate(usr, pwd)
         if user:
             session["username"] = user.username
-            # Log usage event
+            logging.debug(f"Session set: username={user.username}")
             usage_event = models.UsageEvent(
                 event_type='user_login',
                 user_id=user.username,
@@ -333,29 +378,178 @@ def log_in_user():
                 event_details={'username': user.username}
             )
             models.db.session.add(usage_event)
-            models.db.session.commit()
-            flash('Login successful!', 'success')
-            log_to_db('INFO', 'User logged in successfully', user_id=user.username, request_path=request.path, details={'username': user.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
-            return redirect(f'/users/{user.username}')
+            try:
+                models.db.session.commit()
+                flash('Login successful!', 'success')
+                log_to_db('INFO', 'User logged in successfully', user_id=user.username, request_path=request.path, details={'username': user.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+                logging.debug(f"Redirecting to /users/{user.username}")
+                return redirect(f'/users/{user.username}')
+            except Exception as e:
+                models.db.session.rollback()
+                flash('An error occurred during login. Please try again.', 'danger')
+                log_to_db('ERROR', f"Login commit failed: {e}", user_id=None, request_path=request.path, details={'username': usr, 'error_type': str(type(e)), 'error_message': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+                return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         else:
-            flash("* Username or Password is incorrect *", 'danger')
+            flash('Username or Password is incorrect.', 'danger')
             log_to_db('WARNING', 'Login failed: incorrect username or password', user_id=None, request_path=request.path, details={'username': usr}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f"Error in {field}: {error}", 'danger')
-        log_to_db('WARNING', 'Login form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        if request.method == 'POST':
+            logging.debug(f"Form validation failed with errors: {form.errors}")
+            if not form.errors:
+                flash('Please check your input and try again.', 'danger')
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f"Error in {field}: {error}", 'danger')
+            log_to_db('WARNING', 'Login form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     return render_template('user-log-in.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
-@app.route('/user/logout')
-def log_out_user():
-    username = session.get("username")
+@app.route('/user/reset-password/request', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
+def reset_password_request():
+    """Handle password reset requests by sending a reset link via email."""
+    form = ResetPasswordRequestForm()
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
         ip_address = ip_address.split(',')[0].strip()
     user_agent = request.headers.get('User-Agent')
+
+    if form.validate_on_submit():
+        recaptcha_response = form.recaptcha_response.data
+        logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
+        if not validate_recaptcha(recaptcha_response, ip_address):
+            flash('reCAPTCHA verification failed. Please try again.', 'danger')
+            log_to_db('WARNING', 'reCAPTCHA verification failed during password reset request', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            return render_template('reset-password-request.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+
+        email = form.email.data
+        user = models.Account.query.filter_by(email=email).first()
+        if user:
+            # Generate a unique token
+            token = str(uuid.uuid4())
+            expires_at = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            reset_token = models.PasswordResetToken(
+                token=token,
+                username=user.username,
+                expires_at=expires_at
+            )
+            models.db.session.add(reset_token)
+            try:
+                models.db.session.commit()
+            except Exception as e:
+                models.db.session.rollback()
+                flash('An error occurred while processing your request. Please try again.', 'danger')
+                log_to_db('ERROR', f"Password reset token creation failed: {e}", user_id=None, request_path=request.path, details={'email': email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+                return render_template('reset-password-request.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+
+            # Send reset email
+            reset_url = url_for('reset_password', token=token, _external=True)
+            msg = MIMEText(f"Hello {user.first_name},\n\nClick the link below to reset your password:\n{reset_url}\n\nThis link will expire in 1 hour.\n\nIf you did not request a password reset, please ignore this email.")
+            msg['Subject'] = 'ForceCreator Password Reset'
+            msg['From'] = config.EMAIL_ADDRESS
+            msg['To'] = user.email
+            try:
+                with smtplib.SMTP('mi3-ts107.a2hosting.com', 587) as server:
+                    server.starttls()
+                    server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
+                    server.send_message(msg)
+                flash('A password reset link has been sent to your email.', 'success')
+                log_to_db('INFO', 'Password reset email sent', user_id=user.username, request_path=request.path, details={'email': email, 'username': user.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            except Exception as e:
+                models.db.session.rollback()
+                flash('Failed to send reset email. Please try again later.', 'danger')
+                log_to_db('ERROR', f"Failed to send password reset email: {e}", user_id=user.username, request_path=request.path, details={'email': email, 'username': user.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+                return render_template('reset-password-request.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+        else:
+            # Don't reveal if email exists
+            flash('If an account with that email exists, a reset link has been sent.', 'info')
+            log_to_db('INFO', 'Password reset requested for non-existent email', user_id=None, request_path=request.path, details={'email': email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        return redirect(url_for('log_in_user'))
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error in {field}: {error}", 'danger')
+        log_to_db('WARNING', 'Password reset request form validation failed', user_id=None, request_path=request.path, details={'errors': form.errors}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+    return render_template('reset-password-request.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+
+@app.route('/user/reset-password/<token>', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")  # Strict to prevent token brute-forcing
+def reset_password(token):
+    """Handle password reset with a token."""
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    user_agent = request.headers.get('User-Agent')
+
+    try:
+        reset_token = models.PasswordResetToken.query.filter_by(token=token).first()
+        logging.debug(f"Token lookup: {token}, found: {reset_token}")
+        if not reset_token or reset_token.expires_at < datetime.datetime.utcnow():
+            flash('The password reset link is invalid or expired.', 'danger')
+            log_to_db('WARNING', 'Invalid or expired password reset token', user_id=None, request_path=request.path, details={'token': token}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            return redirect(url_for('log_in_user'))
+
+        form = ResetPasswordForm()
+        if form.validate_on_submit():
+            user = models.Account.query.get(reset_token.username)  # Foreign key ensures user exists
+            user.password = models.bcrypt.generate_password_hash(form.new_password.data).decode("utf8")
+            models.db.session.delete(reset_token)
+            usage_event = models.UsageEvent(
+                event_type='password_reset',
+                user_id=user.username,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                event_details={'username': user.username, 'email': user.email}
+            )
+            models.db.session.add(usage_event)
+            try:
+                models.db.session.commit()
+            except Exception as e:
+                models.db.session.rollback()
+                flash('An error occurred while resetting your password. Please try again.', 'danger')
+                log_to_db('ERROR', f"Password reset commit failed: {e}", user_id=user.username, request_path=request.path, details={'username': user.username, 'error_type': str(type(e)), 'error_message': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+                return render_template('reset-password.html', form=form, token=token)
+            flash('Your password has been reset successfully. Please log in.', 'success')
+            log_to_db('INFO', 'Password reset successfully', user_id=user.username, request_path=request.path, details={'username': user.username, 'email': user.email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            return redirect(url_for('log_in_user'))
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Error in {field}: {error}", 'danger')
+            log_to_db('WARNING', 'Password reset form validation failed', user_id=reset_token.username, request_path=request.path, details={'errors': form.errors, 'username': reset_token.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        return render_template('reset-password.html', form=form, token=token)
+    except Exception as e:
+        flash('An unexpected error occurred. Please try again.', 'danger')
+        log_to_db('ERROR', f"Unexpected error in reset_password: {e}", user_id=None, request_path=request.path, details={'token': token, 'error_type': str(type(e)), 'error_message': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        return redirect(url_for('log_in_user'))
+
+@app.route('/user/logout')
+def log_out_user():
+    """Handle user logout."""
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    user_agent = request.headers.get('User-Agent')
+
+    # Redirect if not logged in
+    if 'username' not in session:
+        flash('You are not logged in.', 'info')
+        log_to_db(
+            'INFO',
+            'Attempted logout without being logged in',
+            user_id=None,
+            request_path=request.path,
+            details=None,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            list_uuid=None
+        )
+        return redirect(url_for('log_in_user'))
+
+    username = session.get("username")
     session.pop("username", None)
-    # Log usage event
+    session.pop('last_activity', None)
     usage_event = models.UsageEvent(
         event_type='user_logout',
         user_id=username,
@@ -364,13 +558,19 @@ def log_out_user():
         event_details={'username': username}
     )
     models.db.session.add(usage_event)
-    models.db.session.commit()
-    flash('You have been logged out successfully.', 'success')
-    log_to_db('INFO', 'User logged out successfully', user_id=username, request_path=request.path, details={'username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
-    return redirect('/user/login')
+    try:
+        models.db.session.commit()
+        flash('You have been logged out successfully.', 'success')
+        log_to_db('INFO', 'User logged out successfully', user_id=username, request_path=request.path, details={'username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+    except Exception as e:
+        models.db.session.rollback()
+        flash('An error occurred during logout. Please try again.', 'danger')
+        log_to_db('ERROR', f"Logout commit failed: {e}", user_id=username, request_path=request.path, details={'error_type': str(type(e)), 'error_message': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+    return redirect(url_for('log_in_user'))
 
 @app.route('/users/<username>')
-def show_secrets(username):
+def show_user(username):
+    """Show user profile."""
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
         ip_address = ip_address.split(',')[0].strip()
@@ -381,11 +581,19 @@ def show_secrets(username):
     user = models.Account.query.get_or_404(username)
     # Filter saved lists to exclude list_status='deleted' or 'pdf'
     saved_lists = models.SavedList.query.filter_by(username=username).filter(models.SavedList.list_status == 'saved').all()
-    saved_list_data = [save.pack_data() for save in saved_lists]
-    json_list_data = json.dumps(saved_list_data)
+    listdata = json.dumps([{
+        'uuid': l.uuid,
+        'name': l.name,
+        'nationality_id': l.nationality_id,
+        'faction_id': l.faction_id,
+        'commandernickname': l.commandernickname,
+        'totalforcepoints': l.totalforcepoints,
+        'maxpoints': l.maxpoints
+    } for l in saved_lists])
     delete_form = DeleteUserForm()
     log_to_db('INFO', 'User profile accessed', user_id=username, request_path=request.path, details={'username': username, 'list_count': len(saved_lists)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
-    return render_template('user-info.html', user=user, savedlists=saved_lists, listdata=json_list_data, delete_form=delete_form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
+    logging.debug(f"Rendering user profile for {username}")
+    return render_template('user-info.html', user=user, savedlists=saved_lists, listdata=listdata, delete_form=delete_form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
 @app.route('/users/<username>/delete', methods=['POST'])
 @limiter.limit("5 per minute")
@@ -442,10 +650,10 @@ def edit_user(username):
         flash('You are not authorized to edit this account.', 'danger')
         log_to_db('WARNING', 'Unauthorized attempt to edit user account: wrong user', user_id=session.get('username'), request_path=request.path, details={'attempted_username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
         return redirect(f'/users/{session["username"]}')
-    
+
     form = EditUserForm()
     user = models.Account.query.get_or_404(username)
-    
+
     if form.validate_on_submit():
         recaptcha_response = form.recaptcha_response.data
         logging.debug(f"reCAPTCHA response from form: {recaptcha_response}")
@@ -455,11 +663,16 @@ def edit_user(username):
             return render_template('user-edit.html', form=form, user=user, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         usr = session['username']
         pwd = form.password.data
-        user = models.Account.authenticate(usr, pwd)
-        if user:
+        user_auth = models.Account.authenticate(usr, pwd)
+        if user_auth:
+            # Update user details
             user.first_name = form.first_name.data
             user.last_name = form.last_name.data
             user.email = form.email.data
+            # Update password if new_password is provided
+            if form.new_password.data:
+                user.password = models.bcrypt.generate_password_hash(form.new_password.data).decode("utf8")
+                logging.debug(f"Password updated for user: {username}")
             # Log usage event
             usage_event = models.UsageEvent(
                 event_type='user_updated',
@@ -470,16 +683,17 @@ def edit_user(username):
                     'username': user.username,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
-                    'email': user.email
+                    'email': user.email,
+                    'password_changed': bool(form.new_password.data)
                 }
             )
             models.db.session.add(usage_event)
             models.db.session.commit()
             flash('Account updated successfully!', 'success')
-            log_to_db('INFO', 'User account updated successfully', user_id=user.username, request_path=request.path, details={'username': user.username, 'email': user.email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+            log_to_db('INFO', 'User account updated successfully', user_id=user.username, request_path=request.path, details={'username': user.username, 'email': user.email, 'password_changed': bool(form.new_password.data)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(f'/users/{usr}')
         else:
-            flash("* Password is incorrect *", 'danger')
+            flash("Current password is incorrect.", 'danger')
             log_to_db('WARNING', 'User edit failed: incorrect password', user_id=usr, request_path=request.path, details={'username': usr}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
     else:
         for field, errors in form.errors.items():
@@ -1197,6 +1411,7 @@ def pdf_from_forcelist():
 # Global error handler for unhandled exceptions
 @app.errorhandler(Exception)
 def handle_exception(e):
+    """Handle uncaught exceptions."""
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
     if ip_address:
         ip_address = ip_address.split(',')[0].strip()
@@ -1212,7 +1427,16 @@ def handle_exception(e):
         user_agent=user_agent,
         list_uuid=None
     )
-    models.db.session.commit()
+    try:
+        models.db.session.commit()
+    except Exception as commit_err:
+        models.db.session.rollback()
+        logging.error(f"Failed to commit log in handle_exception: {commit_err}")
+    if request.path.startswith(('/user/', '/users/')):
+        flash('Page not found or invalid request. Please try again.', 'warning')
+        if 'username' in session:
+            return redirect(url_for('show_user', username=session['username']))
+        return redirect(url_for('log_in_user'))
     return jsonify({"success": False, "error": "An unexpected error occurred"}), 500
 
 @app.errorhandler(MethodNotAllowed)

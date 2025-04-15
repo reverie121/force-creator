@@ -27,6 +27,8 @@ config.py
 
 migrations/
 
+reset_password.py
+
 # cPanel-specific files
 .well-known.zip
 .well-known/

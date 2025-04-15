@@ -77,6 +77,21 @@ class Account(db.Model):
     def __repr__(self):
         return f'<Account username={self.username} email={self.email}>'
 
+class PasswordResetToken(db.Model):
+    """Model for password reset tokens."""
+    __tablename__ = "password_reset_token"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(36), nullable=False, unique=True, index=True)
+    username = db.Column(db.String(30), db.ForeignKey('account.username', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    expires_at = db.Column(db.DateTime, nullable=False)
+
+    user = db.relationship('Account', backref='password_reset_tokens')
+
+    def __repr__(self):
+        return f'<PasswordResetToken id={self.id} username={self.username}>'
+
 ############################## Force Creator Models ##############################
 
 #################### FC Save Models ####################

@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
 {% block title %}
-    Force Creator Edit User Form
+    Force Creator User Edit
 {% endblock title %}
 
 {% block content %}
     <div class='container-fluid border border-5 border-start-0 border-end-0 border-secondary bg-warning'>
         <h1 class='main_header p-1 text-center'>
-            <i>Edit User Account for {{ user.username }}</i>
+            <i>Edit User Profile</i>
         </h1>
     </div>
     <div class='container-fluid pb-2 vh-100'>
@@ -21,8 +21,8 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
-                    <!-- Edit user form with reCAPTCHA -->
-                    <form id="edit-user-form" method="POST">
+                    <!-- User edit form with reCAPTCHA -->
+                    <form id="edit-user-form" method="POST" novalidate>
                         {{ form.hidden_tag() }}
                         <div class="form-group text-info fell fs-5 rounded-2 p-3">
                             <label for="first_name" class='mt-1'>First Name</label>
@@ -31,18 +31,24 @@
                             {{ form.last_name(class_='form-control bg-info text-primary', maxlength='50', value=user.last_name) }}
                             <label for="email" class='mt-1'>Email</label>
                             {{ form.email(class_='form-control bg-info text-primary', maxlength='75', value=user.email) }}
-                            <label for="password" class='mt-1'>Password (for verification)</label>
+                            <label for="password" class='mt-1'>Current Password</label>
                             {{ form.password(class_='form-control bg-info text-primary', autocomplete='current-password') }}
+                            <label for="new_password" class='mt-1'>New Password (optional)</label>
+                            {{ form.new_password(class_='form-control bg-info text-primary', autocomplete='new-password') }}
+                            <label for="confirm_password" class='mt-1'>Confirm New Password</label>
+                            {{ form.confirm_password(class_='form-control bg-info text-primary', autocomplete='new-password') }}
                             <div class="mb-3 mt-1">
                                 <div id="recaptcha-widget" class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-type="checkbox" data-theme="dark"></div>
                                 <input type="hidden" name="recaptcha_response" id="recaptcha_response_edit">
                             </div>
-                            <div class='container-fluid mt-2 p-1'>
-                                <button class="btn btn-danger" formaction="/users/{{user.username}}" formmethod="GET" type="submit">Cancel</button>
+                            <div class='container-fluid mt-2 p-1 d-flex justify-content-between align-items-center'>
                                 <button class="btn btn-success" formmethod="POST" type="submit">Save</button>
                             </div>
                         </div>
                     </form>
+                    <div class='container-fluid mt-2 p-1'>
+                        <a href="{{ url_for('show_user', username=user.username) }}" class="btn btn-danger">Cancel</a>
+                    </div>
                 </div>
             </div>
         </div>
