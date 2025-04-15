@@ -750,11 +750,11 @@ async saveList() {
             const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#commander-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='commander-${this.id}-specialrules-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='commander-${this.id}-specialrules-expand'></i>
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulesDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `commander-${this.id}-specialrules-details`)
+            const specialrulesDetails = $('<div>').addClass(['collapse', 'card-text', 'show']).attr('id', `commander-${this.id}-specialrules-details`)
             const specialrules = $('<ul>').addClass('mb-1').attr('id',`fl-commander-specialrules`);
             for (const rule of this.commander.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
@@ -786,22 +786,33 @@ async saveList() {
         });
         // Handle expanding/contracting of force's commander information.
         $('#commander-expand').parent().on('click', () => {
-            $('#commander-expand').toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            debouncedToggleExpander('commander-expand');
+        });
+        // Sync icon with collapse animation
+        $('#commander-details').on('shown.bs.collapse', () => {
+            toggleExpanderIcon('commander-expand', true);
+        }).on('hidden.bs.collapse', () => {
+            toggleExpanderIcon('commander-expand', false);
         });
         // Handle expander for all Commander Special Rules content.
         if (this.commander.specialrule.length > 0 || this.commander.specialruleChoice.length > 0) {
             $(`#commander-${this.id}-specialrules-expand`).parent().on('click', () => {
-                $(`#commander-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`commander-${this.id}-specialrules-expand`);
+            });
+            $(`#commander-${this.id}-specialrules-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`commander-${this.id}-specialrules-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`commander-${this.id}-specialrules-expand`, false);
             });
         }
-        // Handle Special Rule checkboxes for Standard Commanders.
+        // Handle Special Rule checkboxes for Standard Commanders
         if (this.commander.specialruleChoice.length > 0) {
             for (const sr of this.commander.specialruleChoice) {
-                $(`#fl-commander-sr-choice-${sr.id}`).on('change',(e) => {
+                $(`#fl-commander-sr-choice-${sr.id}`).on('change', () => {
                     if ($(`#fl-commander-sr-choice-${sr.id}`).prop('checked')) {
-                        this.handleCommanderSpecialruleChoice(1,sr.id);
+                        this.handleCommanderSpecialruleChoice(1, sr.id);
                     } else {
-                        this.handleCommanderSpecialruleChoice(-1,sr.id);
+                        this.handleCommanderSpecialruleChoice(-1, sr.id);
                     }
                 });
             }
@@ -879,11 +890,11 @@ async saveList() {
             const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#faction-${this.id}-specialrules-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='faction-${this.id}-specialrules-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='faction-${this.id}-specialrules-expand'></i>
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text', 'show']).attr('id', `faction-${this.id}-specialrules-details`)
             for (const rule of this.faction.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`${rule.details}`);
                 specialrulesDetails.append(newRule);
@@ -899,11 +910,11 @@ async saveList() {
             const optionExpandColumn = $('<div>').addClass(['col-1']);
             optionExpandColumn.html(`
                 <a href='#faction-${this.id}-options-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='faction-${this.id}-options-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='faction-${this.id}-options-expand'></i>
                 </a>
             `);
             factionOptionsHeader.append([descColumn, optionExpandColumn]);
-            const unitOptionsDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `faction-${this.id}-options-details`)
+            const unitOptionsDetails = $('<div>').addClass(['collapse', 'card-text', 'show']).attr('id', `faction-${this.id}-options-details`)
             for (const o of this.faction.option) {
                 // Set Faction/Force option['selected'] to 0 for 'unselected' when Faction is displayed.
                 o['selected'] = 0;
@@ -919,20 +930,29 @@ async saveList() {
         $('#force-faction').append(factionDisplay);
         // Handle expanding/contracting of force's faction information.
         $('#faction-expand').parent().on('click', () => {
-            $('#faction-expand').toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            debouncedToggleExpander('faction-expand');
+        });
+        $('#faction-details').on('shown.bs.collapse', () => {
+            toggleExpanderIcon('faction-expand', true);
+        }).on('hidden.bs.collapse', () => {
+            toggleExpanderIcon('faction-expand', false);
         });
         if (this.faction.option.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#faction-${this.id}-options-expand`).parent().on('click', () => {
-                $(`#faction-${this.id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`faction-${this.id}-options-expand`);
+            });
+            $(`#faction-${this.id}-options-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`faction-${this.id}-options-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`faction-${this.id}-options-expand`, false);
             });
             for (const o of this.faction.option) {
-                $(`#faction-${this.faction.id}-option-${o.id}`).on('click change',() => {
-                    // Handle method for Faction/Force Option wants the Option id and 1/-1 for checked/unchecked.
+                $(`#faction-${this.faction.id}-option-${o.id}`).on('click change', () => {
                     if ($(`#faction-${this.faction.id}-option-${o.id}`).prop('checked')) {
-                        this.handleFactionOption(1,o.id);
+                        this.handleFactionOption(1, o.id);
                     } else {
-                        this.handleFactionOption(-1,o.id);
+                        this.handleFactionOption(-1, o.id);
                     }
                 });
             }
@@ -940,7 +960,12 @@ async saveList() {
         if (this.faction.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#faction-${this.id}-specialrules-expand`).parent().on('click', () => {
-                $(`#faction-${this.id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`faction-${this.id}-specialrules-expand`);
+            });
+            $(`#faction-${this.id}-specialrules-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`faction-${this.id}-specialrules-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`faction-${this.id}-specialrules-expand`, false);
             });
         }
         // Handle removal of force's faction.
@@ -1110,11 +1135,11 @@ async saveList() {
             const optionExpandColumn = $('<div>').addClass(['col-1']);
             optionExpandColumn.html(`
                 <a href='#fl-${artillery.f_id}-options-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='fl-${artillery.f_id}-options-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='fl-${artillery.f_id}-options-expand'></i>
                 </a>
             `);
             optionHeader.append([descColumn, optionExpandColumn]);
-            const artilleryOptionDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${artillery.f_id}-options-details`)
+            const artilleryOptionDetails = $('<div>').addClass(['collapse', 'card-text', 'show']).attr('id', `fl-${artillery.f_id}-options-details`)
             for (const o of artillery.option) {
                 o['selected'] = 0;
                 const newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${artillery.f_id}-option-${o.id}'> <b>${o.name}</b> (${o.pointcost} pts)`);
@@ -1141,18 +1166,28 @@ async saveList() {
         });
         // Handle expanding/contracting of item information.
         $(`#fl-${artillery.f_id}-expand`).parent().on('click', () => {
-            $(`#fl-${artillery.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            debouncedToggleExpander(`fl-${artillery.f_id}-expand`);
+        });
+        $(`#fl-${artillery.f_id}-details`).on('shown.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${artillery.f_id}-expand`, true);
+        }).on('hidden.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${artillery.f_id}-expand`, false);
         });
         if (!artillery.name.includes('Swivel')) {
             // Handle expanding/contracting of item information.
             $(`#fl-${artillery.f_id}-options-expand`).parent().on('click', () => {
-                $(`#fl-${artillery.f_id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`fl-${artillery.f_id}-options-expand`);
+            });
+            $(`#fl-${artillery.f_id}-options-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${artillery.f_id}-options-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${artillery.f_id}-options-expand`, false);
             });
             // Handle checking/unchecking of options.
             for (const o of artillery.option) {
-                $(`#fl-${artillery.f_id}-option-${o.id}`).on('click',() => {
+                $(`#fl-${artillery.f_id}-option-${o.id}`).on('click', () => {
                     this.handleArtilleryOption(artillery.f_id, o);
-                })
+                });
             }
         }
         // Handle minus button to subtract artillery piece from group.
@@ -1354,11 +1389,11 @@ async saveList() {
             const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#fl-${character.f_id}-specialrules-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='fl-${character.f_id}-specialrules-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='fl-${character.f_id}-specialrules-expand'></i>
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${character.f_id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse', 'card-text', 'show']).attr('id', `fl-${character.f_id}-specialrules-details`)
             for (const rule of character.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
                 specialrulesDetails.append(newRule);
@@ -1393,12 +1428,22 @@ async saveList() {
         });
         // Handle expanding/contracting of item information.
         $(`#fl-${character.f_id}-expand`).parent().on('click', () => {
-            $(`#fl-${character.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            debouncedToggleExpander(`fl-${character.f_id}-expand`);
+        });
+        $(`#fl-${character.f_id}-details`).on('shown.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${character.f_id}-expand`, true);
+        }).on('hidden.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${character.f_id}-expand`, false);
         });
         if (character.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#fl-${character.f_id}-specialrules-expand`).parent().on('click', () => {
-                $(`#fl-${character.f_id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`fl-${character.f_id}-specialrules-expand`);
+            });
+            $(`#fl-${character.f_id}-specialrules-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${character.f_id}-specialrules-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${character.f_id}-specialrules-expand`, false);
             });
         }
         // Handle removal of Character from ForceList.
@@ -1659,11 +1704,11 @@ async saveList() {
             const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#fl-${ship.f_id}-specialrules-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='fl-${ship.f_id}-specialrules-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='fl-${ship.f_id}-specialrules-expand'></i>
                 </a>
             `);
             shipSpecialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const shipSpecialrulesDetails = $('<ul>').addClass(['collapse', 'card-text']).attr('id', `fl-${ship.f_id}-specialrules-details`)
+            const shipSpecialrulesDetails = $('<ul>').addClass(['collapse', 'card-text', 'show']).attr('id', `fl-${ship.f_id}-specialrules-details`)
             for (const sr of ship.specialrule) {
                 const newSpecialrule = $('<li>').html(`<b>${sr.name}:</b> ${sr.details}`);
                 shipSpecialrulesDetails.append(newSpecialrule);
@@ -1678,11 +1723,11 @@ async saveList() {
             const upgradeExpandColumn = $('<div>').addClass(['col-1']);
             upgradeExpandColumn.html(`
                 <a href='#fl-${ship.f_id}-upgrades-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='fl-${ship.f_id}-upgrades-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='fl-${ship.f_id}-upgrades-expand'></i>
                 </a>
             `);
             upgradeHeader.append([descColumn, upgradeExpandColumn]);
-            const shipUpgradeDetails = $('<div>').addClass(['collapse', 'card-text']).attr('id', `fl-${ship.f_id}-upgrades-details`)
+            const shipUpgradeDetails = $('<div>').addClass(['collapse', 'card-text', 'show']).attr('id', `fl-${ship.f_id}-upgrades-details`)
             for (const u of ship.upgrade) {
                 u['selected'] = 0;
                 const newUpgrade = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${ship.f_id}-upgrade-${u.id}'> <b>${u.name}</b> (${u.pointcost} pts)`);
@@ -1705,28 +1750,42 @@ async saveList() {
         newItem.show('medium','swing');
         // Handle expanding/contracting of item information.
         $(`#fl-${ship.f_id}-expand`).parent().on('click', () => {
-            $(`#fl-${ship.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            debouncedToggleExpander(`fl-${ship.f_id}-expand`);
         });
-        // Handle updates to nickname.
+        $(`#fl-${ship.f_id}-details`).on('shown.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${ship.f_id}-expand`, true);
+        }).on('hidden.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${ship.f_id}-expand`, false);
+        });
         $(`#fl-${ship.f_id}-nickname`).on('keyup change', () => {
             this.ships[`${ship.f_id}`]['nickname'] = $(`#fl-${ship.f_id}-nickname`).val();
         });
         if (ship.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#fl-${ship.f_id}-specialrules-expand`).parent().on('click', () => {
-                $(`#fl-${ship.f_id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
-            });            
+                debouncedToggleExpander(`fl-${ship.f_id}-specialrules-expand`);
+            });
+            $(`#fl-${ship.f_id}-specialrules-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${ship.f_id}-specialrules-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${ship.f_id}-specialrules-expand`, false);
+            });
         }
         if (ship.upgrade.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#fl-${ship.f_id}-upgrades-expand`).parent().on('click', () => {
-                $(`#fl-${ship.f_id}-upgrades-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`fl-${ship.f_id}-upgrades-expand`);
+            });
+            $(`#fl-${ship.f_id}-upgrades-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${ship.f_id}-upgrades-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${ship.f_id}-upgrades-expand`, false);
             });
             // Handle checking/unchecking upgrades.
             for (const u of ship.upgrade) {
-                $(`#fl-${ship.f_id}-upgrade-${u.id}`).on('click',() => {
+                $(`#fl-${ship.f_id}-upgrade-${u.id}`).on('click', () => {
                     this.handleShipUpgrade(ship.f_id, u);
-                })
+                });
             }
         }
         // Handle removal of Ship from ForceList.
@@ -2083,11 +2142,11 @@ async saveList() {
             const optionExpandColumn = $('<div>').addClass(['col-1']);
             optionExpandColumn.html(`
                 <a href='#fl-${unit.f_id}-options-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='fl-${unit.f_id}-options-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='fl-${unit.f_id}-options-expand'></i>
                 </a>
             `);
             unitOptionsHeader.append([descColumn, optionExpandColumn]);
-            const unitOptionsDetails = $('<div>').addClass(['collapse','card-text']).attr('id', `fl-${unit.f_id}-options-details`)
+            const unitOptionsDetails = $('<div>').addClass(['collapse','card-text', 'show']).attr('id', `fl-${unit.f_id}-options-details`)
             for (const o of unit.option) {
                 o['selected'] = 0;
                 const newOption = $('<div>').addClass('mt-1').html(`<input type='checkbox' class='form-check-input' id='fl-${unit.f_id}-option-${o.id}'> ${o.details}`);
@@ -2103,11 +2162,11 @@ async saveList() {
             const specialruleExpandColumn = $('<div>').addClass(['col-1']);
             specialruleExpandColumn.html(`
                 <a href='#fl-${unit.f_id}-specialrules-details' role='button' data-bs-toggle='collapse'>
-                    <i class='fa-solid fa-chevron-down' id='fl-${unit.f_id}-specialrules-expand'></i>
+                    <i class='fa-solid fa-chevron-up' id='fl-${unit.f_id}-specialrules-expand'></i>
                 </a>
             `);
             specialrulesHeader.append([descColumn, specialruleExpandColumn]);
-            const specialrulesDetails = $('<ul>').addClass(['collapse','card-text']).attr('id', `fl-${unit.f_id}-specialrules-details`)
+            const specialrulesDetails = $('<ul>').addClass(['collapse','card-text', 'show']).attr('id', `fl-${unit.f_id}-specialrules-details`)
             for (const rule of unit.specialrule) {
                 const newRule = $('<li>').addClass('mt-1').html(`<b>${rule.name}:</b> ${rule.details}`);
                 specialrulesDetails.append(newRule);
@@ -2140,24 +2199,39 @@ async saveList() {
         });
         // Handle expanding/contracting of item information.
         $(`#fl-${unit.f_id}-expand`).parent().on('click', () => {
-            $(`#fl-${unit.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            debouncedToggleExpander(`fl-${unit.f_id}-expand`);
+        });
+        $(`#fl-${unit.f_id}-details`).on('shown.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${unit.f_id}-expand`, true);
+        }).on('hidden.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${unit.f_id}-expand`, false);
         });
         if (unit.option.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#fl-${unit.f_id}-options-expand`).parent().on('click', () => {
-                $(`#fl-${unit.f_id}-options-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`fl-${unit.f_id}-options-expand`);
+            });
+            $(`#fl-${unit.f_id}-options-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${unit.f_id}-options-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${unit.f_id}-options-expand`, false);
             });
             // Handle checking/unchecking of options.
             for (const o of unit.option) {
-                $(`#fl-${unit.f_id}-option-${o.id}`).on('click',() => {
+                $(`#fl-${unit.f_id}-option-${o.id}`).on('click', () => {
                     this.handleUnitOption(unit.f_id, o);
-                })
+                });
             }
         }
         if (unit.specialrule.length > 0) {
             // Handle expanding/contracting of item information.
             $(`#fl-${unit.f_id}-specialrules-expand`).parent().on('click', () => {
-                $(`#fl-${unit.f_id}-specialrules-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+                debouncedToggleExpander(`fl-${unit.f_id}-specialrules-expand`);
+            });
+            $(`#fl-${unit.f_id}-specialrules-details`).on('shown.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${unit.f_id}-specialrules-expand`, true);
+            }).on('hidden.bs.collapse', () => {
+                toggleExpanderIcon(`fl-${unit.f_id}-specialrules-expand`, false);
             });
         }
         // Handle removal of unit from ForceList.
@@ -2304,9 +2378,14 @@ async saveList() {
         $(`#fl-${misc.f_id}-details`).on('keyup change', () => {
             this.misc[`${misc.f_id}`]['details'] = $(`#fl-${misc.f_id}-description`).val();
         });
-        // Handle expanding/contracting of item information.
+        // Handle expanding/contracting of item information.        
         $(`#fl-${misc.f_id}-expand`).parent().on('click', () => {
-            $(`#fl-${misc.f_id}-expand`).toggleClass('fa-chevron-down').toggleClass('fa-chevron-up');
+            debouncedToggleExpander(`fl-${misc.f_id}-expand`);
+        });
+        $(`#fl-${misc.f_id}-details`).on('shown.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${misc.f_id}-expand`, true);
+        }).on('hidden.bs.collapse', () => {
+            toggleExpanderIcon(`fl-${misc.f_id}-expand`, false);
         });
         // Handle minus button to decrease qty.
         $(`#fl-${misc.f_id}-subtract-model`).on('click', () => {
