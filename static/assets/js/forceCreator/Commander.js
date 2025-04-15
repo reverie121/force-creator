@@ -46,11 +46,17 @@ class Commander {
     // Get a list of the chosen commander's valid factions 
     // and add to this object as a property.
     setCommanderFactionList(nationality_name) {
+        console.debug(`Getting faction list for commander in ${nationality_name}.`);
         const nationFactionList = JSON.parse(sessionStorage.getItem(`${nationality_name}_factions`));
         const commanderFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
         for (const faction of nationFactionList) {
             if (this.factionIDs.includes(faction.id)) {
-                const newFaction = {'id': faction.id, 'name': faction.name};
+                const newFaction = {
+                    'id': faction.id,
+                    'name': faction.name,
+                    'first_year': faction.first_year,
+                    'last_year': faction.last_year
+                };
                 commanderFactionList.push(newFaction);
             }
         }
