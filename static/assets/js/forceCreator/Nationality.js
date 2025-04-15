@@ -15,15 +15,20 @@ class Nationality {
         this.commanderList = nationalCommanderList;
     }
     // Retrieve a list of a specific Nation's Factions 
-    // with id and name from session storage for dropdown.
+    // with id, name, first_year, and last_year from session storage for dropdown.
     getNationalFactionList() {
         console.debug(`Getting faction list from session storage for ${this.name}.`);
         const factionsData = JSON.parse(sessionStorage.getItem(`${this.name}_factions`));
         const nationalFactionList = [{'id': 0, 'name': 'Be More Specific...'}];
         for (const faction of factionsData) {
-            const newFaction = {'id': faction.id, 'name': faction.name};
+            const newFaction = {
+                'id': faction.id,
+                'name': faction.name,
+                'first_year': faction.first_year,
+                'last_year': faction.last_year
+            };
             nationalFactionList.push(newFaction);
         }
-        this.factionList = nationalFactionList
+        this.factionList = nationalFactionList;
     }
 }

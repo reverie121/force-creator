@@ -8,7 +8,7 @@ class ForceList {
         this.ships = {};
         this.artillery = {};
         this.misc = {};
-        this.idCounter = 0
+        this.idCounter = 0;
         this.coreCount = 0;
         this.supportCount = 0;
         this.fightingCount = 0;
@@ -19,6 +19,34 @@ class ForceList {
         $('#point-max-display').text(this.maxPoints);
     }
 
+    // Clear the entire ForceList and UI, preserving maxPoints and nationality
+    clearForceList() {
+        this.resetForceList();
+        this.emptyBuildArea();
+        if (this.nationality) {
+            // Repopulate faction and commander dropdowns based on nationality
+            populateFactionDropdown(this.nationality.factionList);
+            populateCommanderDropdown(this.nationality.commanderList);
+            $selectFaction.val(0);
+            $selectCommander.val(0);
+        } else {
+            // No nationality selected, reset to welcome area
+            $('#welcome-area').show('fast', 'swing');
+            $('#build-area').hide('fast', 'swing');
+            $selectNationality.val(0);
+            $selectFaction.empty();
+            $selectCommander.empty();
+        }
+        this.name = 'A Force Without A Name';
+        $('#force_name').val('');
+        $('#force-name').text(this.name);
+        this.save = null;
+        this.uuid = null;
+        this.updateTotalForcePoints();
+        resetComponentSelector();
+        resetBuildSideTools();
+    }
+
     checkErrors() {
         const errors = ListError.checkErrors(this);
         if (errors.length > 0) {
@@ -26,10 +54,10 @@ class ForceList {
             errors.forEach(error => console.warn(error.toString()));
             // Create a bulleted list of error messages
             $('#error-display').html('<ul>' + errors.map(e => `<li>${e.message}</li>`).join('') + '</ul>').show();
-            $('#force-pdf a').hide(); // Hide the button inside #force-pdf
+            $('#force-pdf a').hide();
         } else {
             $('#error-display').hide();
-            $('#force-pdf a').show(); // Show the button inside #force-pdf
+            $('#force-pdf a').show();
         }
         return errors;
     }
@@ -44,8 +72,7 @@ class ForceList {
     updateTotalForcePoints() {
         if (this.commander) {
             this.totalForcePoints = this.commander.points;
-        }
-        else {
+        } else {
             this.totalForcePoints = 0;
         }
         this.updateAllArtilleryCost();
@@ -512,6 +539,7 @@ async saveList() {
         // $('#force-pdf').hide('medium', 'swing');
         setTimeout(() => {
             $('#force-revert').show('medium', 'swing');
+            $('#force-reset').show('medium', 'swing');
             $('#force-save').show('medium', 'swing');
             $('#force-pdf').show('medium', 'swing');
         },400)

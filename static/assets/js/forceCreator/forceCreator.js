@@ -48,6 +48,8 @@ function resetComponentSelector() {
         }
         $('#force-save').hide('fast', 'swing');
         $('#force-pdf').hide('fast', 'swing');
+        $('#force-reset').hide('fast', 'swing');
+
     } else {
         $('.instructions').hide('fast', 'swing');
         $('#component_selector').show('medium', 'swing');
@@ -55,6 +57,7 @@ function resetComponentSelector() {
         if (forceList.save) {
             $('#force-revert').show('fast', 'swing');
         }
+        $('#force-reset').show('fast', 'swing');
         $('#force-save').show('fast', 'swing');
         $('#force-pdf').show('fast', 'swing');
     }
@@ -80,7 +83,8 @@ function populateFactionDropdown(factionList) {
         .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
     const sortedFactionList = [placeholder, ...sortableFactions];
     sortedFactionList.forEach(function(e) {
-        $selectFaction.append($('<option></option>').val(e.id).text(e.name));
+        const displayText = e.id === 0 ? e.name : `${e.name} (${e.first_year || 'Unknown'} - ${e.last_year || 'Unknown'})`;
+        $selectFaction.append($('<option></option>').val(e.id).text(displayText));
     });
     // Restore current selection if still valid, otherwise leave unselected
     if (currentFactionId && sortedFactionList.some(f => f.id == currentFactionId)) {
@@ -128,6 +132,13 @@ $(window).ready(async function() {
     // Event handlers for build-side tools
     $('#force-revert').on('click', () => {
         forceList.loadSave(forceList.save);
+    });
+    $('#force-reset').on('click', () => {
+        $('#resetConfirmationModal').modal('show');
+    });
+    $('#confirmResetButton').on('click', () => {
+        $('#resetConfirmationModal').modal('hide');
+        forceList.clearForceList();
     });
     $('#force-save').on('click', () => {
         forceList.saveList();

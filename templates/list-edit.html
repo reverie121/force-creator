@@ -15,7 +15,7 @@
 
     <div class='container p-0 px-1 m-0'>
         
-        <!-- MAIN SELECT  -->
+        <!-- MAIN SELECT -->
         <div class='container-fluid rounded-3 bg-warning p-0 fell bigger-text'>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -28,7 +28,6 @@
                 
                 <!-- MAIN SELECT RIGHT SIDE -->
                 <div class='col-12-sm col-md order-md-last m-1'>      
-
                     <div class='row mt-1 align-items-center'>
                         <div class='col-auto p-0 pe-2 text-end'>
                             <i class='form-label text-info'>Nation:</i>
@@ -129,18 +128,21 @@
                     <div class='rounded-2 force-selector-field border border-2 border-secondary'>
                         <div class='row text-center align-items-center'>
                             <div class='col-auto' id='force-revert'>
-                                <a href='#/' role='button'><i class="fa-solid fa-clock-rotate-left m-1"></i></a>
-                            </div>                         
+                                <a href='#/' role='button'aria-label="Revert Force List"><i class="fa-solid fa-clock-rotate-left m-1"></i></a>
+                            </div>
+                            <div class='col-auto' id='force-reset'>
+                                <a href='#/' role='button'aria-label="Reset Force List"><i class="fa-solid fa-trash m-1"></i></a>
+                            </div>
                             <div class='col'>
                                 <i id='force-name' class='biggest-text'></i>
                             </div>
                             <div class='col-auto' id='force-save'>
-                                <a href='#/' role='button'>
+                                <a href='#/' role='button'aria-label="Save Force List">
                                     <i class="fa-solid fa-floppy-disk"></i>
                                 </a>
                             </div>
                             <div class='col-auto me-1' id='force-pdf'>
-                                <a href='#/' role='button'>
+                                <a href='#/' role='button'aria-label="Generate PDF of Force List">
                                     <i class="fa-solid fa-file-pdf"></i>
                                 </a>
                             </div>   
@@ -213,18 +215,26 @@
                 </div>
             </div>
 
-        </div>
-
-    </div>
-
-    <!-- FOOTER -->
-    <!-- <div class='container-fluid bg-primary sticky-bottom mb-0' id='footer'>
-        <div class='container p-0 pt-1 mb-0 bg-secondary border border-2 border-top-0 border-bottom-0 border-info text-info'>
-            <div class='container-fluid border border-5 border-top-0 border-start-0 border-end-0 border-secondary bg-warning m-0'>
-                 
+            <!-- Bootstrap Modal for Reset Confirmation -->
+            <div class="modal fade" id="resetConfirmationModal" tabindex="-1" aria-labelledby="resetConfirmationModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fell" id="resetConfirmationModalLabel">Confirm Reset</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to reset the force list? This will clear all selections and cannot be undone unless saved.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmResetButton">Reset</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div> -->
+    </div>
 
 {% endblock content %}
 
