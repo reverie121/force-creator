@@ -19,6 +19,8 @@ from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 import models
 from models import db
+from concurrent.futures import ThreadPoolExecutor
+import atexit
 
 app = Flask(__name__)
 
@@ -61,6 +63,10 @@ models.connect_db(app)
 migrate = Migrate(app, db)
 
 logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+
+# Thread pool for async email sending
+executor = ThreadPoolExecutor(max_workers=2)
+atexit.register(executor.shutdown)
 
 # Existing log_to_db function (unchanged)
 def log_to_db(level, message, user_id=None, request_path=None, details=None, ip_address=None, user_agent=None, list_uuid=None):
@@ -173,6 +179,30 @@ def ratelimit_handler(e):
     flash('Too many requests. Please try again later.', 'danger')
     return render_template('error.html', error="Too many requests. Please try again later."), 429
 
+def send_email_async(msg, email, username, ip_address, user_agent, route):
+    """Send email asynchronously."""
+    try:
+        with smtplib.SMTP_SSL('mail.forcecreator.com', 465, timeout=10) as server:
+            server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
+            server.send_message(msg)
+        log_to_db('INFO', f"{route} email sent", user_id=username, request_path=f"/{route}",
+                  details={'email': email, 'username': username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+    except smtplib.SMTPAuthenticationError as e:
+        logging.error(f"SMTP authentication failed in {route}: {e}")
+        log_to_db('ERROR', f"SMTP authentication failed in {route}: {e}", user_id=username, request_path=f"/{route}",
+                  details={'email': email, 'username': username, 'error': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        raise
+    except smtplib.SMTPException as e:
+        logging.error(f"SMTP error in {route}: {e}")
+        log_to_db('ERROR', f"SMTP error in {route}: {e}", user_id=username, request_path=f"/{route}",
+                  details={'email': email, 'username': username, 'error': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error sending email in {route}: {e}")
+        log_to_db('ERROR', f"Unexpected error sending email in {route}: {e}", user_id=username, request_path=f"/{route}",
+                  details={'email': email, 'username': username, 'error': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+        raise
+
 # Verify reCAPTCHA token with Google API
 def validate_recaptcha(response, remote_ip):
     secret_key = config.RECAPTCHA_SECRET_KEY
@@ -204,6 +234,10 @@ def known_issues():
 @limiter.limit("10 per hour")
 def contact():
     form = ContactForm()
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    user_agent = request.headers.get('User-Agent')
     if request.method == 'POST':
         logging.debug("Form data: %s", form.data)
         if form.validate_on_submit():
@@ -211,10 +245,6 @@ def contact():
             email = form.email.data
             message = form.message.data
             recaptcha_response = form.recaptcha_response.data
-            ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
-            if ip_address:
-                ip_address = ip_address.split(',')[0].strip()
-            user_agent = request.headers.get('User-Agent')
             if not validate_recaptcha(recaptcha_response, ip_address):
                 flash('reCAPTCHA verification failed. Please try again.', 'error')
                 log_to_db('WARNING', 'reCAPTCHA verification failed', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
@@ -225,22 +255,16 @@ def contact():
             msg['To'] = config.EMAIL_ADDRESS
             msg['Reply-To'] = email
             try:
-                with smtplib.SMTP('mi3-ts107.a2hosting.com', 587) as server:
-                    server.starttls()
-                    server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
-                    server.send_message(msg)
+                logging.debug(f"Submitting contact email to async task")
+                executor.submit(send_email_async, msg, email, None, ip_address, user_agent, 'contact')
                 flash('Your message has been sent successfully!', 'success')
                 log_to_db('INFO', 'Contact form submitted successfully', user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             except Exception as e:
-                flash(f'Error sending message: {str(e)}', 'danger')
+                flash('Error sending message. Please try again later.', 'danger')
                 log_to_db('ERROR', f"Error sending contact form message: {e}", user_id=None, request_path=request.path, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             return redirect(url_for('contact'))
         else:
             logging.debug("Form validation failed: %s", form.errors)
-            ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
-            if ip_address:
-                ip_address = ip_address.split(',')[0].strip()
-            user_agent = request.headers.get('User-Agent')
             for field, errors in form.errors.items():
                 for error in errors:
                     flash(f"Error in {field}: {error}", 'danger')
@@ -443,23 +467,18 @@ def reset_password_request():
                 log_to_db('ERROR', f"Password reset token creation failed: {e}", user_id=None, request_path=request.path, details={'email': email}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
                 return render_template('reset-password-request.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
 
-            # Send reset email
+            # Send reset email asynchronously
             reset_url = url_for('reset_password', token=token, _external=True)
             msg = MIMEText(f"Hello {user.first_name},\n\nClick the link below to reset your password:\n{reset_url}\n\nThis link will expire in 1 hour.\n\nIf you did not request a password reset, please ignore this email.")
             msg['Subject'] = 'ForceCreator Password Reset'
             msg['From'] = config.EMAIL_ADDRESS
             msg['To'] = user.email
             try:
-                with smtplib.SMTP('mi3-ts107.a2hosting.com', 587) as server:
-                    server.starttls()
-                    server.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
-                    server.send_message(msg)
+                executor.submit(send_email_async, msg, email, user.username, ip_address, user_agent, 'user/reset-password/request')
                 flash('A password reset link has been sent to your email.', 'success')
-                log_to_db('INFO', 'Password reset email sent', user_id=user.username, request_path=request.path, details={'email': email, 'username': user.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
             except Exception as e:
-                models.db.session.rollback()
                 flash('Failed to send reset email. Please try again later.', 'danger')
-                log_to_db('ERROR', f"Failed to send password reset email: {e}", user_id=user.username, request_path=request.path, details={'email': email, 'username': user.username}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
+                log_to_db('ERROR', f"Failed to send password reset email: {e}", user_id=user.username, request_path=request.path, details={'email': email, 'username': user.username, 'error': str(e)}, ip_address=ip_address, user_agent=user_agent, list_uuid=None)
                 return render_template('reset-password-request.html', form=form, recaptcha_site_key=config.RECAPTCHA_SITE_KEY)
         else:
             # Don't reveal if email exists
